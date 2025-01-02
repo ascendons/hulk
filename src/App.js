@@ -1,12 +1,17 @@
 import Sidebar from "./app/Components/Sidebar";
-import Home from "./app/Pages/Home";
+import Attendence from "./app/Pages/Attendance";
+import Homes from "./app/Pages/Home";
+import { BrowserRouter as Router, Route, Routes  } from "react-router-dom";
 
 function App() {
   return (
-     <>
-     <Home/>
-     <Sidebar/>
-     </>
+    <Router>
+      <Sidebar />
+      <Routes>
+        <Route path="/" element={<Homes />} />
+        <Route path="/Attendence" element={<Attendence />} />
+      </Routes>
+     </Router>
   );
 }
 

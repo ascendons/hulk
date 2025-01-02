@@ -1,12 +1,9 @@
 import React from "react";
-import Sidebar from "../Components/Sidebar";
 
 const Homes = () => {
   return (
     <div className="flex">
-      <div className="relative">
-        <Sidebar />
-      </div>
+
 
       {/* Main Content */}
       <div className="ml-16 w-full p-8 ">
@@ -15,7 +12,7 @@ const Homes = () => {
         {/* Top Stats Section */}
         <div className="grid grid-cols-3 gap-80 mb-8">
           <div className="bg-white shadow-md rounded-lg p-6   text-center">
-            <h2 className="text-lg font-bold ">Total Students</h2>
+          <h2 className="text-lg font-bold ">Total Students</h2>
             <p className="text-2xl mt-2">200</p>
           </div>
           <div className="bg-white shadow-md rounded-lg p-6  text-center">
