@@ -1,12 +1,8 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// import { getAnalytics } from "firebase/analytics";
-import { getAuth } from "firebase/auth";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import { initializeApp, getApps, setLogLevel } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+import { initializeAuth } from "firebase/auth";
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+
 const firebaseConfig = {
   apiKey: "AIzaSyAQt3wC9b3D11kTpYxAQ5tLTSxjRbuTyxE",
   authDomain: "campusconnect-a9fd9.firebaseapp.com",
@@ -15,11 +11,16 @@ const firebaseConfig = {
   storageBucket: "campusconnect-a9fd9.appspot.com",
   messagingSenderId: "856272800171",
   appId: "1:856272800171:web:d18054d53ef7ecb778eaee",
-  measurementId: "G-G9MDK6QHKZ",
+  measurementId: "G-G9MDK6QHKZ"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-// const analytics = getAnalytics(app);
-// export default app;
-export const auth = getAuth(app);
+setLogLevel("silent");
+
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+const db = getFirestore(app);
+const auth = initializeAuth(app);
+
+
+export {db , auth};
+
+ 

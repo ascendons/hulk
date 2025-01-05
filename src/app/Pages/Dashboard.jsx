@@ -1,15 +1,34 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Sidebar from "../Components/Sidebar";
+// import db from "../../config";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../../config";
 
 const Dashboard = () => {
+  const [noticeboard, setNotices] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const noticesCollection = collection(db, "notices");
+        const noticesSnapshot = await getDocs(noticesCollection);
+        const noticesList = noticesSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setNotices(noticesList);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchData();
+  }, []);
+
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
       <Sidebar className="w-1/5 bg-gray-800 text-white h-full" />
 
-      {/* Main Content */}
       <div className="flex-grow p-6">
-        {/* Header */}
         <header className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Dashboard</h1>
           <input
@@ -111,23 +130,14 @@ const Dashboard = () => {
 
       {/* Right Panel */}
       <div className="w-1/4 bg-white p-6 shadow-md">
-        <h2 className="text-lg font-semibold mb-4">Calendar</h2>
-        <p>Calendar Placeholder</p>
-
         <h2 className="text-lg font-semibold mt-6 mb-4">Notice Board</h2>
         <ul>
-          <li className="mb-4">
-            <h3 className="font-medium">Special Examination</h3>
-            <p className="text-sm text-gray-600">By Justin Langer</p>
-          </li>
-          <li className="mb-4">
-            <h3 className="font-medium">Semester Admission</h3>
-            <p className="text-sm text-gray-600">By Daniel Vatory</p>
-          </li>
-          <li>
-            <h3 className="font-medium">COVID-19 Vaccination</h3>
-            <p className="text-sm text-gray-600">By Jacob Oram</p>
-          </li>
+          {noticeboard.map((notice) => (
+            <li key={notice.id} className="mb-2">
+              <h3 className="font-semibold">{notice.title}</h3>
+              <p className="text-gray-600">{notice.content}</p>
+            </li>
+          ))}
         </ul>
       </div>
     </div>
