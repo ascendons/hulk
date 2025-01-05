@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 
 const Sidebar = () => {
   return (
-    <div className="h-screen bg-gray-800 text-white p-4">
+    <div className="h-screen  bg-gray-800 text-white p-4">
       <h1 className="text-lg font-bold mb-4">Education Dashboard</h1>
       <ul>
         <li className="mb-4 hover:bg-gray-700 p-2 rounded">
