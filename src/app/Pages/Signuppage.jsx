@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../config"; // Import Firebase auth instance
+import { auth } from "../../config";
 
 const Signuppage = ({ onLogin }) => {
   const navigate = useNavigate();
@@ -13,16 +13,11 @@ const Signuppage = ({ onLogin }) => {
     event.preventDefault();
 
     try {
-      // Authenticate user with Firebase
       await signInWithEmailAndPassword(auth, email, password);
-
-      // Call onLogin to update authentication state
       onLogin();
-
-      // Navigate to Dashboard
       navigate("/home");
+
     } catch (err) {
-      // Handle authentication errors
       setError(err.message);
     }
   };
@@ -35,7 +30,7 @@ const Signuppage = ({ onLogin }) => {
           <div className="text-red-500 text-sm mb-4 text-center">{error}</div>
         )}
         <form onSubmit={handleSubmit}>
-          {/* Email Field */}
+
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-bold mb-2">
               Enter Your Email
@@ -50,7 +45,6 @@ const Signuppage = ({ onLogin }) => {
             />
           </div>
 
-          {/* Password Field */}
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-bold mb-2">
               Password
@@ -65,7 +59,6 @@ const Signuppage = ({ onLogin }) => {
             />
           </div>
 
-          {/* Submit Button */}
           <button
             type="submit"
             className="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"

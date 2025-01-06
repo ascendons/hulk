@@ -53,7 +53,25 @@ const Courses = () => {
     },
   ];
 
-  const days = Array.from({ length: 31 }, (_, i) => i + 1);
+  // Calculate first day of the month and its day of the week
+  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+  const firstDayOfWeek = firstDayOfMonth.getDay();
+
+  // Calculate the number of days in the month
+  const daysInMonth = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth() + 1,
+    0
+  ).getDate();
+
+  // Create an array of days with date objects
+  const days = Array.from({ length: daysInMonth }, (_, i) => {
+    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), i + 1);
+    return {
+      day: i + 1,
+      date: date,
+    };
+  });
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
@@ -68,44 +86,43 @@ const Courses = () => {
       {/* Calendar Navigation */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center space-x-4">
-          <button className="px-4 py-2 border rounded-lg bg-gray-200 hover:bg-gray-300">
-            Today
-          </button>
-          <select
-            className="border px-4 py-2 rounded-lg bg-white focus:outline-none"
-            value={currentMonth}
-            onChange={(e) => setCurrentMonth(e.target.value)}
-          >
-            <option>January 2025</option>
-            <option>February 2025</option>
-            <option>March 2025</option>
-          </select>
           <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
             Edit Timetable
           </button>
         </div>
       </div>
 
-      {/* Calendar Grid */}
       <div className="grid grid-cols-7 gap-4 text-center">
-        {/* Week Days */}
-        {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
-          <div key={day} className="font-medium">
-            {day}
-          </div>
+        {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day, index) => {
+          // Calculate the date for each day of the week
+          const dateForDay = new Date(
+            currentDate.getFullYear(),
+            currentDate.getMonth(),
+            currentDate.getDate() - currentDate.getDay() + index + 1  
+          );
+          const dayOfMonth = dateForDay.getDate();  
+
+          return (
+            <div key={day} className="font-medium">
+              {day} {dayOfMonth}
+            </div>
+          );
+        })}
+
+        {Array.from({ length: firstDayOfWeek }, (_, i) => (
+          <div key={`empty-${i}`} className="border rounded-lg p-4 h-32 bg-white shadow-md"></div>
         ))}
 
-        {/* Calendar Days */}
-        {days.map((day) => (
+        {days.map((dayObj) => (
           <div
-            key={day}
+            key={dayObj.day}
             className="relative border rounded-lg p-4 h-32 bg-white shadow-md"
           >
             <div className="absolute top-2 right-2 text-sm font-bold">
-              {day}
+              {dayObj.day}
             </div>
             {events
-              .filter((event) => parseInt(event.date, 10) === day)
+              .filter((event) => parseInt(event.date, 10) === dayObj.day)
               .map((event, idx) => (
                 <div
                   key={idx}

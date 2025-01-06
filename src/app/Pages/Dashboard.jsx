@@ -46,7 +46,7 @@ const Dashboard = () => {
       {/* Main Content */}
       <div className="flex-grow p-6">
         <header className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">Dashboard</h1>
+          <h1 className="text-2xl font-bold"> Welcome Niyati </h1>
           <input
             type="text"
             placeholder="Search"
