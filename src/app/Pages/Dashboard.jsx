@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from "react";
 import Sidebar from "../Components/Sidebar";
-// import db from "../../config";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../config";
 
 const Dashboard = () => {
   const [noticeboard, setNotices] = useState([]);
+  const [totalStudents, setTotalStudents] = useState(0); // State for Total Students
 
   useEffect(() => {
-    const fetchData = async () => {
+    // Fetch Notices
+    const fetchNotices = async () => {
       try {
         const noticesCollection = collection(db, "notices");
         const noticesSnapshot = await getDocs(noticesCollection);
@@ -21,13 +22,28 @@ const Dashboard = () => {
         console.log(error);
       }
     };
-    fetchData();
+
+    // Fetch Total Students
+    const fetchTotalStudents = async () => {
+      try {
+        const studentsCollection = collection(db, "studentinfo");
+        const studentsSnapshot = await getDocs(studentsCollection);
+        setTotalStudents(studentsSnapshot.size); // Set total count of documents
+      } catch (error) {
+        console.error("Error fetching student data: ", error);
+      }
+    };
+
+    fetchNotices();
+    fetchTotalStudents();
   }, []);
 
   return (
     <div className="flex min-h-screen bg-gray-100">
+      {/* Sidebar */}
       <Sidebar className="w-1/5 bg-gray-800 text-white h-full" />
 
+      {/* Main Content */}
       <div className="flex-grow p-6">
         <header className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Dashboard</h1>
@@ -42,7 +58,7 @@ const Dashboard = () => {
         <div className="grid grid-cols-4 gap-4 mb-8">
           <div className="bg-purple-100 p-6 rounded-lg text-center">
             <h2 className="text-lg font-semibold">Total Students</h2>
-            <p className="text-3xl font-bold">1220</p>
+            <p className="text-3xl font-bold">{totalStudents}</p>
           </div>
           <div className="bg-red-100 p-6 rounded-lg text-center">
             <h2 className="text-lg font-semibold">Total Teachers</h2>
