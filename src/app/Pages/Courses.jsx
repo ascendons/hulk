@@ -1,138 +1,147 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../../config";
 
 const Courses = () => {
-  const [currentMonth, setCurrentMonth] = useState("January 2025");
-
-  // Get current date with the day
-  const currentDate = new Date();
-  const formattedDate = currentDate.toLocaleDateString("en-US", {
-    weekday: "long", // Full name of the day
-    year: "numeric",
-    month: "long", // Full name of the month
-    day: "numeric",
-  });
-
-  // Mock events data for the calendar
-  const events = [
-    {
-      date: "1",
-      time: "10:00 AM",
-      title: "One-on-one with Alex",
-      color: "bg-red-200",
-    },
-    {
-      date: "3",
-      time: "4:00 PM",
-      title: "All-hands meeting",
-      color: "bg-green-200",
-    },
-    {
-      date: "7",
-      time: "2:30 PM",
-      title: "Catch up with Alex",
-      color: "bg-purple-200",
-    },
-    {
-      date: "10",
-      time: "9:00 AM",
-      title: "Friday Standup",
-      color: "bg-blue-200",
-    },
-    {
-      date: "15",
-      time: "11:00 AM",
-      title: "Product Planning",
-      color: "bg-yellow-200",
-    },
-    { date: "22", time: "9:00 AM", title: "Deep Work", color: "bg-red-200" },
-    {
-      date: "28",
-      time: "2:30 PM",
-      title: "Lunch with Alina",
-      color: "bg-blue-200",
-    },
+  const [lectures, setLectures] = useState({});
+  const [selectedCourse, setSelectedCourse] = useState("All Courses");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false); // State to control dropdown visibility
+  const daysOfWeek = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
   ];
 
-  // Calculate first day of the month and its day of the week
-  const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
-  const firstDayOfWeek = firstDayOfMonth.getDay();
+  useEffect(() => {
+    fetchLecturesForWeek();
+  }, [selectedCourse]);
 
-  // Calculate the number of days in the month
-  const daysInMonth = new Date(
-    currentDate.getFullYear(),
-    currentDate.getMonth() + 1,
-    0
-  ).getDate();
+  const fetchLecturesForWeek = async () => {
+    let weekLectures = {};
+    try {
+      for (let day of daysOfWeek) {
+        let allLecturesForDay = [];
+        if (selectedCourse === "All Courses") {
+          // Fetch for all years
+          const years = ["FYBSCIT", "SYBSCIT", "TYBSCIT"];
+          for (let year of years) {
+            const docRef = doc(db, `timetable/Bsc.IT/${year}/${day}`);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+              const data = docSnap.data();
+              allLecturesForDay.push(...data.lectures);
+            }
+          }
+        } else {
+          // Fetch for selected year only
+          const docRef = doc(db, `timetable/Bsc.IT/${selectedCourse}/${day}`);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            allLecturesForDay.push(...data.lectures);
+          }
+        }
+        weekLectures[day] = allLecturesForDay;
+      }
+      setLectures(weekLectures);
+    } catch (error) {
+      console.error("Error fetching lectures for the week:", error);
+    }
+  };
 
-  // Create an array of days with date objects
-  const days = Array.from({ length: daysInMonth }, (_, i) => {
-    const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), i + 1);
-    return {
-      day: i + 1,
-      date: date,
-    };
-  });
+  const handleCourseChange = (course) => {
+    setSelectedCourse(course);
+    setIsDropdownOpen(false); // Close dropdown after selecting an option
+  };
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen); // Toggle dropdown visibility
+  };
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
-      {/* Header */}
+      {/* Header Section */}
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Calendar</h1>
-        <div>
-          <p className="text-xl text-gray-600 mb-2 font-semibold">{`Today's Date: ${formattedDate}`}</p>
-        </div>
-      </div>
-
-      {/* Calendar Navigation */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center space-x-4">
-          <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
-            Edit Timetable
+        <h1 className="text-3xl font-bold">CALENDAR</h1>
+        <div className="flex space-x-4">
+          {/* Edit Time Table Button */}
+          <button className="px-4 py-2 bg-white border rounded-md shadow-md hover:bg-gray-200">
+            Edit Time Table
           </button>
+
+          {/* Dropdown Button */}
+          <div className="relative">
+            <button
+              onClick={toggleDropdown}
+              className="px-4 py-2 bg-white border rounded-md shadow-md hover:bg-gray-200"
+            >
+              {selectedCourse}
+            </button>
+            {isDropdownOpen && (
+              <ul className="absolute mt-2 bg-white border rounded-md shadow-md w-40 z-10">
+                <li
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  onClick={() => handleCourseChange("All Courses")}
+                >
+                  All Courses
+                </li>
+                <li
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  onClick={() => handleCourseChange("FYBSCIT")}
+                >
+                  FYBSCIT
+                </li>
+                <li
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  onClick={() => handleCourseChange("SYBSCIT")}
+                >
+                  SYBSCIT
+                </li>
+                <li
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  onClick={() => handleCourseChange("TYBSCIT")}
+                >
+                  TYBSCIT
+                </li>
+              </ul>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-7 gap-4 text-center">
-        {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day, index) => {
-          // Calculate the date for each day of the week
-          const dateForDay = new Date(
-            currentDate.getFullYear(),
-            currentDate.getMonth(),
-            currentDate.getDate() - currentDate.getDay() + index + 1  
-          );
-          const dayOfMonth = dateForDay.getDate();  
+      {/* Weekly Timetable Grid */}
+      <div className="grid grid-cols-7 gap-4">
+        {daysOfWeek.map((day) => {
+          const lecturesForDay = lectures[day] || [];
 
           return (
-            <div key={day} className="font-medium">
-              {day} {dayOfMonth}
+            <div
+              key={day}
+              className="border rounded-lg bg-white shadow-md p-4 flex flex-col"
+            >
+              <h2 className="text-lg font-bold mb-2 text-center">{day}</h2>
+              {lecturesForDay.length > 0 ? (
+                lecturesForDay.map((lecture, idx) => (
+                  <div
+                    key={idx}
+                    className="text-sm bg-green-100 p-2 rounded-lg mb-2"
+                  >
+                    <strong>{lecture.timeSlot}</strong> - {lecture.subject}{" "}
+                    <div className="text-gray-600">
+                      {lecture.teacher} ({lecture.location})
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-center text-gray-500 text-sm">No lectures</p>
+              )}
             </div>
           );
         })}
-
-        {Array.from({ length: firstDayOfWeek }, (_, i) => (
-          <div key={`empty-${i}`} className="border rounded-lg p-4 h-32 bg-white shadow-md"></div>
-        ))}
-
-        {days.map((dayObj) => (
-          <div
-            key={dayObj.day}
-            className="relative border rounded-lg p-4 h-32 bg-white shadow-md"
-          >
-            <div className="absolute top-2 right-2 text-sm font-bold">
-              {dayObj.day}
-            </div>
-            {events
-              .filter((event) => parseInt(event.date, 10) === dayObj.day)
-              .map((event, idx) => (
-                <div
-                  key={idx}
-                  className={`text-sm rounded-lg mt-2 px-2 py-1 ${event.color}`}
-                >
-                  {event.time} - {event.title}
-                </div>
-              ))}
-          </div>
-        ))}
       </div>
     </div>
   );
