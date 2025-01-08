@@ -83,7 +83,6 @@ const Courses = () => {
         </div>
       </div>
 
-      {/* Calendar Navigation */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center space-x-4">
           <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
