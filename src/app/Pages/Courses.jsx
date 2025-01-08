@@ -3,7 +3,6 @@ import React, { useState } from "react";
 const Courses = () => {
   const [currentMonth, setCurrentMonth] = useState("January 2025");
 
-  // Get current date with the day
   const currentDate = new Date();
   const formattedDate = currentDate.toLocaleDateString("en-US", {
     weekday: "long", // Full name of the day
@@ -12,7 +11,6 @@ const Courses = () => {
     day: "numeric",
   });
 
-  // Mock events data for the calendar
   const events = [
     {
       date: "1",
@@ -53,18 +51,15 @@ const Courses = () => {
     },
   ];
 
-  // Calculate first day of the month and its day of the week
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
   const firstDayOfWeek = firstDayOfMonth.getDay();
 
-  // Calculate the number of days in the month
   const daysInMonth = new Date(
     currentDate.getFullYear(),
     currentDate.getMonth() + 1,
     0
   ).getDate();
 
-  // Create an array of days with date objects
   const days = Array.from({ length: daysInMonth }, (_, i) => {
     const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), i + 1);
     return {
@@ -88,6 +83,15 @@ const Courses = () => {
           <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
             Edit Timetable
           </button>
+         
+          <div className="flex items-center" >
+          <select className="px-4 py-2 bg-blue-500 text-white  hover:bg-blue-600" >
+            <option>First Year</option>
+            <option>Second Year</option>
+            <option>Third Year</option>
+          </select>
+          </div>
+        
         </div>
       </div>
 
