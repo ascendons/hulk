@@ -16,14 +16,12 @@ function App() {
           element={<Signuppage onLogin={() => setIsAuthenticated(true)} />}
         />
 
-        {/* Protected Dashboard Page */}
         <Route
           path="/home"
           element={isAuthenticated ? <Dashboard /> : <Navigate to="/signup" />}
         />
         <Route path="/courses" element={<Courses />} />
 
-        {/* Default Redirect */}
         <Route path="*" element={<Navigate to="/signup" />} />
       </Routes>
     </BrowserRouter>
