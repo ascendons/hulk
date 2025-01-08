@@ -3,7 +3,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../config";
 
 const Courses = () => {
-<<<<<<< HEAD
+ 
   const [currentMonth, setCurrentMonth] = useState("January 2025");
 
   const currentDate = new Date();
@@ -13,46 +13,6 @@ const Courses = () => {
     month: "long", // Full name of the month
     day: "numeric",
   });
-
-  const events = [
-    {
-      date: "1",
-      time: "10:00 AM",
-      title: "One-on-one with Alex",
-      color: "bg-red-200",
-    },
-    {
-      date: "3",
-      time: "4:00 PM",
-      title: "All-hands meeting",
-      color: "bg-green-200",
-    },
-    {
-      date: "7",
-      time: "2:30 PM",
-      title: "Catch up with Alex",
-      color: "bg-purple-200",
-    },
-    {
-      date: "10",
-      time: "9:00 AM",
-      title: "Friday Standup",
-      color: "bg-blue-200",
-    },
-    {
-      date: "15",
-      time: "11:00 AM",
-      title: "Product Planning",
-      color: "bg-yellow-200",
-    },
-    { date: "22", time: "9:00 AM", title: "Deep Work", color: "bg-red-200" },
-    {
-      date: "28",
-      time: "2:30 PM",
-      title: "Lunch with Alina",
-      color: "bg-blue-200",
-    },
-  ];
 
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
   const firstDayOfWeek = firstDayOfMonth.getDay();
@@ -70,7 +30,7 @@ const Courses = () => {
       date: date,
     };
   });
-=======
+ 
   const [lectures, setLectures] = useState({});
   const [selectedCourse, setSelectedCourse] = useState("All Courses");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false); // State to control dropdown visibility
@@ -129,13 +89,13 @@ const Courses = () => {
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen); // Toggle dropdown visibility
   };
->>>>>>> 3465d28cef1556530fb96371c29a00c50e900935
+ 
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
       {/* Header Section */}
       <div className="flex justify-between items-center mb-6">
-<<<<<<< HEAD
+ 
         <h1 className="text-2xl font-bold">Calendar</h1>
         <div>
           <p className="text-xl text-gray-600 mb-2 font-semibold">{`Today's Date: ${formattedDate}`}</p>
@@ -156,7 +116,7 @@ const Courses = () => {
           </select>
           </div>
         
-=======
+ 
         <h1 className="text-3xl font-bold">CALENDAR</h1>
         <div className="flex space-x-4">
           {/* Edit Time Table Button */}
@@ -201,11 +161,10 @@ const Courses = () => {
               </ul>
             )}
           </div>
->>>>>>> 3465d28cef1556530fb96371c29a00c50e900935
+ 
         </div>
       </div>
 
-      {/* Weekly Timetable Grid */}
       <div className="grid grid-cols-7 gap-4">
         {daysOfWeek.map((day) => {
           const lecturesForDay = lectures[day] || [];
