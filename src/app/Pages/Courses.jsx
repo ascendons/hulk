@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../config";
-import Sidebar from "../Components/Sidebar"; // Import Sidebar component
+import Sidebar from "../Components/Sidebar";
+import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
 
 const Courses = () => {
   const [loading, setLoading] = useState(true);
@@ -27,6 +28,8 @@ const Courses = () => {
   const [selectedCourse, setSelectedCourse] = useState("Third Year");
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false); // State to track hover
+
+  const navigate = useNavigate(); // Hook for navigation
 
   useEffect(() => {
     fetchLecturesForWeek();
@@ -105,7 +108,10 @@ const Courses = () => {
 
         {/* Dropdown and Edit Timetable Button */}
         <div className="flex justify-between items-center mb-6">
-          <button className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+          <button
+            onClick={() => navigate("/edittimetable")} // Navigate to EditTimetable page
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
             Edit Timetable
           </button>
           <div className="relative">
