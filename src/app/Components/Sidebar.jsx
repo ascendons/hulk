@@ -13,7 +13,9 @@ const Sidebar = () => {
         <li className="mb-4 hover:bg-gray-700 p-2 rounded">
           <Link to="/courses">Courses</Link>
         </li>
-        <li className="mb-4 hover:bg-gray-700 p-2 rounded">Students</li>
+        <li className="mb-4 hover:bg-gray-700 p-2 rounded">
+          <Link to="/students">Students</Link>
+        </li>
         <li className="mb-4 hover:bg-gray-700 p-2 rounded">Teachers</li>
         <li className="mb-4 hover:bg-gray-700 p-2 rounded">Exam</li>
         <li className="mb-4 hover:bg-gray-700 p-2 rounded">Results</li>

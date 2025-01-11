@@ -3,6 +3,8 @@ import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import Dashboard from "./app/Pages/Dashboard"; // Import Dashboard component
 import Signuppage from "./app/Pages/Signuppage";
 import Courses from "./app/Pages/Courses";
+import Students from "./app/Pages/Students";
+import ListStudents from "./app/Pages/ListStudents";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false); // Authentication state
@@ -21,6 +23,8 @@ function App() {
           element={isAuthenticated ? <Dashboard /> : <Navigate to="/signup" />}
         />
         <Route path="/courses" element={<Courses />} />
+        <Route path="/students" element={<Students />} />
+        <Route path="/liststudents" element={<ListStudents />} />
 
         <Route path="*" element={<Navigate to="/signup" />} />
       </Routes>
