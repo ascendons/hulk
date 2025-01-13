@@ -7,6 +7,8 @@ const Students = () => {
   const [isSidebarHovered, setIsSidebarHovered] = useState(false); // State for Sidebar hover
   const [showList, setShowList] = useState(false); // State to toggle ListStudents visibility
   const [showAttendance, setShowAttendance] = useState(false); // State to toggle Attendance visibility
+  const [selectedClass, setSelectedClass] = useState("Class 1"); // State for selected class
+  const [selectedDivision, setSelectedDivision] = useState("A"); // State for selected division
 
   const handleSeeListClick = () => {
     setShowList(!showList); // Toggle the visibility of the ListStudents component
@@ -36,11 +38,30 @@ const Students = () => {
         {/* Header Section */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Select Class</h1>
-          <select className="px-4 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-            <option value="Class 1">Class 1</option>
-            <option value="Class 2">Class 2</option>
-            <option value="Class 3">Class 3</option>
-          </select>
+          <div className="flex space-x-4">
+            {/* Class Dropdown */}
+            <select
+              value={selectedClass}
+              onChange={(e) => setSelectedClass(e.target.value)}
+              className="px-4 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="Class 1">Class 1</option>
+              <option value="Class 2">Class 2</option>
+              <option value="Class 3">Class 3</option>
+            </select>
+
+            {/* Division Dropdown */}
+            <select
+              value={selectedDivision}
+              onChange={(e) => setSelectedDivision(e.target.value)}
+              className="px-4 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="A">Division A</option>
+              <option value="B">Division B</option>
+              <option value="C">Division C</option>
+              <option value="D">Division D</option>
+            </select>
+          </div>
         </div>
 
         {/* Main Cards Section */}
@@ -70,14 +91,26 @@ const Students = () => {
         {/* ListStudents Component */}
         {showList && (
           <div>
-            <ListStudents />
+            <h2 className="text-xl font-bold mb-4">
+              Students in {selectedClass}, Division {selectedDivision}
+            </h2>
+            <ListStudents
+              selectedClass={selectedClass}
+              selectedDivision={selectedDivision}
+            />
           </div>
         )}
 
         {/* Attendance Component */}
         {showAttendance && (
           <div>
-            <Attendance />
+            <h2 className="text-xl font-bold mb-4">
+              Mark Attendance for {selectedClass}, Division {selectedDivision}
+            </h2>
+            <Attendance
+              selectedClass={selectedClass}
+              selectedDivision={selectedDivision}
+            />
           </div>
         )}
       </div>

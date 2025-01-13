@@ -6,6 +6,8 @@ import Courses from "./app/Pages/Courses";
 import Students from "./app/Pages/Students";
 import ListStudents from "./app/Pages/ListStudents";
 import EditTimetable from "./app/Pages/EditTimetable";
+import AddStudent from "./app/Pages/AddStudent";
+import AddTeacher from "./app/Pages/AddTeacher";
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false); // Authentication state
 
@@ -27,6 +29,8 @@ function App() {
         <Route path="/liststudents" element={<ListStudents />} />
         <Route path="*" element={<Navigate to="/signup" />} />
         <Route path="/edittimetable" element={<EditTimetable />} />
+        <Route path="/addstudent" element={<AddStudent />} />
+        <Route path="/addteacher" element={<AddTeacher />} />
       </Routes>
     </BrowserRouter>
   );

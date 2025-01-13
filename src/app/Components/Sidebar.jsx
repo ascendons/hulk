@@ -18,7 +18,12 @@ const Sidebar = () => {
         </li>
         <li className="mb-4 hover:bg-gray-700 p-2 rounded">Teachers</li>
         <li className="mb-4 hover:bg-gray-700 p-2 rounded">Exam</li>
-        <li className="mb-4 hover:bg-gray-700 p-2 rounded">Results</li>
+        <li className="mb-4 hover:bg-gray-700 p-2 rounded">
+          <Link to="/addstudent">addStudents</Link>
+        </li>
+        <li className="mb-4 hover:bg-gray-700 p-2 rounded">
+          <Link to="/addteacher">AddTeacher</Link>
+        </li>
       </ul>
     </div>
   );
