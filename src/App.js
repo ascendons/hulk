@@ -14,7 +14,6 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Signup Page */}
         <Route
           path="/signup"
           element={<Signuppage onLogin={() => setIsAuthenticated(true)} />}
