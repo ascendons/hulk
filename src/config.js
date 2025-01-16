@@ -1,7 +1,7 @@
 import { initializeApp, getApps, setLogLevel } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { initializeAuth } from "firebase/auth";
-
+import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAQt3wC9b3D11kTpYxAQ5tLTSxjRbuTyxE",
@@ -11,16 +11,15 @@ const firebaseConfig = {
   storageBucket: "campusconnect-a9fd9.appspot.com",
   messagingSenderId: "856272800171",
   appId: "1:856272800171:web:d18054d53ef7ecb778eaee",
-  measurementId: "G-G9MDK6QHKZ"
+  measurementId: "G-G9MDK6QHKZ",
 };
 
 setLogLevel("silent");
 
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+const app =
+  getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const db = getFirestore(app);
 const auth = initializeAuth(app);
+const storage = getStorage(app);
 
-
-export {db , auth};
-
- 
+export { db, auth, storage };

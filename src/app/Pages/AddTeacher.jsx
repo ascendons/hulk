@@ -15,6 +15,7 @@ const AddTeacher = () => {
     subjects: [],
     classteacher: "",
     divisions: [],
+    teachesYears: [],
   });
 
   const [isLoading, setIsLoading] = useState(false);
@@ -66,6 +67,12 @@ const AddTeacher = () => {
     { value: "G", label: "G" },
   ];
 
+  const yearOptions = [
+    { value: "First Year", label: "First Year" },
+    { value: "Second Year", label: "Second Year" },
+    { value: "Third Year", label: "Third Year" },
+  ];
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
@@ -95,7 +102,8 @@ const AddTeacher = () => {
       !formData.department ||
       !formData.subjects.length ||
       !formData.classteacher ||
-      !formData.divisions.length
+      !formData.divisions.length ||
+      !formData.teachesYears.length
     ) {
       alert("Please fill in all fields before submitting!");
       return;
@@ -130,6 +138,7 @@ const AddTeacher = () => {
         subjects: formData.subjects,
         classteacher: formData.classteacher,
         divisions: formData.divisions,
+        teachesYears: formData.teachesYears,
         userId: user.uid,
       });
 
@@ -146,6 +155,7 @@ const AddTeacher = () => {
         subjects: [],
         classteacher: "",
         divisions: [],
+        teachesYears: [],
       });
     } catch (error) {
       console.error("Error adding teacher:", error.message);
@@ -295,6 +305,25 @@ const AddTeacher = () => {
               ).filter((option) => formData.divisions.includes(option.value))}
               onChange={(selectedOptions) =>
                 handleMultiSelectChange(selectedOptions, "divisions")
+              }
+              className="w-full"
+              required
+            />
+          </div>
+
+          {/* Teaches Years Multi-Select Dropdown */}
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2">
+              Teaches Years
+            </label>
+            <Select
+              isMulti
+              options={yearOptions}
+              value={yearOptions.filter((option) =>
+                formData.teachesYears.includes(option.value)
+              )}
+              onChange={(selectedOptions) =>
+                handleMultiSelectChange(selectedOptions, "teachesYears")
               }
               className="w-full"
               required

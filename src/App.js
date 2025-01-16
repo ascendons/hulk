@@ -8,12 +8,18 @@ import ListStudents from "./app/Pages/ListStudents";
 import EditTimetable from "./app/Pages/EditTimetable";
 import AddStudent from "./app/Pages/AddStudent";
 import AddTeacher from "./app/Pages/AddTeacher";
+import Notices from "./app/Pages/Notices";
+import CreateNotice from "./app/Pages/createNotice";
+import Attendance from "./app/Pages/Attendance";
+import Teachers from "./app/Pages/Teachers";
+
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false); // Authentication state
 
   return (
     <BrowserRouter>
       <Routes>
+        {/* Signup Page */}
         <Route
           path="/signup"
           element={<Signuppage onLogin={() => setIsAuthenticated(true)} />}
@@ -30,6 +36,10 @@ function App() {
         <Route path="/edittimetable" element={<EditTimetable />} />
         <Route path="/addstudent" element={<AddStudent />} />
         <Route path="/addteacher" element={<AddTeacher />} />
+        <Route path="/Notices" element={<Notices />} />
+        <Route path="/create-notice" element={<CreateNotice />} />
+        <Route path="Attendance" element={<Attendance />} />
+        <Route path="Teachers" element={<Teachers />} />
       </Routes>
     </BrowserRouter>
   );
