@@ -13,7 +13,6 @@ const Dashboard = () => {
   const [teacherDivision, setTeacherDivision] = useState("");
 
   useEffect(() => {
-    // Fetch Notices
     const fetchNotices = async () => {
       try {
         const noticesCollection = collection(db, "notices");
@@ -28,7 +27,6 @@ const Dashboard = () => {
       }
     };
 
-    // Fetch Years for Dropdown
     const fetchYears = async () => {
       try {
         const studentsCollection = collection(db, "students");
@@ -44,7 +42,6 @@ const Dashboard = () => {
       }
     };
 
-    // Fetch Total Students based on selected filters
     const fetchTotalStudents = async () => {
       try {
         const studentsCollection = collection(db, "students");

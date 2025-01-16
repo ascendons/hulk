@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // Import useNavigate for navigation
+import { useNavigate } from "react-router-dom"; 
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../../config"; // Adjust the path based on your Firebase config file
-import Sidebar from "../Components/Sidebar"; // Import Sidebar
+import { db } from "../../config";  
+import Sidebar from "../Components/Sidebar";  
 
 const Notices = () => {
   const [notices, setNotices] = useState([]);
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false); // State to track hover
-  const navigate = useNavigate(); // Initialize useNavigate for navigation
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false); 
+  const navigate = useNavigate();  
 
   // Fetch data from Firestore
   useEffect(() => {
@@ -63,7 +63,7 @@ const Notices = () => {
                 <h2 className="text-lg font-bold">
                   Title: {notice.title}{" "}
                   <span className="text-gray-500">
-                    By {notice.teacherName || "Unknown"}
+                    By:{notice.noticeBy || "Unknown"}
                   </span>
                 </h2>
               </div>

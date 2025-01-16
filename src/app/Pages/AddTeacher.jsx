@@ -111,7 +111,6 @@ const AddTeacher = () => {
 
     setIsLoading(true);
     try {
-      // Create a user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         formData.teacheremail,

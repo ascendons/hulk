@@ -129,24 +129,6 @@ const CreateNotice = () => {
             <option value="news">News</option>
           </select>
 
-          {/* Tags Dropdown */}
-          <label className="font-semibold">Tag</label>
-          <select
-            value={tag}
-            onChange={(e) => setTag(e.target.value)}
-            className="p-2 border rounded"
-            required
-          >
-            <option value="" disabled>
-              Select a tag
-            </option>
-            <option value="React">React</option>
-            <option value="JavaScript">JavaScript</option>
-            <option value="Tailwind">Tailwind</option>
-            <option value="CSS">CSS</option>
-            <option value="HTML">HTML</option>
-          </select>
-
           {/* Notice By Display */}
           <label className="font-semibold">Notice By</label>
           <input
