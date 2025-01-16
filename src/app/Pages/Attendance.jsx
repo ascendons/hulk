@@ -112,7 +112,7 @@ const MarkAttendance = () => {
           onChange={(e) => setSelectedClass(e.target.value)}
           className="px-4 py-2 border rounded-lg"
         >
-          <option value="Bsc.IT">Bsc.IT</option>
+          <option value="Bsc.IT">BSC.IT</option>
           <option value="BCOM">BCOM</option>
           <option value="BMS">BMS</option>
         </select>
