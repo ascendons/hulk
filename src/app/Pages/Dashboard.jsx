@@ -6,7 +6,7 @@ import { auth, db } from "../../config";
 const Dashboard = () => {
   const [noticeboard, setNotices] = useState([]);
   const [totalStudents, setTotalStudents] = useState(0);
-  const [years, setYears] = useState([]); // Dynamic years from students collection
+  const [years, setYears] = useState([]);  
   const [selectedYear, setSelectedYear] = useState("");
   const [teacherName, setTeacherName] = useState("");
   const [teacherDepartment, setTeacherDepartment] = useState("");

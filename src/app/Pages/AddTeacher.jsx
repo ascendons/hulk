@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Select from "react-select"; // Import react-select for dropdown
-import { collection, doc, setDoc } from "firebase/firestore"; // Firestore functions
+import { doc, setDoc } from "firebase/firestore"; // Firestore functions
 import { createUserWithEmailAndPassword } from "firebase/auth"; // Firebase Authentication
 import { db, auth } from "../../config"; // Firebase configuration
 
