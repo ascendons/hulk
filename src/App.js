@@ -12,6 +12,8 @@ import Notices from "./app/Pages/Notices";
 import CreateNotice from "./app/Pages/createNotice";
 import Attendance from "./app/Pages/Attendance";
 import Teachers from "./app/Pages/Teachers";
+import AddSubjects from "./app/Pages/AddSubjects";
+import Notes from "./app/Pages/Notes";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false); // Authentication state
@@ -40,6 +42,8 @@ function App() {
         <Route path="/create-notice" element={<CreateNotice />} />
         <Route path="Attendance" element={<Attendance />} />
         <Route path="Teachers" element={<Teachers />} />
+        <Route path="Addsubjects" element={<AddSubjects />} />
+        <Route path="Notes" element={<Notes />} />
       </Routes>
     </BrowserRouter>
   );

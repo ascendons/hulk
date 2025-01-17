@@ -1,6 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Select from "react-select"; // Import react-select for dropdown
-import { doc, setDoc } from "firebase/firestore"; // Firestore functions
+import {
+  doc,
+  setDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore"; // Firestore functions
 import { createUserWithEmailAndPassword } from "firebase/auth"; // Firebase Authentication
 import { db, auth } from "../../config"; // Firebase configuration
 
@@ -18,43 +25,16 @@ const AddTeacher = () => {
     teachesYears: [],
   });
 
+  const [subjectOptions, setSubjectOptions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const departmentOptions = [
-    { value: "BSCIT", label: "BSCIT" },
+    { value: "Bsc.IT", label: "BSCIT" },
     { value: "BCOM", label: "BCOM" },
     { value: "BMS", label: "BMS" },
     { value: "BBA", label: "BBA" },
     { value: "BCA", label: "BCA" },
   ];
-
-  const allSubjectOptions = {
-    BSCIT: [
-      { value: "Mathematics", label: "Mathematics" },
-      { value: "Computer Science", label: "Computer Science" },
-      { value: "Physics", label: "Physics" },
-    ],
-    BCOM: [
-      { value: "Accounting", label: "Accounting" },
-      { value: "Finance", label: "Finance" },
-      { value: "Taxation", label: "Taxation" },
-    ],
-    BMS: [
-      { value: "Marketing", label: "Marketing" },
-      { value: "Human Resource", label: "Human Resource" },
-      { value: "Operations", label: "Operations" },
-    ],
-    BBA: [
-      { value: "Business Administration", label: "Business Administration" },
-      { value: "Entrepreneurship", label: "Entrepreneurship" },
-      { value: "Leadership", label: "Leadership" },
-    ],
-    BCA: [
-      { value: "Programming", label: "Programming" },
-      { value: "Database Management", label: "Database Management" },
-      { value: "Networking", label: "Networking" },
-    ],
-  };
 
   const divisionOptionsForBSCIT = [{ value: "A", label: "A" }];
   const divisionOptionsForOthers = [
@@ -72,6 +52,36 @@ const AddTeacher = () => {
     { value: "Second Year", label: "Second Year" },
     { value: "Third Year", label: "Third Year" },
   ];
+
+  useEffect(() => {
+    // Fetch subjects when department changes
+    const fetchSubjects = async () => {
+      if (!formData.department) {
+        setSubjectOptions([]);
+        return;
+      }
+
+      try {
+        const q = query(
+          collection(db, "subjects"),
+          where("department", "==", formData.department)
+        );
+        const querySnapshot = await getDocs(q);
+
+        const fetchedSubjects = querySnapshot.docs.map((doc) => ({
+          value: doc.data().subjectName,
+          label: doc.data().subjectName,
+        }));
+
+        setSubjectOptions(fetchedSubjects);
+      } catch (error) {
+        console.error("Error fetching subjects:", error);
+        alert("Failed to fetch subjects.");
+      }
+    };
+
+    fetchSubjects();
+  }, [formData.department]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -254,9 +264,9 @@ const AddTeacher = () => {
             </label>
             <Select
               isMulti
-              options={allSubjectOptions[formData.department] || []}
-              value={(allSubjectOptions[formData.department] || []).filter(
-                (option) => formData.subjects.includes(option.value)
+              options={subjectOptions}
+              value={subjectOptions.filter((option) =>
+                formData.subjects.includes(option.value)
               )}
               onChange={(selectedOptions) =>
                 handleMultiSelectChange(selectedOptions, "subjects")
