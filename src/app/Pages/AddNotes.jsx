@@ -9,8 +9,8 @@ import "react-quill/dist/quill.snow.css"; // Import React Quill styles
 const AddNotes = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [department, setDepartment] = useState("");
-  const [division, setDivision] = useState("");
+  const [department, setDepartment] = useState("BSCIT");
+  const [division, setDivision] = useState("A");
   const [year, setYear] = useState("");
   const [subject, setSubject] = useState("");
   const [unit, setUnit] = useState("");
@@ -73,7 +73,6 @@ const AddNotes = () => {
     try {
       let fileURL = "";
 
-      // Upload file to Firebase Storage
       if (file) {
         const storageRef = ref(storage, `notes/${file.name}`);
         const uploadTask = uploadBytesResumable(storageRef, file);
@@ -91,7 +90,6 @@ const AddNotes = () => {
         });
       }
 
-      // Save data to Firestore
       await addDoc(collection(db, "Notes"), {
         title,
         description,
@@ -107,7 +105,6 @@ const AddNotes = () => {
 
       alert("Notes added successfully!");
 
-      // Reset form fields
       setTitle("");
       setDescription("");
       setDepartment("");
@@ -127,7 +124,6 @@ const AddNotes = () => {
 
   return (
     <div className="w-screen h-screen bg-gray-100 flex ">
-      {/* Sidebar */}
       <div
         onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}
@@ -141,7 +137,6 @@ const AddNotes = () => {
         className="bg-white shadow-lg rounded-lg p-8 w-full h-full max-w-screen flex"
         onSubmit={handleSubmit}
       >
-        {/* Left Section */}
         <div className="w-2/3 pr-4">
           <h1 className="text-2xl font-bold mb-6">ADD NOTES</h1>
           <label className="block text-gray-700 font-bold mb-2 text-xl">
@@ -178,7 +173,6 @@ const AddNotes = () => {
               />
               <p>YouTube</p>
             </div>
-            {/* Upload Button */}
             <div
               className="flex flex-col items-center justify-center border border-gray-300 rounded-lg p-4 cursor-pointer hover:shadow-md w-36 h-36 text-center"
               onClick={() => setIsUploadModalOpen(true)}
@@ -192,7 +186,6 @@ const AddNotes = () => {
             </div>
           </div>
 
-          {/* File Preview Section */}
           {file && (
             <div className="w-full mt-4 flex items-center justify-between border border-gray-300 rounded-lg p-4">
               <div>
@@ -223,7 +216,6 @@ const AddNotes = () => {
               </button>
             </div>
           )}
-          {/* YOUTUBE LINK REVIEW*/}
           {youtubeLink && (
             <div className="w-full mt-4 flex items-center justify-between border border-gray-300 rounded-lg p-4">
               <div className="flex items-center space-x-4">
@@ -235,10 +227,8 @@ const AddNotes = () => {
                   alt="YouTube Thumbnail"
                   className="w-16 h-16 rounded-md"
                 />
-                {/* Video Details */}
                 <div>
                   <p className="font-semibold text-gray-800 truncate w-64">
-                    {/* Use a placeholder title or YouTube API call for real titles */}
                     Placeholder Title
                   </p>
                   <p className="text-sm text-gray-500">
@@ -246,7 +236,7 @@ const AddNotes = () => {
                   </p>
                 </div>
               </div>
-              {/* Remove Button */}
+
               <button
                 type="button"
                 className="text-gray-500 hover:text-red-600"
@@ -271,7 +261,6 @@ const AddNotes = () => {
           )}
         </div>
 
-        {/* Right Section */}
         <div className="w-1/3 pl-4 flex flex-col justify-between">
           <div>
             <label className="block text-gray-700 font-bold mb-2">
@@ -282,9 +271,8 @@ const AddNotes = () => {
               onChange={(e) => setDepartment(e.target.value)}
               className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
               required
-              disabled={isRestricted} // Disable if restricted
+              disabled={isRestricted}  
             >
-              <option value="">Select Department</option>
               <option value="BSCIT">BSCIT</option>
               <option value="BCOM">BCOM</option>
               <option value="BMS">BMS</option>
@@ -297,9 +285,8 @@ const AddNotes = () => {
               onChange={(e) => setDivision(e.target.value)}
               className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
               required
-              disabled={isRestricted} // Disable if restricted
+              disabled={isRestricted}  
             >
-              <option value="">Select Division</option>
               <option value="A">A</option>
               <option value="B">B</option>
               <option value="C">C</option>
@@ -311,7 +298,6 @@ const AddNotes = () => {
               className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
               required
             >
-              <option value="">Select Year</option>
               <option value="First Year">First Year</option>
               <option value="Second Year">Second Year</option>
               <option value="Third Year">Third Year</option>
@@ -346,7 +332,7 @@ const AddNotes = () => {
           </button>
         </div>
       </form>
-      {/* YouTube Modal */}
+
       {isYoutubeModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white w-full max-w-2xl p-8 rounded-lg">

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { doc, setDoc, getDoc } from "firebase/firestore"; // Import setDoc and getDoc
-import { db } from "../../config"; // Firestore configuration
-import Sidebar from "../Components/Sidebar"; // Import Sidebar component
+import { doc, setDoc, getDoc } from "firebase/firestore";  
+import { db } from "../../config";  
+import Sidebar from "../Components/Sidebar";  
 
 const EditTimetable = () => {
   const [day, setDay] = useState("");
@@ -10,7 +10,7 @@ const EditTimetable = () => {
   const [teacher, setTeacher] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false); // State for sidebar hover
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);  
 
   const handleSave = async () => {
     if (!day || !location || !subject || !teacher || !startTime || !endTime) {
