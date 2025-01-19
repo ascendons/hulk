@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { db, storage } from "../../config"; // Import your Firebase configuration
-import { collection, addDoc, getDoc, doc } from "firebase/firestore";
+import { db, storage, auth } from "../../config"; // Import your Firebase configuration
+import {
+  collection,
+  addDoc,
+  getDoc,
+  doc,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import Sidebar from "../Components/Sidebar";
 import ReactQuill from "react-quill";
@@ -9,10 +17,11 @@ import "react-quill/dist/quill.snow.css"; // Import React Quill styles
 const AddNotes = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [department, setDepartment] = useState("BSCIT");
-  const [division, setDivision] = useState("A");
+  const [department, setDepartment] = useState("");
+  const [division, setDivision] = useState("");
   const [year, setYear] = useState("");
   const [subject, setSubject] = useState("");
+  const [subjects, setSubjects] = useState([]); // For storing fetched subjects
   const [unit, setUnit] = useState("");
   const [file, setFile] = useState(null);
   const [youtubeLink, setYoutubeLink] = useState("");
@@ -20,27 +29,59 @@ const AddNotes = () => {
   const [isYoutubeModalOpen, setIsYoutubeModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false); // State to track hover
-  const [isRestricted, setIsRestricted] = useState(false); // State to restrict options
 
   useEffect(() => {
-    const fetchUserData = async () => {
+    const fetchTeacherData = async () => {
       try {
-        const userId = "cxmzQhi4GuPkLhiNkipTP0t1tKF3"; // Replace with the logged-in user's ID
-        const userDoc = await getDoc(doc(db, "users", userId));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          if (userData.role === "teacher" && userData.department === "BSCIT") {
-            setDepartment("BSCIT");
-            setDivision("A");
-            setIsRestricted(true); // Restrict changes for this user
+        const user = auth.currentUser;
+        if (user) {
+          const teachersQuery = query(
+            collection(db, "teachersinfo"),
+            where("teacheremail", "==", user.email)
+          );
+          const teachersSnapshot = await getDocs(teachersQuery);
+          if (!teachersSnapshot.empty) {
+            const teacherData = teachersSnapshot.docs[0].data();
+            setDepartment(teacherData.department);
+            setDivision(
+              teacherData.department === "BSCIT"
+                ? "A"
+                : teacherData.divisions[0]
+            );
+          } else {
+            console.error("No teacher found with the given email.");
           }
         }
       } catch (error) {
-        console.error("Error fetching user data:", error);
+        console.error("Error fetching teacher data:", error);
       }
     };
-    fetchUserData();
+
+    fetchTeacherData();
   }, []);
+
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        const q = query(
+          collection(db, "subjects"),
+          where("department", "==", department)
+        );
+        const querySnapshot = await getDocs(q);
+        const fetchedSubjects = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setSubjects(fetchedSubjects);
+      } catch (error) {
+        console.error("Error fetching subjects:", error);
+      }
+    };
+
+    if (department) {
+      fetchSubjects();
+    }
+  }, [department]);
 
   const handleFileUpload = (e) => {
     setFile(e.target.files[0]);
@@ -107,8 +148,6 @@ const AddNotes = () => {
 
       setTitle("");
       setDescription("");
-      setDepartment("");
-      setDivision("");
       setYear("");
       setSubject("");
       setUnit("");
@@ -161,7 +200,6 @@ const AddNotes = () => {
             className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-6"
           />
           <div className="flex space-x-6">
-            {/* YouTube Button */}
             <div
               className="flex flex-col items-center justify-center border border-gray-300 rounded-lg p-4 cursor-pointer hover:shadow-md w-36 h-36 text-center"
               onClick={() => setIsYoutubeModalOpen(true)}
@@ -219,7 +257,6 @@ const AddNotes = () => {
           {youtubeLink && (
             <div className="w-full mt-4 flex items-center justify-between border border-gray-300 rounded-lg p-4">
               <div className="flex items-center space-x-4">
-                {/* Thumbnail */}
                 <img
                   src={`https://img.youtube.com/vi/${
                     youtubeLink.split("v=")[1]
@@ -268,10 +305,8 @@ const AddNotes = () => {
             </label>
             <select
               value={department}
-              onChange={(e) => setDepartment(e.target.value)}
+              disabled
               className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-              required
-              disabled={isRestricted}  
             >
               <option value="BSCIT">BSCIT</option>
               <option value="BCOM">BCOM</option>
@@ -282,10 +317,8 @@ const AddNotes = () => {
             </label>
             <select
               value={division}
-              onChange={(e) => setDivision(e.target.value)}
+              disabled
               className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-              required
-              disabled={isRestricted}  
             >
               <option value="A">A</option>
               <option value="B">B</option>
@@ -305,23 +338,33 @@ const AddNotes = () => {
             <label className="block text-gray-700 font-bold mb-2">
               Subject
             </label>
-            <input
-              type="text"
+            <select
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="Enter subject"
               className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
               required
-            />
+            >
+              <option value="">Select Subject</option>
+              {subjects.map((subj) => (
+                <option key={subj.id} value={subj.subjectName}>
+                  {subj.subjectName}
+                </option>
+              ))}
+            </select>
             <label className="block text-gray-700 font-bold mb-2">Unit</label>
-            <input
-              type="text"
+            <select
               value={unit}
               onChange={(e) => setUnit(e.target.value)}
-              placeholder="Enter unit"
               className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
               required
-            />
+            >
+              <option value="">Select Unit</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
           </div>
           <button
             type="submit"
