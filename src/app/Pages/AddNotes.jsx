@@ -4,7 +4,7 @@ import { collection, addDoc, getDoc, doc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import Sidebar from "../Components/Sidebar";
 import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css"; // Import React Quill styles
+import "react-quill/dist/quill.snow.css";  
 
 const AddNotes = () => {
   const [title, setTitle] = useState("");
@@ -19,20 +19,20 @@ const AddNotes = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isYoutubeModalOpen, setIsYoutubeModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false); // State to track hover
-  const [isRestricted, setIsRestricted] = useState(false); // State to restrict options
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);  
+  const [isRestricted, setIsRestricted] = useState(false);  
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const userId = "cxmzQhi4GuPkLhiNkipTP0t1tKF3"; // Replace with the logged-in user's ID
+        const userId = "cxmzQhi4GuPkLhiNkipTP0t1tKF3";  
         const userDoc = await getDoc(doc(db, "users", userId));
         if (userDoc.exists()) {
           const userData = userDoc.data();
           if (userData.role === "teacher" && userData.department === "BSCIT") {
             setDepartment("BSCIT");
             setDivision("A");
-            setIsRestricted(true); // Restrict changes for this user
+            setIsRestricted(true);      
           }
         }
       } catch (error) {
