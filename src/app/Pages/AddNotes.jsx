@@ -11,8 +11,6 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import Sidebar from "../Components/Sidebar";
-import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css"; // Import React Quill styles
 
 const AddNotes = () => {
   const [title, setTitle] = useState("");
@@ -166,7 +164,7 @@ const AddNotes = () => {
       <div
         onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}
-        className={`${
+        className={`$${
           isSidebarHovered ? "w-64" : "w-16"
         } bg-blue-800 text-white h-screen transition-all duration-300 overflow-hidden`}
       >
@@ -258,7 +256,7 @@ const AddNotes = () => {
             <div className="w-full mt-4 flex items-center justify-between border border-gray-300 rounded-lg p-4">
               <div className="flex items-center space-x-4">
                 <img
-                  src={`https://img.youtube.com/vi/${
+                  src={`https://img.youtube.com/vi/$${
                     youtubeLink.split("v=")[1]
                   }/hqdefault.jpg`}
                   alt="YouTube Thumbnail"

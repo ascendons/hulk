@@ -23,6 +23,7 @@ const AddTeacher = () => {
     classteacher: "",
     divisions: [],
     teachesYears: [],
+    teacherrole: "", // Added teacherrole field
   });
 
   const [subjectOptions, setSubjectOptions] = useState([]);
@@ -34,6 +35,13 @@ const AddTeacher = () => {
     { value: "BMS", label: "BMS" },
     { value: "BBA", label: "BBA" },
     { value: "BCA", label: "BCA" },
+  ];
+
+  const teacherRoleOptions = [
+    { value: "Lecturer", label: "Lecturer" },
+    { value: "Assistant Professor", label: "Assistant Professor" },
+    { value: "Professor", label: "Professor" },
+    { value: "HOD", label: "Head of Department" },
   ];
 
   const divisionOptionsForBSCIT = [{ value: "A", label: "A" }];
@@ -113,7 +121,8 @@ const AddTeacher = () => {
       !formData.subjects.length ||
       !formData.classteacher ||
       !formData.divisions.length ||
-      !formData.teachesYears.length
+      !formData.teachesYears.length ||
+      !formData.teacherrole
     ) {
       alert("Please fill in all fields before submitting!");
       return;
@@ -148,6 +157,7 @@ const AddTeacher = () => {
         classteacher: formData.classteacher,
         divisions: formData.divisions,
         teachesYears: formData.teachesYears,
+        teacherrole: formData.teacherrole, // Add teacherrole to Firestore
         userId: user.uid,
       });
 
@@ -165,6 +175,7 @@ const AddTeacher = () => {
         classteacher: "",
         divisions: [],
         teachesYears: [],
+        teacherrole: "",
       });
     } catch (error) {
       console.error("Error adding teacher:", error.message);
@@ -250,6 +261,29 @@ const AddTeacher = () => {
                 Select Department
               </option>
               {departmentOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Teacher Role Dropdown */}
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2">
+              Teacher Role
+            </label>
+            <select
+              name="teacherrole"
+              value={formData.teacherrole}
+              onChange={handleChange}
+              className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            >
+              <option value="" disabled>
+                Select Role
+              </option>
+              {teacherRoleOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>

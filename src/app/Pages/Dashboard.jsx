@@ -1,213 +1,194 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import Sidebar from "../Components/Sidebar";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { auth, db } from "../../config";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db, auth } from "../../config";
 
 const Dashboard = () => {
-  const [noticeboard, setNotices] = useState([]);
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+  const [teacherInfo, setTeacherInfo] = useState({});
   const [totalStudents, setTotalStudents] = useState(0);
-  const [years, setYears] = useState([]);
-  const [selectedYear, setSelectedYear] = useState("");
-  const [teacherName, setTeacherName] = useState("");
-  const [teacherDepartment, setTeacherDepartment] = useState("");
-  const [teacherDivision, setTeacherDivision] = useState("");
+  const [totalTeachers, setTotalTeachers] = useState(0);
+  const [totalSubjects, setTotalSubjects] = useState(0);
+  const [attendance, setAttendance] = useState(75); // Placeholder for attendance data
+  const [notices, setNotices] = useState([]); // Notices state
 
   useEffect(() => {
-    const fetchNotices = async () => {
-      try {
-        const noticesCollection = collection(db, "notices");
-        const noticesSnapshot = await getDocs(noticesCollection);
-        const noticesList = noticesSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setNotices(noticesList);
-      } catch (error) {
-        console.log("Error fetching notices:", error);
-      }
-    };
-
-    const fetchYears = async () => {
-      try {
-        const studentsCollection = collection(db, "students");
-        const studentsSnapshot = await getDocs(studentsCollection);
-        const uniqueYears = [
-          ...new Set(
-            studentsSnapshot.docs.map((doc) => doc.data().studentyear)
-          ),
-        ];
-        setYears(uniqueYears);
-      } catch (error) {
-        console.error("Error fetching years:", error);
-      }
-    };
-
-    const fetchTotalStudents = async () => {
-      try {
-        const studentsCollection = collection(db, "students");
-        let studentsQuery = studentsCollection;
-
-        // Apply year filter
-        if (selectedYear) {
-          studentsQuery = query(
-            studentsCollection,
-            where("studentyear", "==", selectedYear)
-          );
-        }
-
-        const studentsSnapshot = await getDocs(studentsQuery);
-        setTotalStudents(studentsSnapshot.size); // Count of filtered students
-      } catch (error) {
-        console.error("Error fetching student data:", error);
-      }
-    };
-
-    // Fetch the logged-in teacher's data
-    const fetchTeacherData = async () => {
+    const fetchDashboardData = async () => {
       try {
         const user = auth.currentUser;
         if (user) {
-          const teachersQuery = query(
+          // Fetch teacher info
+          const teacherQuery = query(
             collection(db, "teachersinfo"),
             where("teacheremail", "==", user.email)
           );
-          const teachersSnapshot = await getDocs(teachersQuery);
-          if (!teachersSnapshot.empty) {
-            const teacherData = teachersSnapshot.docs[0].data();
-            setTeacherName(teacherData.teachername);
-            setTeacherDepartment(teacherData.department);
-            setTeacherDivision(
-              teacherData.department === "BSCIT"
-                ? "A"
-                : teacherData.divisions[0]
-            );
-          } else {
-            console.error("No teacher found with the given email.");
+          const teacherSnapshot = await getDocs(teacherQuery);
+          if (!teacherSnapshot.empty) {
+            setTeacherInfo(teacherSnapshot.docs[0].data());
           }
+
+          // Fetch total students
+          const studentsSnapshot = await getDocs(collection(db, "students"));
+          setTotalStudents(studentsSnapshot.size);
+
+          // Fetch total teachers
+          const teachersSnapshot = await getDocs(
+            collection(db, "teachersinfo")
+          );
+          setTotalTeachers(teachersSnapshot.size);
+
+          // Fetch total subjects
+          const subjectsSnapshot = await getDocs(collection(db, "subjects"));
+          setTotalSubjects(subjectsSnapshot.size);
         }
       } catch (error) {
-        console.error("Error fetching teacher data:", error);
+        console.error("Error fetching dashboard data:", error);
       }
     };
 
+    const fetchNotices = async () => {
+      try {
+        const noticesSnapshot = await getDocs(collection(db, "notices"));
+        const fetchedNotices = noticesSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setNotices(fetchedNotices);
+      } catch (error) {
+        console.error("Error fetching notices:", error);
+      }
+    };
+
+    fetchDashboardData();
     fetchNotices();
-    fetchYears();
-    fetchTotalStudents();
-    fetchTeacherData();
-  }, [selectedYear]);
+  }, []);
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gradient-to-br from-indigo-50 to-indigo-100">
       {/* Sidebar */}
-      <Sidebar className="w-1/5 bg-gray-800 text-white h-full" />
-
-      {/* Main Content */}
-      <div className="flex-grow p-6">
-        <header className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">
-            Welcome {teacherName || "User"}
-          </h1>
-          <div className="flex space-x-4">
-            {/* Year Dropdown */}
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              className="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            >
-              <option value="">All Years</option>
-              {years.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-
-            {/* Department Dropdown */}
-            <select
-              value={teacherDepartment}
-              disabled
-              className="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            >
-              <option value="BSCIT">BSCIT</option>
-              <option value="BCOM">BCOM</option>
-              <option value="BBA">BBA</option>
-              {/* Add more departments if necessary */}
-            </select>
-
-            {/* Division Dropdown */}
-            <select
-              value={teacherDivision}
-              disabled={teacherDepartment === "BSCIT"} // Disable if department is BSCIT
-              onChange={(e) => setTeacherDivision(e.target.value)}
-              className="border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
-            >
-              {teacherDepartment === "BSCIT" ? (
-                <option value="A">A</option>
-              ) : (
-                <>
-                  <option value="A">A</option>
-                  <option value="B">B</option>
-                  <option value="C">C</option>
-                  <option value="D">D</option>
-                  <option value="E">E</option>
-                  <option value="F">F</option>
-                  <option value="G">G</option>
-                </>
-              )}
-            </select>
-          </div>
-        </header>
-
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
-          <div className="bg-purple-100 p-6 rounded-lg text-center">
-            <h2 className="text-lg font-semibold">Total Students</h2>
-            <p className="text-3xl font-bold">{totalStudents}</p>
-          </div>
-          <div className="bg-red-100 p-6 rounded-lg text-center">
-            <h2 className="text-lg font-semibold">Total Teachers</h2>
-            <p className="text-3xl font-bold">120</p>
-          </div>
-          <div className="bg-blue-100 p-6 rounded-lg text-center">
-            <h2 className="text-lg font-semibold">Total Courses</h2>
-            <p className="text-3xl font-bold">15</p>
-          </div>
-          <div className="bg-yellow-100 p-6 rounded-lg text-center">
-            <h2 className="text-lg font-semibold">Faculty Room</h2>
-            <p className="text-3xl font-bold">100</p>
-          </div>
-        </div>
-
-        {/* Middle Section */}
-        <div className="grid grid-cols-3 gap-6 mb-8">
-          {/* Statistics Chart */}
-          <div className="col-span-2 bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-lg font-semibold mb-4">Statistics</h2>
-            <p>Graph/Chart Placeholder</p>
-          </div>
-
-          {/* Course Activities */}
-          <div className="bg-white p-6 rounded-lg shadow-md text-center">
-            <h2 className="text-lg font-semibold mb-4">Course Activities</h2>
-            <div className="w-24 h-24 mx-auto bg-blue-100 rounded-full flex items-center justify-center">
-              <p className="text-2xl font-bold">75%</p>
-            </div>
-            <p className="text-gray-600 mt-2">Process</p>
-          </div>
-        </div>
+      <div
+        onMouseEnter={() => setIsSidebarHovered(true)}
+        onMouseLeave={() => setIsSidebarHovered(false)}
+        className={`${
+          isSidebarHovered ? "w-64" : "w-16"
+        } bg-indigo-800 text-white h-screen transition-all duration-300 overflow-hidden`}
+      >
+        <Sidebar />
       </div>
 
-      {/* Right Panel */}
-      <div className="w-1/4 bg-white p-6 shadow-md">
-        <h2 className="text-lg font-semibold mt-6 mb-4">Notice Board</h2>
-        <ul>
-          {noticeboard.map((notice) => (
-            <li key={notice.id} className="mb-2">
-              <h3 className="font-semibold">{notice.title}</h3>
-              <p className="text-gray-600">{notice.content}</p>
-            </li>
-          ))}
-        </ul>
+      {/* Main Content */}
+      <div className="flex-grow p-6 grid grid-cols-4 gap-6">
+        {/* Left Section */}
+        <div className="col-span-3">
+          <h1 className="text-4xl font-bold text-gray-800 mb-4">Dashboard</h1>
+          <p className="text-gray-600 mb-8">Welcome, Teacher!</p>
+
+          {/* Profile Section */}
+          <div className="bg-white shadow-xl rounded-lg p-6 mb-6 flex items-center">
+            {/* Photo Placeholder */}
+            <div className="w-24 h-24 bg-gray-300 rounded-full mr-6 border-4 border-indigo-500"></div>
+
+            {/* Teacher Info */}
+            <div className="flex-grow">
+              <h2 className="text-2xl font-bold mb-2 text-gray-800">
+                Name: {teacherInfo.teachername || "NAME"}
+              </h2>
+              <p className="text-gray-600 font-semibold mb-1">
+                Department: {teacherInfo.department || "DEPARTMENT"}
+              </p>
+              <p className="text-gray-600">
+                {teacherInfo.role || "Teachers Role"}
+              </p>
+            </div>
+
+            {/* Edit Profile Button */}
+            <button className="bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600">
+              Edit Profile
+            </button>
+          </div>
+
+          {/* Statistics Section */}
+          <div className="bg-white shadow-xl rounded-lg p-6 mb-6">
+            <div className="grid grid-cols-4 gap-6">
+              <div className="bg-blue-100 text-center p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                <h2 className="text-3xl font-bold text-blue-700">
+                  {totalStudents}
+                </h2>
+                <p className="text-gray-600 mt-2">Total Students</p>
+              </div>
+              <div className="bg-green-100 text-center p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                <h2 className="text-3xl font-bold text-green-700">
+                  {totalTeachers}
+                </h2>
+                <p className="text-gray-600 mt-2">Total Teachers</p>
+              </div>
+              <div className="bg-red-100 text-center p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                <h2 className="text-3xl font-bold text-red-700">
+                  {totalSubjects}
+                </h2>
+                <p className="text-gray-600 mt-2">Total Subjects</p>
+              </div>
+              <div className="bg-yellow-100 text-center p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+                <h2 className="text-3xl font-bold text-yellow-700">
+                  {attendance}%
+                </h2>
+                <p className="text-gray-600 mt-2">Attendance</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Links */}
+          <div className="grid grid-cols-3 gap-6">
+            <button className="bg-blue-300 text-black px-6 py-4 rounded-lg font-bold hover:scale-105 transition-transform">
+              TIMETABLE
+            </button>
+            <button className="bg-green-300 text-black px-6 py-4 rounded-lg font-bold hover:scale-105 transition-transform">
+              ATTENDANCE
+            </button>
+            <button className="bg-purple-300 text-black px-6 py-4 rounded-lg font-bold hover:scale-105 transition-transform">
+              NOTES
+            </button>
+          </div>
+        </div>
+
+        {/* Right Section - Notice Board */}
+        <div className="col-span-1">
+          <div className="bg-white shadow-xl rounded-lg p-6 h-full">
+            <h2 className="text-2xl font-bold mb-4 text-gray-800">
+              Notice Board
+            </h2>
+            {notices.length > 0 ? (
+              <ul className="overflow-y-auto max-h-96">
+                {notices.map((notice) => (
+                  <li
+                    key={notice.id}
+                    className="mb-6 border-b pb-4 last:border-b-0"
+                  >
+                    <h3 className="text-lg font-semibold text-indigo-600">
+                      {notice.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-2">
+                      By: {notice.author}
+                    </p>
+                    <p className="text-gray-800">{notice.content}</p>
+                    {notice.attachment && (
+                      <a
+                        href={notice.attachment}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 underline block mt-2"
+                      >
+                        View Attachment
+                      </a>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-gray-600">No notices available.</p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

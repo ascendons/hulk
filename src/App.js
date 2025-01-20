@@ -14,7 +14,8 @@ import Attendance from "./app/Pages/Attendance";
 import Teachers from "./app/Pages/Teachers";
 import AddSubjects from "./app/Pages/AddSubjects";
 import Notes from "./app/Pages/Notes";
-
+import SubjectDetails from "./app/Components/SubjectDetails";
+import AddNotes from "./app/Pages/AddNotes";
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false); // Authentication state
 
@@ -44,6 +45,8 @@ function App() {
         <Route path="Teachers" element={<Teachers />} />
         <Route path="Addsubjects" element={<AddSubjects />} />
         <Route path="Notes" element={<Notes />} />
+        <Route path="/subject/:subjectName" element={<SubjectDetails />} />
+        <Route path="/add-notes" element={<AddNotes />} />
       </Routes>
     </BrowserRouter>
   );
