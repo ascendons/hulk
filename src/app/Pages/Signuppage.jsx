@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../config";
-import bglogin from "../../bglogin.png";
 
 const Signuppage = ({ onLogin }) => {
   const navigate = useNavigate();
@@ -15,7 +14,7 @@ const Signuppage = ({ onLogin }) => {
   const handleSubmit = async (event) => {
     event.preventDefault();
     setIsLoading(true);
-    setError(""); 
+    setError(""); // Clear error on new submit
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
@@ -29,8 +28,7 @@ const Signuppage = ({ onLogin }) => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100"
-    style={{ backgroundImage: `url(${bglogin})` }}>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100">
       <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-2xl shadow-lg transform transition-all duration-500 hover:shadow-xl">
         <div className="text-center space-y-2">
           <h2 className="text-3xl font-bold tracking-tight text-gray-900">Welcome back</h2>

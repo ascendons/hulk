@@ -1,10 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { db, storage, auth } from "../../config"; // Import your Firebase configuration
-import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  getDoc,
+  doc,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import Sidebar from "../Components/Sidebar";
+<<<<<<< HEAD
+=======
 import ReactQuill from "react-quill";
-import "react-quill/dist/quill.snow.css";
+import "react-quill/dist/quill.snow.css";  
+>>>>>>> 37f6be770dadf9e8dc9c27ed2e2e98c7e61705c6
 
 const AddNotes = () => {
   const [title, setTitle] = useState("");
@@ -20,11 +31,17 @@ const AddNotes = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isYoutubeModalOpen, setIsYoutubeModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+<<<<<<< HEAD
   const [isSidebarHovered, setIsSidebarHovered] = useState(false); // State to track hover
+=======
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);  
+  const [isRestricted, setIsRestricted] = useState(false);  
+>>>>>>> 37f6be770dadf9e8dc9c27ed2e2e98c7e61705c6
 
   useEffect(() => {
     const fetchTeacherData = async () => {
       try {
+<<<<<<< HEAD
         const user = auth.currentUser;
         if (user) {
           const teachersQuery = query(
@@ -42,6 +59,16 @@ const AddNotes = () => {
             );
           } else {
             console.error("No teacher found with the given email.");
+=======
+        const userId = "cxmzQhi4GuPkLhiNkipTP0t1tKF3";  
+        const userDoc = await getDoc(doc(db, "users", userId));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          if (userData.role === "teacher" && userData.department === "BSCIT") {
+            setDepartment("BSCIT");
+            setDivision("A");
+            setIsRestricted(true);      
+>>>>>>> 37f6be770dadf9e8dc9c27ed2e2e98c7e61705c6
           }
         }
       } catch (error) {
@@ -158,7 +185,7 @@ const AddNotes = () => {
       <div
         onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}
-        className={`$${
+        className={`${
           isSidebarHovered ? "w-64" : "w-16"
         } bg-blue-800 text-white h-screen transition-all duration-300 overflow-hidden`}
       >
@@ -184,10 +211,12 @@ const AddNotes = () => {
           <label className="block text-gray-700 font-bold mb-2">
             Description
           </label>
-          <ReactQuill
+          <textarea
             value={description}
-            onChange={setDescription}
-            className="bg-white rounded-lg mb-6"
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Enter description"
+            rows={6}
+            className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-6"
           />
           <div className="flex space-x-6">
             <div
@@ -244,6 +273,48 @@ const AddNotes = () => {
               </button>
             </div>
           )}
+          {youtubeLink && (
+            <div className="w-full mt-4 flex items-center justify-between border border-gray-300 rounded-lg p-4">
+              <div className="flex items-center space-x-4">
+                <img
+                  src={`https://img.youtube.com/vi/$${
+                    youtubeLink.split("v=")[1]
+                  }/hqdefault.jpg`}
+                  alt="YouTube Thumbnail"
+                  className="w-16 h-16 rounded-md"
+                />
+                <div>
+                  <p className="font-semibold text-gray-800 truncate w-64">
+                    Placeholder Title
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    YouTube video • Placeholder duration
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="text-gray-500 hover:text-red-600"
+                onClick={() => setYoutubeLink("")}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                  stroke="currentColor"
+                  className="w-5 h-5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="w-1/3 pl-4 flex flex-col justify-between">
@@ -251,21 +322,27 @@ const AddNotes = () => {
             <label className="block text-gray-700 font-bold mb-2">
               Department
             </label>
-            <input
-              type="text"
+            <select
               value={department}
               disabled
               className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-            />
+            >
+              <option value="BSCIT">BSCIT</option>
+              <option value="BCOM">BCOM</option>
+              <option value="BMS">BMS</option>
+            </select>
             <label className="block text-gray-700 font-bold mb-2">
               Division
             </label>
-            <input
-              type="text"
+            <select
               value={division}
               disabled
               className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-            />
+            >
+              <option value="A">A</option>
+              <option value="B">B</option>
+              <option value="C">C</option>
+            </select>
             <label className="block text-gray-700 font-bold mb-2">Year</label>
             <select
               value={year}
@@ -273,7 +350,6 @@ const AddNotes = () => {
               className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
               required
             >
-              <option value="">Select Year</option>
               <option value="First Year">First Year</option>
               <option value="Second Year">Second Year</option>
               <option value="Third Year">Third Year</option>
@@ -351,7 +427,7 @@ const AddNotes = () => {
           </div>
         </div>
       )}
-
+      {/* Upload Modal */}
       {isUploadModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white w-full max-w-md p-8 rounded-lg shadow-lg">
