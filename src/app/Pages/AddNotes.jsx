@@ -11,6 +11,11 @@ import {
 } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import Sidebar from "../Components/Sidebar";
+<<<<<<< HEAD
+=======
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";  
+>>>>>>> 4ecc896 (new build is desployed)
 
 const AddNotes = () => {
   const [title, setTitle] = useState("");
@@ -26,11 +31,17 @@ const AddNotes = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isYoutubeModalOpen, setIsYoutubeModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+<<<<<<< HEAD
   const [isSidebarHovered, setIsSidebarHovered] = useState(false); // State to track hover
+=======
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);  
+  const [isRestricted, setIsRestricted] = useState(false);  
+>>>>>>> 4ecc896 (new build is desployed)
 
   useEffect(() => {
     const fetchTeacherData = async () => {
       try {
+<<<<<<< HEAD
         const user = auth.currentUser;
         if (user) {
           const teachersQuery = query(
@@ -48,6 +59,16 @@ const AddNotes = () => {
             );
           } else {
             console.error("No teacher found with the given email.");
+=======
+        const userId = "cxmzQhi4GuPkLhiNkipTP0t1tKF3";  
+        const userDoc = await getDoc(doc(db, "users", userId));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          if (userData.role === "teacher" && userData.department === "BSCIT") {
+            setDepartment("BSCIT");
+            setDivision("A");
+            setIsRestricted(true);      
+>>>>>>> 4ecc896 (new build is desployed)
           }
         }
       } catch (error) {
