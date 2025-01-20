@@ -51,7 +51,6 @@ const Courses = () => {
     );
   };
 
-  // Function to get cached data from localStorage
   const getCachedLectures = (course) => {
     const cachedData = localStorage.getItem(`lectures-${course}`);
     if (cachedData) {
@@ -65,7 +64,6 @@ const Courses = () => {
     return null;
   };
 
-  // Function to cache data in localStorage with an expiry time
   const cacheLectures = (course, data, expiryInMinutes = 60) => {
     const expiry = Date.now() + expiryInMinutes * 60 * 1000;
     localStorage.setItem(
@@ -110,7 +108,6 @@ const Courses = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
       <div
         onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}
@@ -121,9 +118,7 @@ const Courses = () => {
         <Sidebar />
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 p-6">
-        {/* Header Section */}
         <div className="flex justify-between items-center mb-6">
           <a href="/home">
             <h1 className="text-3xl font-bold">Courses</h1>
