@@ -1,38 +1,42 @@
 import React, { useState, useEffect } from "react";
-import { db, storage, auth } from "../../config"; // Import your Firebase configuration
-import {
-  collection,
-  addDoc,
-  getDoc,
-  doc,
-  query,
-  where,
-  getDocs,
-} from "firebase/firestore";
+import { db, storage, auth } from "../../config"; // Firebase configuration
+import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import Sidebar from "../Components/Sidebar";
 
-const AddNotes = () => {
+const AddAssignment = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [department, setDepartment] = useState("");
   const [division, setDivision] = useState("");
   const [year, setYear] = useState("");
   const [subject, setSubject] = useState("");
-  const [subjects, setSubjects] = useState([]); // For storing fetched subjects
-  const [unit, setUnit] = useState("");
+  const [subjects, setSubjects] = useState([]);
+  const [marks, setMarks] = useState("");
+  const [dueDate, setDueDate] = useState("");
   const [file, setFile] = useState(null);
   const [youtubeLink, setYoutubeLink] = useState("");
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [assignedBy, setAssignedBy] = useState(""); // Assigned By field
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [isYoutubeModalOpen, setIsYoutubeModalOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false); // State to track hover
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchTeacherData = async () => {
       try {
         const user = auth.currentUser;
         if (user) {
+          // Fetch the user's name from the Firestore `users` collection
+          const usersQuery = query(
+            collection(db, "users"),
+            where("email", "==", user.email)
+          );
+          const usersSnapshot = await getDocs(usersQuery);
+          if (!usersSnapshot.empty) {
+            const userData = usersSnapshot.docs[0].data();
+            setAssignedBy(userData.name || user.email); // Use name if available, otherwise email
+          }
+
           const teachersQuery = query(
             collection(db, "teachersinfo"),
             where("teacheremail", "==", user.email)
@@ -46,8 +50,6 @@ const AddNotes = () => {
                 ? "A"
                 : teacherData.divisions[0]
             );
-          } else {
-            console.error("No teacher found with the given email.");
           }
         }
       } catch (error) {
@@ -102,18 +104,24 @@ const AddNotes = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title || !department || !division || !year || !subject || !unit) {
+    if (
+      !title ||
+      !department ||
+      !division ||
+      !year ||
+      !subject ||
+      !marks ||
+      !dueDate
+    ) {
       alert("Please fill out all required fields.");
       return;
     }
-
-    setIsLoading(true);
 
     try {
       let fileURL = "";
 
       if (file) {
-        const storageRef = ref(storage, `notes/${file.name}`);
+        const storageRef = ref(storage, `assignments/${file.name}`);
         const uploadTask = uploadBytesResumable(storageRef, file);
 
         await new Promise((resolve, reject) => {
@@ -129,38 +137,39 @@ const AddNotes = () => {
         });
       }
 
-      await addDoc(collection(db, "Notes"), {
+      await addDoc(collection(db, "Assignments"), {
         title,
         description,
         department,
         division,
         year,
         subject,
-        unit,
-        youtubeLink,
+        marks,
+        dueDate,
         fileURL,
+        youtubeLink,
+        assignedBy,
         timestamp: new Date(),
       });
 
-      alert("Notes added successfully!");
+      alert("Assignment added successfully!");
 
       setTitle("");
       setDescription("");
       setYear("");
       setSubject("");
-      setUnit("");
+      setMarks("");
+      setDueDate("");
       setFile(null);
       setYoutubeLink("");
     } catch (error) {
-      console.error("Error adding notes:", error);
-      alert("Failed to add notes. Please try again.");
-    } finally {
-      setIsLoading(false);
+      console.error("Error adding assignment:", error);
+      alert("Failed to add assignment. Please try again.");
     }
   };
 
   return (
-    <div className="w-screen h-screen bg-gray-100 flex ">
+    <div className="w-screen h-screen bg-gray-100 flex">
       <div
         onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}
@@ -171,14 +180,13 @@ const AddNotes = () => {
         <Sidebar />
       </div>
       <form
-        className="bg-white shadow-lg rounded-lg p-8 w-full h-full max-w-screen flex"
+        className="bg-white shadow-lg rounded-lg p-8 w-full h-full flex"
         onSubmit={handleSubmit}
       >
+        {/* Left Section */}
         <div className="w-2/3 pr-4">
-          <h1 className="text-2xl font-bold mb-6">ADD NOTES</h1>
-          <label className="block text-gray-700 font-bold mb-2 text-xl">
-            Title
-          </label>
+          <h1 className="text-3xl font-bold mb-6">ASSIGNMENT</h1>
+          <label className="block text-gray-700 font-bold mb-2">Title</label>
           <input
             type="text"
             value={title}
@@ -221,107 +229,38 @@ const AddNotes = () => {
               <p>Upload</p>
             </div>
           </div>
-
-          {file && (
-            <div className="w-full mt-4 flex items-center justify-between border border-gray-300 rounded-lg p-4">
-              <div>
-                <p className="font-semibold text-gray-800">{file.name}</p>
-                <p className="text-sm text-gray-500">
-                  {file.type || "Unknown"}
-                </p>
-              </div>
-              <button
-                type="button"
-                className="text-gray-500 hover:text-red-600"
-                onClick={removeFile}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2}
-                  stroke="currentColor"
-                  className="w-5 h-5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-          )}
-          {youtubeLink && (
-            <div className="w-full mt-4 flex items-center justify-between border border-gray-300 rounded-lg p-4">
-              <div className="flex items-center space-x-4">
-                <img
-                  src={`https://img.youtube.com/vi/$${
-                    youtubeLink.split("v=")[1]
-                  }/hqdefault.jpg`}
-                  alt="YouTube Thumbnail"
-                  className="w-16 h-16 rounded-md"
-                />
-                <div>
-                  <p className="font-semibold text-gray-800 truncate w-64">
-                    Placeholder Title
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    YouTube video • Placeholder duration
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                className="text-gray-500 hover:text-red-600"
-                onClick={() => setYoutubeLink("")}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={2}
-                  stroke="currentColor"
-                  className="w-5 h-5"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </div>
-          )}
         </div>
 
+        {/* Right Section */}
         <div className="w-1/3 pl-4 flex flex-col justify-between">
           <div>
             <label className="block text-gray-700 font-bold mb-2">
+              Assigned By
+            </label>
+            <input
+              type="text"
+              value={assignedBy}
+              disabled
+              className="w-full p-4 border border-gray-300 rounded-md focus:outline-none mb-4 bg-gray-100"
+            />
+            <label className="block text-gray-700 font-bold mb-2">
               Department
             </label>
-            <select
+            <input
+              type="text"
               value={department}
               disabled
-              className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-            >
-              <option value="BSCIT">BSCIT</option>
-              <option value="BCOM">BCOM</option>
-              <option value="BMS">BMS</option>
-            </select>
+              className="w-full p-4 border border-gray-300 rounded-md focus:outline-none mb-4"
+            />
             <label className="block text-gray-700 font-bold mb-2">
               Division
             </label>
-            <select
+            <input
+              type="text"
               value={division}
               disabled
-              className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-            >
-              <option value="A">A</option>
-              <option value="B">B</option>
-              <option value="C">C</option>
-            </select>
+              className="w-full p-4 border border-gray-300 rounded-md focus:outline-none mb-4"
+            />
             <label className="block text-gray-700 font-bold mb-2">Year</label>
             <select
               value={year}
@@ -329,6 +268,7 @@ const AddNotes = () => {
               className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
               required
             >
+              <option value="">Select Year</option>
               <option value="First Year">First Year</option>
               <option value="Second Year">Second Year</option>
               <option value="Third Year">Third Year</option>
@@ -349,31 +289,36 @@ const AddNotes = () => {
                 </option>
               ))}
             </select>
-            <label className="block text-gray-700 font-bold mb-2">Unit</label>
-            <select
-              value={unit}
-              onChange={(e) => setUnit(e.target.value)}
+            <label className="block text-gray-700 font-bold mb-2">Marks</label>
+            <input
+              type="number"
+              value={marks}
+              onChange={(e) => setMarks(e.target.value)}
+              placeholder="Enter marks"
               className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
               required
-            >
-              <option value="">Select Unit</option>
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4</option>
-              <option value="5">5</option>
-            </select>
+            />
+            <label className="block text-gray-700 font-bold mb-2">
+              Due Date
+            </label>
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+              required
+            />
           </div>
           <button
             type="submit"
-            disabled={isLoading}
             className="bg-blue-500 text-white py-3 px-8 rounded-lg hover:bg-blue-600"
           >
-            {isLoading ? "Submitting..." : "POST"}
+            POST
           </button>
         </div>
       </form>
 
+      {/* YouTube Modal */}
       {isYoutubeModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white w-full max-w-2xl p-8 rounded-lg">
@@ -406,6 +351,7 @@ const AddNotes = () => {
           </div>
         </div>
       )}
+
       {/* Upload Modal */}
       {isUploadModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -439,4 +385,4 @@ const AddNotes = () => {
   );
 };
 
-export default AddNotes;
+export default AddAssignment;

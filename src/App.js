@@ -16,6 +16,9 @@ import AddSubjects from "./app/Pages/AddSubjects";
 import Notes from "./app/Pages/Notes";
 import SubjectDetails from "./app/Components/SubjectDetails";
 import AddNotes from "./app/Pages/AddNotes";
+import Assignments from "./app/Pages/Assignments";
+import AddAssignment from "./app/Pages/AddAssignment";
+import AssignmentDetail from "./app/Components/AssignmentDetail";
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false); // Authentication state
 
@@ -27,7 +30,6 @@ function App() {
           path="/signup"
           element={<Signuppage onLogin={() => setIsAuthenticated(true)} />}
         />
-
         <Route
           path="/home"
           element={isAuthenticated ? <Dashboard /> : <Navigate to="/signup" />}
@@ -47,6 +49,10 @@ function App() {
         <Route path="Notes" element={<Notes />} />
         <Route path="/subject/:subjectName" element={<SubjectDetails />} />
         <Route path="/add-notes" element={<AddNotes />} />
+        <Route path="/assignments" element={<Assignments />} />
+        <Route path="/add-assignment" element={<AddAssignment />} />
+        <Route path="/assignment/:id" element={<AssignmentDetail />} />{" "}
+        {/* Add this */}
       </Routes>
     </BrowserRouter>
   );
