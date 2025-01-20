@@ -17,6 +17,7 @@
     "react-router-dom": "^7.1.1",
     "react-scripts": "^5.0.1",
     "react-select": "^5.9.0",
+    "react-toastify": "^11.0.3",
     "tailwind-merge": "^2.6.0"
   },
   "scripts": {

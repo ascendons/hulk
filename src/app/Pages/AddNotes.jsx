@@ -1,7 +1,11 @@
-import React, { useState, useEffect } from "react";
-import { db, storage, auth } from "../../config"; // Import your Firebase configuration
+
+
+import React, { useState, useEffect, useMemo } from "react";
+import { db, storage, auth } from "../../config";
 import { collection, addDoc, getDocs, getDoc, doc, where, query } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { toast, ToastContainer } from 'react-toastify'; 
+import 'react-toastify/dist/ReactToastify.css'; // Import toast CSS
 import Sidebar from "../Components/Sidebar";
 
 const AddNotes = () => {
@@ -17,14 +21,18 @@ const AddNotes = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isYoutubeModalOpen, setIsYoutubeModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false); // State to track hover
-  const [isRestricted, setIsRestricted] = useState(false);  
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+  const [isDepartmentDivisionLocked, setIsDepartmentDivisionLocked] = useState(false);
+  const [isRestricted] = useState(false);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const user = auth.currentUser;
-        if (user) {
+  const { department: fetchedDepartment, division: fetchedDivision } = useMemo(() => {
+    const user = auth.currentUser;
+    let department = "BSCIT";
+    let division = "A";
+  
+    if (user) {
+      const fetchUserData = async () => {
+        try {
           const teachersQuery = query(
             collection(db, "teachersinfo"),
             where("teacheremail", "==", user.email)
@@ -32,32 +40,39 @@ const AddNotes = () => {
           const teachersSnapshot = await getDocs(teachersQuery);
           if (!teachersSnapshot.empty) {
             const teacherData = teachersSnapshot.docs[0].data();
-            setDepartment(teacherData.department);
-            setDivision(
+            department = teacherData.department;
+            division =
               teacherData.department === "BSCIT"
                 ? "A"
-                : teacherData.divisions[0]
-            );
+                : teacherData.divisions[0];
           } else {
             console.error("No teacher found with the given email.");
           }
-        }
-        const userId = "cxmzQhi4GuPkLhiNkipTP0t1tKF3";  
-        const userDoc = await getDoc(doc(db, "users", userId));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          if (userData.role === "teacher" && userData.department === "BSCIT") {
-            setDepartment("BSCIT");
-            setDivision("A");
-            setIsRestricted(true);      
+
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+            if (userData.role === "admin" || (userData.role === "teacher" && userData.department === "BSCIT")) {
+              department = "BSCIT";
+              division = "A";
+              setIsDepartmentDivisionLocked(true);      
+            }
           }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
         }
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-      }
-    };
-    fetchUserData();
-  }, []);
+      };
+  
+      fetchUserData();
+    }
+  
+    return { department, division };
+  }, [auth.currentUser]);
+  
+  useEffect(() => {
+    setDepartment(fetchedDepartment);
+    setDivision(fetchedDivision);
+  }, [fetchedDepartment, fetchedDivision]);
 
   const handleFileUpload = (e) => {
     setFile(e.target.files[0]);
@@ -71,17 +86,24 @@ const AddNotes = () => {
   const handleYoutubeSubmit = (e) => {
     e.preventDefault();
     if (!youtubeLink) {
-      alert("Please provide a YouTube link.");
-    } else {
-      alert(`YouTube Link Added: ${youtubeLink}`);
-      setIsYoutubeModalOpen(false);
+      toast.error("Please provide a YouTube link.");
+      return;
     }
+
+    const youtubeRegex = /^(https?\:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
+    if (!youtubeRegex.test(youtubeLink)) {
+      toast.error("Please provide a valid YouTube link.");
+      return;
+    }
+
+    toast.success("YouTube Link Added!");
+    setIsYoutubeModalOpen(false);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title || !department || !division || !year || !subject || !unit) {
-      alert("Please fill out all required fields.");
+      toast.error("Please fill out all required fields.");
       return;
     }
 
@@ -94,13 +116,32 @@ const AddNotes = () => {
         const storageRef = ref(storage, `notes/${file.name}`);
         const uploadTask = uploadBytesResumable(storageRef, file);
 
+        const toastId = toast.loading("Uploading file...");
+
         await new Promise((resolve, reject) => {
           uploadTask.on(
             "state_changed",
-            null,
-            (error) => reject(error),
+            (snapshot) => {
+              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              toast.update(toastId, { progress: progress });
+            },
+            (error) => {
+              toast.update(toastId, {
+                render: "Upload failed!",
+                type: toast.TYPE.ERROR,
+                isLoading: false,
+                autoClose: 3000,
+              });
+              reject(error);
+            },
             async () => {
               fileURL = await getDownloadURL(uploadTask.snapshot.ref);
+              toast.update(toastId, {
+                render: "Upload complete!",
+                type: toast.TYPE.SUCCESS,
+                isLoading: false,
+                autoClose: 3000,
+              });
               resolve();
             }
           );
@@ -122,10 +163,7 @@ const AddNotes = () => {
 
       await addDoc(collection(db, "Notes"), newNote);
 
-      const cachedNotes = JSON.parse(localStorage.getItem("notes")) || [];
-      localStorage.setItem("notes", JSON.stringify([...cachedNotes, newNote]));
-
-      alert("Notes added successfully!");
+      toast.success("Notes added successfully!");
 
       setTitle("");
       setDescription("");
@@ -138,11 +176,12 @@ const AddNotes = () => {
       setYoutubeLink("");
     } catch (error) {
       console.error("Error adding notes:", error);
-      alert("Failed to add notes. Please try again.");
+      toast.error("Failed to add notes. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
+
 
   return (
     <div className="w-screen h-screen bg-gray-100 flex ">
