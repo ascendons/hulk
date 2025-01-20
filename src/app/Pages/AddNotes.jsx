@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { db, storage, auth } from "../../config"; // Import your Firebase configuration
-import { collection, addDoc, getDocs, where, query } from "firebase/firestore";
+import { collection, addDoc, getDocs, getDoc, doc, where, query } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import Sidebar from "../Components/Sidebar";
 
@@ -18,38 +18,38 @@ const AddNotes = () => {
   const [isYoutubeModalOpen, setIsYoutubeModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false); // State to track hover
-
+  const [isRestricted, setIsRestricted] = useState(false);  
 
   useEffect(() => {
     const fetchUserData = async () => {
       try {
         const user = auth.currentUser;
         if (user) {
-          const cachedData = localStorage.getItem("teacherData");
-          if (cachedData) {
-            const teacherData = JSON.parse(cachedData);
+          const teachersQuery = query(
+            collection(db, "teachersinfo"),
+            where("teacheremail", "==", user.email)
+          );
+          const teachersSnapshot = await getDocs(teachersQuery);
+          if (!teachersSnapshot.empty) {
+            const teacherData = teachersSnapshot.docs[0].data();
             setDepartment(teacherData.department);
             setDivision(
-              teacherData.department === "BSCIT" ? "A" : teacherData.divisions[0]
+              teacherData.department === "BSCIT"
+                ? "A"
+                : teacherData.divisions[0]
             );
           } else {
-            const teachersQuery = query(
-              collection(db, "teachersinfo"),
-              where("teacheremail", "==", user.email)
-            );
-            const teachersSnapshot = await getDocs(teachersQuery);
-            if (!teachersSnapshot.empty) {
-              const teacherData = teachersSnapshot.docs[0].data();
-              setDepartment(teacherData.department);
-              setDivision(
-                teacherData.department === "BSCIT"
-                  ? "A"
-                  : teacherData.divisions[0]
-              );
-              localStorage.setItem("teacherData", JSON.stringify(teacherData));
-            } else {
-              console.error("No teacher found with the given email.");
-            }
+            console.error("No teacher found with the given email.");
+          }
+        }
+        const userId = "cxmzQhi4GuPkLhiNkipTP0t1tKF3";  
+        const userDoc = await getDoc(doc(db, "users", userId));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          if (userData.role === "teacher" && userData.department === "BSCIT") {
+            setDepartment("BSCIT");
+            setDivision("A");
+            setIsRestricted(true);      
           }
         }
       } catch (error) {
