@@ -118,7 +118,7 @@ const AddTeacher = () => {
       !formData.teacherpassword ||
       !formData.phonenumber ||
       !formData.department ||
-      !formData.subjects.length ||
+      // !formData.subjects.length ||
       !formData.classteacher ||
       !formData.divisions.length ||
       !formData.teachesYears.length ||
