@@ -306,7 +306,7 @@ const AddTeacher = () => {
                 handleMultiSelectChange(selectedOptions, "subjects")
               }
               className="w-full"
-              required
+{/*               required */}
             />
           </div>
 
