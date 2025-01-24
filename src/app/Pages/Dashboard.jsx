@@ -64,130 +64,116 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-indigo-50 to-indigo-100">
+    <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Sidebar */}
       <div
         onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}
         className={`${
           isSidebarHovered ? "w-64" : "w-16"
-        } bg-indigo-800 text-white h-screen transition-all duration-300 overflow-hidden`}
+        } bg-blue-800 text-white h-screen transition-all duration-300 overflow-hidden`}
       >
         <Sidebar />
       </div>
 
       {/* Main Content */}
-      <div className="flex-grow p-6 grid grid-cols-4 gap-6">
-        {/* Left Section */}
-        <div className="col-span-3">
-          <h1 className="text-4xl font-bold text-gray-800 mb-4">Dashboard</h1>
-          <p className="text-gray-600 mb-8">Welcome, Teacher!</p>
+      <div className="flex-grow p-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-800">Dashboard</h1>
+          <p className="text-gray-600 mt-2">
+            Welcome back, {teacherInfo.teachername || "Teacher"}!
+          </p>
+        </div>
 
-          {/* Profile Section */}
-          <div className="bg-white shadow-xl rounded-lg p-6 mb-6 flex items-center">
-            {/* Photo Placeholder */}
-            <div className="w-24 h-24 bg-gray-300 rounded-full mr-6 border-4 border-indigo-500"></div>
+        {/* Profile Section */}
+        <div className="bg-white shadow-lg rounded-lg p-6 mb-8 flex items-center">
+          {/* Profile Picture Placeholder */}
+          <div className="w-20 h-20 bg-gray-300 rounded-full mr-6 border-4 border-blue-500"></div>
 
-            {/* Teacher Info */}
-            <div className="flex-grow">
-              <h2 className="text-2xl font-bold mb-2 text-gray-800">
-                Name: {teacherInfo.teachername || "NAME"}
-              </h2>
-              <p className="text-gray-600 font-semibold mb-1">
-                Department: {teacherInfo.department || "DEPARTMENT"}
-              </p>
-              <p className="text-gray-600">
-                {teacherInfo.role || "Teachers Role"}
-              </p>
-            </div>
-
-            {/* Edit Profile Button */}
-            <button className="bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600">
-              Edit Profile
-            </button>
+          {/* Teacher Info */}
+          <div className="flex-grow">
+            <h2 className="text-2xl font-bold text-gray-800">
+              {teacherInfo.teachername || "Teacher Name"}
+            </h2>
+            <p className="text-gray-600 font-semibold">
+              Department: {teacherInfo.department || "Department"}
+            </p>
+            <p className="text-gray-600">{teacherInfo.role || "Role"}</p>
           </div>
 
-          {/* Statistics Section */}
-          <div className="bg-white shadow-xl rounded-lg p-6 mb-6">
-            <div className="grid grid-cols-4 gap-6">
-              <div className="bg-blue-100 text-center p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                <h2 className="text-3xl font-bold text-blue-700">
-                  {totalStudents}
-                </h2>
-                <p className="text-gray-600 mt-2">Total Students</p>
-              </div>
-              <div className="bg-green-100 text-center p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                <h2 className="text-3xl font-bold text-green-700">
-                  {totalTeachers}
-                </h2>
-                <p className="text-gray-600 mt-2">Total Teachers</p>
-              </div>
-              <div className="bg-red-100 text-center p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                <h2 className="text-3xl font-bold text-red-700">
-                  {totalSubjects}
-                </h2>
-                <p className="text-gray-600 mt-2">Total Subjects</p>
-              </div>
-              <div className="bg-yellow-100 text-center p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                <h2 className="text-3xl font-bold text-yellow-700">
-                  {attendance}%
-                </h2>
-                <p className="text-gray-600 mt-2">Attendance</p>
-              </div>
-            </div>
-          </div>
+          {/* Edit Profile Button */}
+          <button className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors">
+            Edit Profile
+          </button>
+        </div>
 
-          {/* Quick Links */}
-          <div className="grid grid-cols-3 gap-6">
-            <button className="bg-blue-300 text-black px-6 py-4 rounded-lg font-bold hover:scale-105 transition-transform">
-              TIMETABLE
-            </button>
-            <button className="bg-green-300 text-black px-6 py-4 rounded-lg font-bold hover:scale-105 transition-transform">
-              ATTENDANCE
-            </button>
-            <button className="bg-purple-300 text-black px-6 py-4 rounded-lg font-bold hover:scale-105 transition-transform">
-              NOTES
-            </button>
+        {/* Statistics Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
+            <h2 className="text-3xl font-bold text-blue-600">{totalStudents}</h2>
+            <p className="text-gray-600 mt-2">Total Students</p>
+          </div>
+          <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
+            <h2 className="text-3xl font-bold text-green-600">{totalTeachers}</h2>
+            <p className="text-gray-600 mt-2">Total Teachers</p>
+          </div>
+          <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
+            <h2 className="text-3xl font-bold text-red-600">{totalSubjects}</h2>
+            <p className="text-gray-600 mt-2">Total Subjects</p>
+          </div>
+          <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
+            <h2 className="text-3xl font-bold text-yellow-600">{attendance}%</h2>
+            <p className="text-gray-600 mt-2">Attendance</p>
           </div>
         </div>
 
-        {/* Right Section - Notice Board */}
-        <div className="col-span-1">
-          <div className="bg-white shadow-xl rounded-lg p-6 h-full">
-            <h2 className="text-2xl font-bold mb-4 text-gray-800">
-              Notice Board
-            </h2>
-            {notices.length > 0 ? (
-              <ul className="overflow-y-auto max-h-96">
-                {notices.map((notice) => (
-                  <li
-                    key={notice.id}
-                    className="mb-6 border-b pb-4 last:border-b-0"
-                  >
-                    <h3 className="text-lg font-semibold text-indigo-600">
-                      {notice.title}
-                    </h3>
-                    <p className="text-sm text-gray-600 mb-2">
-                      By: {notice.author}
-                    </p>
-                    <p className="text-gray-800">{notice.content}</p>
-                    {notice.attachment && (
-                      <a
-                        href={notice.attachment}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-500 underline block mt-2"
-                      >
-                        View Attachment
-                      </a>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-gray-600">No notices available.</p>
-            )}
-          </div>
+        {/* Quick Actions Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <button className="bg-blue-500 text-white px-6 py-4 rounded-lg font-bold hover:bg-blue-600 transition-colors">
+            Timetable
+          </button>
+          <button className="bg-green-500 text-white px-6 py-4 rounded-lg font-bold hover:bg-green-600 transition-colors">
+            Attendance
+          </button>
+          <button className="bg-purple-500 text-white px-6 py-4 rounded-lg font-bold hover:bg-purple-600 transition-colors">
+            Notes
+          </button>
+          <button className="bg-orange-500 text-white px-6 py-4 rounded-lg font-bold hover:bg-orange-600 transition-colors">
+            Assignments
+          </button>
+        </div>
+
+        {/* Notice Board Section */}
+        <div className="bg-white shadow-lg rounded-lg p-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Notice Board</h2>
+          {notices.length > 0 ? (
+            <ul className="space-y-4">
+              {notices.map((notice) => (
+                <li key={notice.id} className="border-b pb-4 last:border-b-0">
+                  <h3 className="text-lg font-semibold text-blue-600">
+                    {notice.title}
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-2">
+                    By: {notice.author}
+                  </p>
+                  <p className="text-gray-800">{notice.content}</p>
+                  {notice.attachment && (
+                    <a
+                      href={notice.attachment}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 underline block mt-2"
+                    >
+                      View Attachment
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-600">No notices available.</p>
+          )}
         </div>
       </div>
     </div>

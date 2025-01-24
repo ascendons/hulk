@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
-import Dashboard from "./app/Pages/Dashboard"; // Import Dashboard component
+import Dashboard from "./app/Pages/Dashboard"; // Ensure this import is correct
 import Signuppage from "./app/Pages/Signuppage";
 import Courses from "./app/Pages/Courses";
 import Students from "./app/Pages/Students";
@@ -19,13 +19,13 @@ import AddNotes from "./app/Pages/AddNotes";
 import Assignments from "./app/Pages/Assignments";
 import AddAssignment from "./app/Pages/AddAssignment";
 import AssignmentDetail from "./app/Components/AssignmentDetail";
+
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // Authentication state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   return (
     <BrowserRouter>
       <Routes>
-        {/* Signup Page */}
         <Route
           path="/signup"
           element={<Signuppage onLogin={() => setIsAuthenticated(true)} />}
@@ -51,8 +51,7 @@ function App() {
         <Route path="/add-notes" element={<AddNotes />} />
         <Route path="/assignments" element={<Assignments />} />
         <Route path="/add-assignment" element={<AddAssignment />} />
-        <Route path="/assignment/:id" element={<AssignmentDetail />} />{" "}
-        {/* Add this */}
+        <Route path="/assignment/:id" element={<AssignmentDetail />} />
       </Routes>
     </BrowserRouter>
   );

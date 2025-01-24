@@ -1,45 +1,134 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import {
+  LayoutDashboard,
+  Bell,
+  Calendar,
+  Users,
+  BookOpen,
+  ClipboardList,
+  FileText,
+  Notebook,
+  UserPlus,
+  BookmarkPlus,
+  BookPlus,
+} from "lucide-react";
 
 const Sidebar = () => {
   return (
-    <div className="h-screen  bg-gray-800 text-white p-4">
-      <h1 className="text-lg font-bold mb-4">Education Dashboard</h1>
-      <ul>
-        <li className="mb-4 hover:bg-gray-700 p-2 rounded">
-          <Link to="/home">Dashboard</Link>
+    <div className="h-screen bg-gray-800 text-white w-64 p-6 flex flex-col">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-xl font-bold flex items-center">
+          <LayoutDashboard className="mr-2 text-green-400" />
+          College Dashboard
+        </h1>
+      </div>
+
+      {/* Navigation Links */}
+      <ul className="flex-grow space-y-2">
+        <li>
+          <Link
+            to="/home"
+            className="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            <LayoutDashboard className="mr-3 text-green-400" />
+            Dashboard
+          </Link>
         </li>
-        <li className="mb-4 hover:bg-gray-700 p-2 rounded">
-          <Link to="/Notices">Notices</Link>
+        <li>
+          <Link
+            to="/Notices"
+            className="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            <Bell className="mr-3 text-green-400" />
+            Notices
+          </Link>
         </li>
-        <li className="mb-4 hover:bg-gray-700 p-2 rounded">
-          <Link to="/courses">Timetable</Link>
+        <li>
+          <Link
+            to="/courses"
+            className="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            <Calendar className="mr-3 text-green-400" />
+            Timetable
+          </Link>
         </li>
-        <li className="mb-4 hover:bg-gray-700 p-2 rounded">
-          <Link to="/students">Students</Link>
+        <li>
+          <Link
+            to="/students"
+            className="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            <Users className="mr-3 text-green-400" />
+            Students
+          </Link>
         </li>
-        <li className="mb-4 hover:bg-gray-700 p-2 rounded">
-          <Link to="/Teachers">Teachers</Link>
+        <li>
+          <Link
+            to="/Teachers"
+            className="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            <BookOpen className="mr-3 text-green-400" />
+            Teachers
+          </Link>
         </li>
-        <li className="mb-4 hover:bg-gray-700 p-2 rounded">
-          <Link to="/Attendance">Attendance</Link>
+        <li>
+          <Link
+            to="/Attendance"
+            className="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            <ClipboardList className="mr-3 text-green-400" />
+            Attendance
+          </Link>
         </li>
-        <li className="mb-4 hover:bg-gray-700 p-2 rounded">
-          <Link to="/Notes">Notes</Link>
+        <li>
+          <Link
+            to="/Notes"
+            className="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            <FileText className="mr-3 text-green-400" />
+            Notes
+          </Link>
         </li>
-        <li className="mb-4 hover:bg-gray-700 p-2 rounded">
-          <Link to="/assignments">Assignments</Link>
+        <li>
+          <Link
+            to="/assignments"
+            className="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            <Notebook className="mr-3 text-green-400" />
+            Assignments
+          </Link>
         </li>
-        <li className="mb-4 hover:bg-gray-700 p-2 rounded">
-          <Link to="/addstudent">addStudents</Link>
+        <li>
+          <Link
+            to="/addstudent"
+            className="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            <UserPlus className="mr-3 text-green-400" />
+            Add Students
+          </Link>
         </li>
-        <li className="mb-4 hover:bg-gray-700 p-2 rounded">
-          <Link to="/addteacher">AddTeacher</Link>
+        <li>
+          <Link
+            to="/addteacher"
+            className="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            <BookmarkPlus className="mr-3 text-green-400" />
+            Add Teacher
+          </Link>
         </li>
-        <li className="mb-4 hover:bg-gray-700 p-2 rounded">
-          <Link to="/Addsubjects">Add Subjects</Link>
+        <li>
+          <Link
+            to="/Addsubjects"
+            className="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            <BookPlus className="mr-3 text-green-400" />
+            Add Subjects
+          </Link>
         </li>
       </ul>
+
+  
     </div>
   );
 };
