@@ -1,24 +1,37 @@
 import React, { useState } from "react";
-import { doc, setDoc, getDoc } from "firebase/firestore";  
-import { db } from "../../config";  
-import Sidebar from "../Components/Sidebar";  
+import { doc, setDoc, getDoc } from "firebase/firestore";
+import { db } from "../../config";
+import Sidebar from "../Components/Sidebar";
 
 const EditTimetable = () => {
   const [day, setDay] = useState("");
+  const [department, setDepartment] = useState("");
+  const [division, setDivision] = useState("");
   const [location, setLocation] = useState("");
   const [subject, setSubject] = useState("");
   const [teacher, setTeacher] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false);  
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
 
   const handleSave = async () => {
-    if (!day || !location || !subject || !teacher || !startTime || !endTime) {
+    if (
+      !day ||
+      !department ||
+      !division ||
+      !location ||
+      !subject ||
+      !teacher ||
+      !startTime ||
+      !endTime
+    ) {
       alert("Please fill in all fields before saving!");
       return;
     }
 
     const timetableEntry = {
+      department,
+      division,
       location,
       subject,
       teacher,
@@ -26,7 +39,7 @@ const EditTimetable = () => {
     };
 
     try {
-      const dayDocRef = doc(db, `timetable/Bsc.IT/Third Year/${day}`);
+      const dayDocRef = doc(db, `timetable/${department}/${division}/${day}`);
       const dayDoc = await getDoc(dayDocRef);
 
       let lectures = [];
@@ -46,6 +59,8 @@ const EditTimetable = () => {
 
     // Clear fields after saving
     setDay("");
+    setDepartment("");
+    setDivision("");
     setLocation("");
     setSubject("");
     setTeacher("");
@@ -94,6 +109,34 @@ const EditTimetable = () => {
               <option value="Saturday">Saturday</option>
               <option value="Sunday">Sunday</option>
             </select>
+          </div>
+
+          {/* Department */}
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2">
+              Department
+            </label>
+            <input
+              type="text"
+              value={department}
+              onChange={(e) => setDepartment(e.target.value)}
+              placeholder="Enter Department"
+              className="w-full border rounded-lg py-2 px-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          {/* Division */}
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2">
+              Division
+            </label>
+            <input
+              type="text"
+              value={division}
+              onChange={(e) => setDivision(e.target.value)}
+              placeholder="Enter Division"
+              className="w-full border rounded-lg py-2 px-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
           </div>
 
           {/* Location */}
