@@ -1,75 +1,94 @@
 import React, { useState, useEffect } from "react";
 import { doc, setDoc, collection, getDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { db, storage } from "../../config"; // Adjust to your Firebase config path
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db, storage } from "../../config";
+import { ref, getDownloadURL, uploadBytes } from "firebase/storage";
+import FileUploadModal from "../Components/FileUploadModal";
+import Sidebar from "../Components/Sidebar";
 
 const CreateNotice = () => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]); // Array to store multiple files
   const [category, setCategory] = useState("");
-  const [tag, setTag] = useState("");
-  const [noticeBy, setNoticeBy] = useState(""); // For "Notice by"
+  const [noticeBy, setNoticeBy] = useState("Loading..."); // "Notice By" field with placeholder
   const [loading, setLoading] = useState(false);
+  const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false); // State for sidebar hover effect
 
-  // Fetch the current user's name from Firestore
+  // Fetch the current user's name using their UID
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchUserName = async () => {
       try {
         const auth = getAuth();
-        const userId = auth.currentUser?.uid; // Get the logged-in user's ID dynamically
-        if (!userId) {
-          console.error("User is not logged in");
+        const user = auth.currentUser;
+
+        if (!user) {
+          setNoticeBy("Guest"); // Fallback for unauthenticated users
           return;
         }
-        const userDoc = await getDoc(doc(db, "users", userId));
+
+        const userId = user.uid;
+        const userDocRef = doc(db, "users", userId); // Assuming the "users" collection uses UID as the document ID
+        const userDoc = await getDoc(userDocRef);
+
         if (userDoc.exists()) {
-          setNoticeBy(userDoc.data().name); // Set the user's name
+          const userData = userDoc.data();
+          setNoticeBy(userData.name || "Unknown"); // Update with the user's name
         } else {
-          console.error("User document not found");
+          setNoticeBy("Unknown");
         }
       } catch (error) {
-        console.error("Error fetching user:", error);
+        console.error("Error fetching user name:", error);
+        setNoticeBy("Error loading name");
       }
     };
 
-    fetchUser();
+    fetchUserName();
   }, []);
+
+  const handleFileUpload = async (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      // Upload to Firebase Storage
+      const storageRef = ref(storage, `notices/${selectedFile.name}`);
+      const uploadTask = await uploadBytes(storageRef, selectedFile);
+      const url = await getDownloadURL(uploadTask.ref);
+
+      setFiles((prevFiles) => [
+        ...prevFiles,
+        { name: selectedFile.name, type: selectedFile.type, url },
+      ]);
+      setIsFileUploadModalOpen(false); // Close the modal
+    }
+  };
+
+  const handleRemoveFile = (index) => {
+    setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      let fileURL = "";
-      if (file) {
-        // Upload file to Firebase Storage
-        const fileRef = ref(storage, `notices/${file.name}`);
-        await uploadBytes(fileRef, file);
-        fileURL = await getDownloadURL(fileRef);
-      }
-
-      // Add notice to Firestore
-      const newNotice = {
+      const noticeData = {
         title,
         content,
-        file: fileURL,
+        files: files.map((file) => file.url), // Save only URLs to Firestore
         category,
-        tag,
         createdAt: new Date().toISOString(),
-        noticeBy, // Include "Notice by" field
+        noticeBy,
       };
 
-      const noticeRef = doc(collection(db, "notices"));
-      await setDoc(noticeRef, newNotice);
-
+      await setDoc(doc(collection(db, "notices")), noticeData);
       alert("Notice created successfully!");
+
+      // Reset form
       setTitle("");
       setContent("");
-      setFile(null);
+      setFiles([]);
       setCategory("");
-      setTag("");
     } catch (error) {
       console.error("Error creating notice:", error);
       alert("Failed to create notice. Please try again.");
@@ -79,77 +98,160 @@ const CreateNotice = () => {
   };
 
   return (
-    <div className="flex justify-center items-center h-screen">
-      <div className="p-6 rounded-lg shadow-lg bg-white max-w-md w-full">
-        <h2 className="text-2xl font-bold mb-4">Create Notice</h2>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {/* Title */}
-          <label className="font-semibold">Title</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="p-2 border rounded"
-            placeholder="Enter title"
-            required
-          />
-
-          {/* Content */}
-          <label className="font-semibold">Content</label>
-          <textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="p-2 border rounded"
-            placeholder="Enter content"
-            required
-            rows="5"
-          ></textarea>
-
-          {/* File Upload */}
-          <label className="font-semibold">Upload File</label>
-          <input
-            type="file"
-            onChange={(e) => setFile(e.target.files[0])}
-            className="p-2 border rounded"
-          />
-
-          {/* Category Dropdown */}
-          <label className="font-semibold">Category</label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="p-2 border rounded"
-            required
-          >
-            <option value="" disabled>
-              Select category
-            </option>
-            <option value="announcement">Announcement</option>
-            <option value="event">Event</option>
-            <option value="news">News</option>
-          </select>
-
-          {/* Notice By Display */}
-          <label className="font-semibold">Notice By</label>
-          <input
-            type="text"
-            value={noticeBy || "Loading..."}
-            className="p-2 border rounded bg-gray-100"
-            readOnly
-          />
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            className={`p-2 bg-blue-500 text-white rounded ${
-              loading ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-600"
-            }`}
-            disabled={loading}
-          >
-            {loading ? "Submitting..." : "Submit"}
-          </button>
-        </form>
+    <div className="flex h-screen w-screen bg-gray-50 overflow-hidden">
+      {/* Sidebar */}
+      <div
+        onMouseEnter={() => setIsSidebarHovered(true)}
+        onMouseLeave={() => setIsSidebarHovered(false)}
+        className={`${
+          isSidebarHovered ? "w-64" : "w-16"
+        } bg-blue-800 text-white h-full transition-all duration-300 overflow-hidden`}
+      >
+        <Sidebar />
       </div>
+
+      {/* Main Content */}
+      <div className="flex-1 flex w-screen h-screen  overflow-y-auto">
+        <div className="bg-white shadow-lg rounded-2xl p-10 w-full   overflow-auto">
+          <h2 className="text-3xl font-bold mb-8  text-blue-600">
+            CREATE NOTICE
+          </h2>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Title */}
+            <div>
+              <label className="block text-lg text-gray-700 font-semibold mb-2">
+                Title
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Enter title"
+                className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              />
+            </div>
+
+            {/* Content */}
+            <div>
+              <label className="block text-lg text-gray-700 font-semibold mb-2">
+                Content
+              </label>
+              <textarea
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder="Enter content"
+                rows="5"
+                className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                required
+              ></textarea>
+            </div>
+
+            {/* File Upload */}
+            <div>
+              <label className="block text-lg text-gray-700 font-semibold mb-2">
+                Upload Files
+              </label>
+              <button
+                type="button"
+                onClick={() => setIsFileUploadModalOpen(true)}
+                className="px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600"
+              >
+                Upload File
+              </button>
+              <div className="mt-4 space-y-4">
+                {files.map((file, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between bg-gray-50 p-4 rounded-lg border"
+                  >
+                    <div>
+                      <a
+                        href={file.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 underline"
+                      >
+                        {file.name}
+                      </a>
+                      <p className="text-sm text-gray-500">{file.type}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveFile(index)}
+                      className="text-gray-500 hover:text-red-600"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={2}
+                        stroke="currentColor"
+                        className="w-5 h-5"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M6 18L18 6M6 6l12 12"
+                        />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Category */}
+            <div>
+              <label className="block text-lg text-gray-700 font-semibold mb-2">
+                Category
+              </label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full border rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
+              >
+                <option value="" disabled>
+                  Select category
+                </option>
+                <option value="announcement">Announcement</option>
+                <option value="event">Event</option>
+                <option value="news">News</option>
+              </select>
+            </div>
+
+            {/* Notice By */}
+            <div>
+              <label className="block text-lg text-gray-700 font-semibold mb-2">
+                Notice By
+              </label>
+              <input
+                type="text"
+                value={noticeBy}
+                className="w-full border rounded-lg px-4 py-3 bg-gray-100"
+                readOnly
+              />
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 transition duration-300 disabled:opacity-50"
+            >
+              {loading ? "Submitting..." : "Submit"}
+            </button>
+          </form>
+        </div>
+      </div>
+
+      {isFileUploadModalOpen && (
+        <FileUploadModal
+          onFileUpload={handleFileUpload}
+          onClose={() => setIsFileUploadModalOpen(false)}
+        />
+      )}
     </div>
   );
 };
