@@ -90,7 +90,7 @@ const Sidebar = () => {
             Notes
           </Link>
         </li>
-       
+
         <li>
           <Link
             to="/addstudent"
@@ -119,8 +119,6 @@ const Sidebar = () => {
           </Link>
         </li>
       </ul>
-
-  
     </div>
   );
 };

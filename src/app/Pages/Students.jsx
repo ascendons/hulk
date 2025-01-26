@@ -8,13 +8,13 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { db } from "../../config"; // Adjust the path based on your Firebase config file
+import { db } from "../../config"; // Adjust based on your Firebase config file path
 import Sidebar from "../Components/Sidebar"; // Import Sidebar component
 import { useNavigate } from "react-router-dom";
 
 const Students = () => {
   const [isSidebarHovered, setIsSidebarHovered] = useState(false); // State for Sidebar hover
-  const [showList, setShowList] = useState(false); // State to toggle ListStudents visibility
+  const [showList, setShowList] = useState(false); // State to toggle student list
   const [selectedClass, setSelectedClass] = useState(""); // State for selected class
   const [selectedDivision, setSelectedDivision] = useState(""); // State for selected division
   const [selectedYear, setSelectedYear] = useState(""); // State for selected year
@@ -23,8 +23,9 @@ const Students = () => {
   const [years, setYears] = useState([]); // State to store unique years
   const [students, setStudents] = useState([]); // State to store student data
   const [loading, setLoading] = useState(false); // State for loading indicator
-  const navigate = useNavigate(); // Navigation hook for routing
+  const navigate = useNavigate(); // Navigation hook
 
+  // Fetch user data and set default values
   useEffect(() => {
     const fetchUserData = async () => {
       const auth = getAuth();
@@ -48,11 +49,13 @@ const Students = () => {
     fetchUserData();
   }, []);
 
+  // Fetch dropdown options
   useEffect(() => {
     const fetchDropdownData = async () => {
       try {
         const querySnapshot = await getDocs(collection(db, "students"));
         const studentData = querySnapshot.docs.map((doc) => doc.data());
+
         const uniqueClasses = [
           ...new Set(studentData.map((item) => item.studentcourse)),
         ];
@@ -67,6 +70,7 @@ const Students = () => {
         setDivisions(uniqueDivisions);
         setYears(uniqueYears);
 
+        // Set default dropdown values
         if (!selectedClass) setSelectedClass(uniqueClasses[0] || "");
         if (!selectedDivision) setSelectedDivision(uniqueDivisions[0] || "");
         if (!selectedYear) setSelectedYear(uniqueYears[0] || "");
@@ -78,6 +82,7 @@ const Students = () => {
     fetchDropdownData();
   }, [selectedClass, selectedDivision, selectedYear]);
 
+  // Fetch students based on filters
   const fetchStudents = async () => {
     setLoading(true);
     try {
@@ -102,15 +107,16 @@ const Students = () => {
 
   const handleSeeListClick = () => {
     fetchStudents();
-    setShowList(!showList);
+    setShowList(true);
   };
 
   const handleProfileClick = (studentId) => {
-    navigate(`/profile/${studentId}`);
+    navigate(`/profile/${studentId}`); // Navigate to student profile
   };
 
   return (
     <div className="flex min-h-screen bg-gray-100">
+      {/* Sidebar */}
       <div
         onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}
@@ -121,9 +127,10 @@ const Students = () => {
         <Sidebar />
       </div>
 
+      {/* Main Content */}
       <div className="flex-1 p-6">
         <div className="bg-white p-4 rounded-lg shadow-md mb-6">
-          <h1 className="text-3xl font-bold mb-4">Select Class</h1>
+          <h1 className="text-3xl font-bold mb-8 text-blue-600">STUDENTS</h1>
           <div className="flex flex-wrap gap-4">
             <select
               value={selectedClass}
@@ -163,7 +170,7 @@ const Students = () => {
 
             <button
               onClick={handleSeeListClick}
-              className="bg-blue-500 text-white px-6 py-2 rounded-lg shadow-md hover:bg-blue-600"
+              className="bg-green-600 text-white px-6 py-2 rounded-lg shadow-md hover:bg-green-700"
             >
               SEE LIST
             </button>
@@ -197,7 +204,7 @@ const Students = () => {
                       <td className="py-2 px-4">
                         <button
                           onClick={() => handleProfileClick(student.id)}
-                          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
                         >
                           See Profile
                         </button>

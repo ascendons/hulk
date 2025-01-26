@@ -87,7 +87,9 @@ const Courses = () => {
       for (let day of daysOfWeek) {
         const docRef = doc(db, `timetable/Bsc.IT/${selectedCourse}/${day}`);
         const docSnap = await getDoc(docRef);
-        weekLectures[day] = docSnap.exists() ? docSnap.data().lectures || [] : [];
+        weekLectures[day] = docSnap.exists()
+          ? docSnap.data().lectures || []
+          : [];
       }
       setLectures(weekLectures);
       cacheLectures(selectedCourse, weekLectures); // Cache the fetched data
@@ -121,7 +123,7 @@ const Courses = () => {
       <div className="flex-1 p-6">
         <div className="flex justify-between items-center mb-6">
           <a href="/home">
-            <h1 className="text-3xl font-bold">Courses</h1>
+            <h1 className="text-3xl font-bold mb-8 text-blue-600">TIMETABLE</h1>
           </a>
           <div>
             <p className="text-xl text-gray-600">{`Today's Date: ${formattedDate}`}</p>
@@ -132,14 +134,14 @@ const Courses = () => {
         <div className="flex justify-between items-center mb-6">
           <button
             onClick={() => navigate("/edittimetable")}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
           >
             Edit Timetable
           </button>
           <div className="relative">
             <button
               onClick={toggleDropdown}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
             >
               {selectedCourse}
             </button>

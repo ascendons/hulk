@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../../config";  
-import Sidebar from "../Components/Sidebar";  
+import { db } from "../../config";
+import Sidebar from "../Components/Sidebar";
 
 const Notices = () => {
   const [notices, setNotices] = useState([]);
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false); 
-  const navigate = useNavigate();  
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+  const navigate = useNavigate();
 
   // Fetch data from Firestore
   useEffect(() => {
@@ -43,11 +43,11 @@ const Notices = () => {
       {/* Main Content */}
       <div className="flex-1 p-6 bg-gray-100 overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-bold">Notices</h1>
+          <h1 className="text-3xl font-bold mb-8 text-blue-600">NOTICES</h1>
           {/* Create Notice Button */}
           <button
             onClick={() => navigate("/create-notice")} // Navigate to CreateNotice.jsx
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
           >
             Create Notice
           </button>

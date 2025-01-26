@@ -1,12 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { db, storage } from "../../config";
-import {
-  collection,
-  addDoc,
-  getDoc,
-  doc,
-  updateDoc,
-} from "firebase/firestore";
+import { collection, addDoc, getDoc, doc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -71,22 +65,26 @@ const AddNotes = () => {
     setIsUploadModalOpen(false);
   }, []);
 
-  const handleYoutubeSubmit = useCallback((e) => {
-    e.preventDefault();
-    if (!youtubeLink) {
-      toast.error("Please provide a YouTube link.");
-      return;
-    }
+  const handleYoutubeSubmit = useCallback(
+    (e) => {
+      e.preventDefault();
+      if (!youtubeLink) {
+        toast.error("Please provide a YouTube link.");
+        return;
+      }
 
-    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/;
-    if (!youtubeRegex.test(youtubeLink)) {
-      toast.error("Please provide a valid YouTube link.");
-      return;
-    }
+      const youtubeRegex =
+        /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/;
+      if (!youtubeRegex.test(youtubeLink)) {
+        toast.error("Please provide a valid YouTube link.");
+        return;
+      }
 
-    toast.success("YouTube Link Added!");
-    setIsYoutubeModalOpen(false);
-  }, [youtubeLink]);
+      toast.success("YouTube Link Added!");
+      setIsYoutubeModalOpen(false);
+    },
+    [youtubeLink]
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -110,7 +108,8 @@ const AddNotes = () => {
           uploadTask.on(
             "state_changed",
             (snapshot) => {
-              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              const progress =
+                (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
               toast.update(toastId, { progress: progress });
             },
             (error) => {
@@ -192,7 +191,7 @@ const AddNotes = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-6 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto">
         <div className="bg-white shadow-lg rounded-lg p-8 max-w-4xl mx-auto">
           <h1 className="text-3xl font-bold text-blue-800 mb-8">
             {noteId ? "Edit Note" : "Add Note"}
@@ -213,7 +212,9 @@ const AddNotes = () => {
 
           {/* Description */}
           <div className="mb-6">
-            <label className="block text-gray-700 font-bold mb-2">Description</label>
+            <label className="block text-gray-700 font-bold mb-2">
+              Description
+            </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -226,7 +227,9 @@ const AddNotes = () => {
           {/* Department, Division, Year, Subject, Unit */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
-              <label className="block text-gray-700 font-bold mb-2">Department</label>
+              <label className="block text-gray-700 font-bold mb-2">
+                Department
+              </label>
               <select
                 value={department}
                 onChange={(e) => setDepartment(e.target.value)}
@@ -243,7 +246,9 @@ const AddNotes = () => {
             </div>
 
             <div>
-              <label className="block text-gray-700 font-bold mb-2">Division</label>
+              <label className="block text-gray-700 font-bold mb-2">
+                Division
+              </label>
               <select
                 value={division}
                 onChange={(e) => setDivision(e.target.value)}
@@ -276,7 +281,9 @@ const AddNotes = () => {
             </div>
 
             <div>
-              <label className="block text-gray-700 font-bold mb-2">Subject</label>
+              <label className="block text-gray-700 font-bold mb-2">
+                Subject
+              </label>
               <input
                 type="text"
                 value={subject}
@@ -302,7 +309,9 @@ const AddNotes = () => {
 
           {/* File and YouTube Links */}
           <div className="mb-6">
-            <label className="block text-gray-700 font-bold mb-2">Attachments</label>
+            <label className="block text-gray-700 font-bold mb-2">
+              Attachments
+            </label>
             <div className="flex space-x-4">
               <button
                 type="button"
@@ -325,7 +334,9 @@ const AddNotes = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-semibold text-gray-800">{file.name}</p>
-                    <p className="text-sm text-gray-500">{file.type || "Unknown"}</p>
+                    <p className="text-sm text-gray-500">
+                      {file.type || "Unknown"}
+                    </p>
                   </div>
                   <button
                     type="button"
@@ -401,10 +412,16 @@ const AddNotes = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition duration-300"
+              className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition duration-300"
               onClick={handleSubmit}
             >
-              {isLoading ? (noteId ? "Updating..." : "Submitting...") : noteId ? "Update" : "Submit"}
+              {isLoading
+                ? noteId
+                  ? "Updating..."
+                  : "Submitting..."
+                : noteId
+                ? "Update"
+                : "Submit"}
             </button>
           </div>
         </div>

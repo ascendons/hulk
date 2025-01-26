@@ -1,5 +1,13 @@
-import React, { useState } from "react";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import React, { useState, useEffect } from "react";
+import {
+  doc,
+  setDoc,
+  getDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore";
 import { db } from "../../config";
 import Sidebar from "../Components/Sidebar";
 
@@ -12,7 +20,38 @@ const EditTimetable = () => {
   const [teacher, setTeacher] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
+  const [subjects, setSubjects] = useState([]);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+
+  // Predefined options
+  const departments = ["Bsc.IT", "BCOM", "BMS"];
+  const divisions = ["A", "B", "C", "D"];
+
+  // Fetch subjects based on the selected department
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      if (!department) return;
+
+      try {
+        const q = query(
+          collection(db, "subjects"),
+          where("department", "==", department)
+        );
+
+        const querySnapshot = await getDocs(q);
+        const fetchedSubjects = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        setSubjects(fetchedSubjects);
+      } catch (error) {
+        console.error("Error fetching subjects:", error);
+      }
+    };
+
+    fetchSubjects();
+  }, [department]);
 
   const handleSave = async () => {
     if (
@@ -47,7 +86,6 @@ const EditTimetable = () => {
         lectures = dayDoc.data().lectures || [];
       }
 
-      // Add new lecture to existing lectures
       lectures.push(timetableEntry);
 
       await setDoc(dayDocRef, { lectures });
@@ -57,7 +95,6 @@ const EditTimetable = () => {
       alert("Failed to save timetable entry. Please try again.");
     }
 
-    // Clear fields after saving
     setDay("");
     setDepartment("");
     setDivision("");
@@ -69,7 +106,7 @@ const EditTimetable = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex h-screen w-screen bg-gray-100">
       {/* Sidebar */}
       <div
         onMouseEnter={() => setIsSidebarHovered(true)}
@@ -82,133 +119,150 @@ const EditTimetable = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center">
-        <div className="bg-white shadow-md rounded-lg p-8 w-96">
-          <h1 className="text-center text-2xl font-bold mb-6">
-            EDIT TIMETABLE
+      <div className="flex-1 flex w-screen h-screen ">
+        <div className="bg-white shadow-lg rounded-xl p-8 w-full ">
+          <h1 className=" text-4xl font-bold text-blue-700 mb-6">
+            Edit Timetable
           </h1>
 
           {/* Select Day */}
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Select Day
+            <label className="block text-gray-600 font-semibold mb-2">
+              Day
             </label>
             <select
               value={day}
               onChange={(e) => setDay(e.target.value)}
-              className="w-full border rounded-lg py-2 px-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="" disabled>
-                Choose Day
-              </option>
-              <option value="Monday">Monday</option>
-              <option value="Tuesday">Tuesday</option>
-              <option value="Wednesday">Wednesday</option>
-              <option value="Thursday">Thursday</option>
-              <option value="Friday">Friday</option>
-              <option value="Saturday">Saturday</option>
-              <option value="Sunday">Sunday</option>
+              <option value="">Select Day</option>
+              {[
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+                "Sunday",
+              ].map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
             </select>
           </div>
 
-          {/* Department */}
+          {/* Select Department */}
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
+            <label className="block text-gray-600 font-semibold mb-2">
               Department
             </label>
-            <input
-              type="text"
+            <select
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
-              placeholder="Enter Department"
-              className="w-full border rounded-lg py-2 px-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+              className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Department</option>
+              {departments.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {/* Division */}
+          {/* Select Division */}
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
+            <label className="block text-gray-600 font-semibold mb-2">
               Division
             </label>
-            <input
-              type="text"
+            <select
               value={division}
               onChange={(e) => setDivision(e.target.value)}
-              placeholder="Enter Division"
-              className="w-full border rounded-lg py-2 px-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+              className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Division</option>
+              {divisions.map((div) => (
+                <option key={div} value={div}>
+                  {div}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Location */}
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
+            <label className="block text-gray-600 font-semibold mb-2">
               Location
             </label>
             <input
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter Location"
-              className="w-full border rounded-lg py-2 px-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          {/* Subject */}
+          {/* Subject Dropdown */}
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
+            <label className="block text-gray-600 font-semibold mb-2">
               Subject
             </label>
-            <input
-              type="text"
+            <select
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              placeholder="Enter Subject"
-              className="w-full border rounded-lg py-2 px-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+              className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Select Subject</option>
+              {subjects.map((sub) => (
+                <option key={sub.id} value={sub.subjectName}>
+                  {sub.subjectName}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Teacher */}
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
+            <label className="block text-gray-600 font-semibold mb-2">
               Teacher
             </label>
             <input
               type="text"
               value={teacher}
               onChange={(e) => setTeacher(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Enter Teacher Name"
-              className="w-full border rounded-lg py-2 px-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           {/* Time Slot */}
           <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
+            <label className="block text-gray-600 font-semibold mb-2">
               Time Slot
             </label>
-            <div className="flex items-center space-x-2">
+            <div className="flex space-x-2">
               <input
                 type="time"
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-1/2 border rounded-lg py-2 px-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-1/2 border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <span className="text-gray-700">TO</span>
               <input
                 type="time"
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="w-1/2 border rounded-lg py-2 px-4 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-1/2 border border-gray-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
 
-          {/* Save Button */}
           <button
             onClick={handleSave}
-            className="w-full bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+            className="w-full bg-green-600 text-white font-bold py-2 rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
           >
-            Save
+            Save Timetable
           </button>
         </div>
       </div>

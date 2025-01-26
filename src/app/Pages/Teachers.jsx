@@ -1,43 +1,14 @@
 import React, { useState, useEffect } from "react";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  doc,
-  getDoc,
-} from "firebase/firestore";
-import { getAuth } from "firebase/auth";
-import { db } from "../../config";
+import { collection, query, where, getDocs } from "firebase/firestore";
 import Sidebar from "../Components/Sidebar";
+import { db } from "../../config";
 
 const Teachers = () => {
-  const [selectedDepartment, setSelectedDepartment] = useState("BSCIT");
+  const [selectedDepartment, setSelectedDepartment] = useState("Bsc.IT");
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-    const [isSidebarHovered, setIsSidebarHovered] = useState(false);
-  
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
-      if (currentUser) {
-        try {
-          const userDoc = await getDoc(
-            doc(db, "teachersinfo", currentUser.uid)
-          );
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-          }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-        }
-      }
-    };
-    fetchUserData();
-  }, []);
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
 
   const fetchTeachers = async () => {
     setLoading(true);
@@ -48,6 +19,7 @@ const Teachers = () => {
       );
 
       const querySnapshot = await getDocs(q);
+
       let fetchedTeachers = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -56,8 +28,12 @@ const Teachers = () => {
       if (searchTerm) {
         fetchedTeachers = fetchedTeachers.filter(
           (teacher) =>
-            teacher.teachername.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            teacher.teacheremail.toLowerCase().includes(searchTerm.toLowerCase())
+            teacher.teachername
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase()) ||
+            teacher.teacheremail
+              .toLowerCase()
+              .includes(searchTerm.toLowerCase())
         );
       }
 
@@ -73,10 +49,16 @@ const Teachers = () => {
     fetchTeachers();
   };
 
+  const handleViewProfile = (teacherId) => {
+    // Navigate to the teacher's profile page or display additional details
+    console.log("View profile for teacher ID:", teacherId);
+    alert(`View Profile for Teacher ID: ${teacherId}`);
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
-   
-        <div
+      {/* Sidebar */}
+      <div
         onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}
         className={`${
@@ -86,18 +68,17 @@ const Teachers = () => {
         <Sidebar />
       </div>
 
-      {/* Content Container */}
+      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Main Content Area */}
         <div className="flex-1 overflow-auto p-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold">Select Filters</h1>
+            <h1 className="text-3xl font-bold mb-8 text-blue-600">TEACHERS</h1>
             <select
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
               className="px-4 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="BSCIT">BSCIT</option>
+              <option value="Bsc.IT">Bsc.IT</option>
               <option value="BCOM">BCOM</option>
               <option value="BMS">BMS</option>
               <option value="BBA">BBA</option>
@@ -117,7 +98,7 @@ const Teachers = () => {
               />
               <button
                 onClick={handleSeeListClick}
-                className="bg-blue-600 text-white px-5 py-2 rounded-lg ml-5 hover:bg-blue-900"
+                className="bg-green-600 text-white px-5 py-2 rounded-lg ml-5 hover:bg-green-700"
               >
                 Fetch
               </button>
@@ -133,7 +114,7 @@ const Teachers = () => {
                   <th className="py-2 px-4 text-left">Name</th>
                   <th className="py-2 px-4 text-left">Email</th>
                   <th className="py-2 px-4 text-left">Phone</th>
-                  <th className="py-2 px-4 text-left">Actions</th>
+                  <th className="py-2 px-4 text-left">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -143,8 +124,11 @@ const Teachers = () => {
                     <td className="py-2 px-4">{teacher.teacheremail}</td>
                     <td className="py-2 px-4">{teacher.phonenumber}</td>
                     <td className="py-2 px-4">
-                      <button className="text-blue-500 hover:text-blue-700">
-                        👁️‍🗨️ View Profile
+                      <button
+                        onClick={() => handleViewProfile(teacher.id)}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                      >
+                        View Profile
                       </button>
                     </td>
                   </tr>

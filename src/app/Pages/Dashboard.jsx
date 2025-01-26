@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import Sidebar from "../Components/Sidebar";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db, auth } from "../../config";
-
+import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 const Dashboard = () => {
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [teacherInfo, setTeacherInfo] = useState({});
@@ -11,6 +12,7 @@ const Dashboard = () => {
   const [totalSubjects, setTotalSubjects] = useState(0);
   const [attendance, setAttendance] = useState(75); // Placeholder for attendance data
   const [notices, setNotices] = useState([]); // Notices state
+  const navigate = useNavigate(); // For navigation
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -80,7 +82,7 @@ const Dashboard = () => {
       <div className="flex-grow p-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-800">Dashboard</h1>
+          <h1 className="text-3xl font-bold mb-8 text-blue-600">Dashboard</h1>
           <p className="text-gray-600 mt-2">
             Welcome back, {teacherInfo.teachername || "Teacher"}!
           </p>
@@ -103,19 +105,28 @@ const Dashboard = () => {
           </div>
 
           {/* Edit Profile Button */}
-          <button className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors">
-            Edit Profile
-          </button>
+          <Link to="/view-profile">
+            <button
+              onClick={() => navigate("/edit-profile")}
+              className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
+            >
+              View Profile
+            </button>
+          </Link>
         </div>
 
         {/* Statistics Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
-            <h2 className="text-3xl font-bold text-blue-600">{totalStudents}</h2>
+            <h2 className="text-3xl font-bold text-blue-600">
+              {totalStudents}
+            </h2>
             <p className="text-gray-600 mt-2">Total Students</p>
           </div>
           <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
-            <h2 className="text-3xl font-bold text-green-600">{totalTeachers}</h2>
+            <h2 className="text-3xl font-bold text-green-600">
+              {totalTeachers}
+            </h2>
             <p className="text-gray-600 mt-2">Total Teachers</p>
           </div>
           <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
@@ -123,30 +134,46 @@ const Dashboard = () => {
             <p className="text-gray-600 mt-2">Total Subjects</p>
           </div>
           <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
-            <h2 className="text-3xl font-bold text-yellow-600">{attendance}%</h2>
+            <h2 className="text-3xl font-bold text-yellow-600">
+              {attendance}%
+            </h2>
             <p className="text-gray-600 mt-2">Attendance</p>
           </div>
         </div>
 
         {/* Quick Actions Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <button className="bg-blue-500 text-white px-6 py-4 rounded-lg font-bold hover:bg-blue-600 transition-colors">
+          <button
+            onClick={() => navigate("/courses")}
+            className="bg-blue-500 text-white px-6 py-4 rounded-lg font-bold hover:bg-blue-600 transition-colors"
+          >
             Timetable
           </button>
-          <button className="bg-green-500 text-white px-6 py-4 rounded-lg font-bold hover:bg-green-600 transition-colors">
+          <button
+            onClick={() => navigate("/Attendance")}
+            className="bg-green-500 text-white px-6 py-4 rounded-lg font-bold hover:bg-green-600 transition-colors"
+          >
             Attendance
           </button>
-          <button className="bg-purple-500 text-white px-6 py-4 rounded-lg font-bold hover:bg-purple-600 transition-colors">
+          <button
+            onClick={() => navigate("/Notes")}
+            className="bg-purple-500 text-white px-6 py-4 rounded-lg font-bold hover:bg-purple-600 transition-colors"
+          >
             Notes
           </button>
-          <button className="bg-orange-500 text-white px-6 py-4 rounded-lg font-bold hover:bg-orange-600 transition-colors">
+          <button
+            onClick={() => navigate("/assignment/:id")}
+            className="bg-orange-500 text-white px-6 py-4 rounded-lg font-bold hover:bg-orange-600 transition-colors"
+          >
             Assignments
           </button>
         </div>
 
         {/* Notice Board Section */}
         <div className="bg-white shadow-lg rounded-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Notice Board</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            Notice Board
+          </h2>
           {notices.length > 0 ? (
             <ul className="space-y-4">
               {notices.map((notice) => (
