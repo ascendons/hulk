@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom"; 
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../../config";
-import Sidebar from "../Components/Sidebar";
+import { db } from "../../config";  
+import Sidebar from "../Components/Sidebar";  
 
 const Notices = () => {
   const [notices, setNotices] = useState([]);
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
-  const navigate = useNavigate();
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false); 
+  const navigate = useNavigate();  
 
   // Fetch data from Firestore
   useEffect(() => {
@@ -28,75 +28,70 @@ const Notices = () => {
   }, []);
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen">
       {/* Sidebar */}
       <div
         onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}
         className={`${
           isSidebarHovered ? "w-64" : "w-16"
-        } bg-blue-800 text-white h-full transition-all duration-300 overflow-hidden`}
+        } bg-blue-800 text-white h-screen transition-all duration-300 overflow-hidden`}
       >
         <Sidebar />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-6 overflow-y-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold mb-8  text-blue-600">NOTICES</h1>
+      <div className="flex-1 p-6 bg-gray-100 overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-bold">Notices</h1>
           {/* Create Notice Button */}
           <button
-            onClick={() => navigate("/create-notice")}
-            className="px-6 py-3 bg-orange-500 text-white text-sm font-semibold rounded-lg shadow hover:bg-orange-600 transition"
+            onClick={() => navigate("/create-notice")} // Navigate to CreateNotice.jsx
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
           >
             Create Notice
           </button>
         </div>
 
-        {notices.length === 0 ? (
-          <p className="text-gray-500 text-center">No notices available.</p>
-        ) : (
-          notices.map((notice, index) => (
-            <div
-              key={index}
-              className="bg-white shadow rounded-lg p-6 mb-6 border border-gray-200"
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h2 className="text-lg font-bold text-blue-600">
-                    {notice.title}
-                  </h2>
-                  <p className="text-large text-red-500">
-                    By: {notice.noticeBy || "Unknown"}
-                  </p>
-                </div>
-                <div className="text-large text-gray-400 text-right">
-                  <p>{new Date(notice.createdAt).toLocaleDateString()}</p>
-                  <p>{new Date(notice.createdAt).toLocaleTimeString()}</p>
-                </div>
-              </div>
-              <p className="mb-4 text-gray-700">
-                <strong className="text-blue-600">Content:</strong>{" "}
-                {notice.content}
-              </p>
+        {notices.map((notice, index) => (
+          <div
+            key={index}
+            className="bg-white shadow-md rounded-md p-4 mb-4 border border-gray-300"
+          >
+            <div className="flex justify-between items-center mb-2">
               <div>
-                <strong className="text-blue-600">Attachments:</strong>{" "}
-                {notice.file ? (
-                  <a
-                    href={notice.file}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-500 underline hover:text-blue-700"
-                  >
-                    Download File
-                  </a>
-                ) : (
-                  <span className="text-gray-500">No attachments</span>
-                )}
+                <h2 className="text-lg font-bold">
+                  Title: {notice.title}{" "}
+                  <span className="text-gray-500">
+                    By:{notice.noticeBy || "Unknown"}
+                  </span>
+                </h2>
+              </div>
+              <div className="text-sm text-gray-500">
+                <p>Date: {new Date(notice.createdAt).toLocaleDateString()}</p>
+                <p>Time: {new Date(notice.createdAt).toLocaleTimeString()}</p>
               </div>
             </div>
-          ))
-        )}
+            <p className="mb-2 text-gray-700">
+              <strong>Content:</strong> {notice.content}
+            </p>
+            <p>
+              <strong>Attachments:</strong>{" "}
+              {notice.file ? (
+                <a
+                  href={notice.file}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 underline hover:text-blue-700"
+                >
+                  Download File
+                </a>
+              ) : (
+                "No attachments"
+              )}
+            </p>
+          </div>
+        ))}
       </div>
     </div>
   );

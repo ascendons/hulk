@@ -1,41 +1,67 @@
 import React, { useState, useEffect } from "react";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+} from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { db } from "../../config";
 import Sidebar from "../Components/Sidebar";
 
 const Teachers = () => {
-  const [selectedDepartment, setSelectedDepartment] = useState("Bsc.IT");
+  const [selectedDepartment, setSelectedDepartment] = useState("BSCIT");
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+    const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+  
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        try {
+          const userDoc = await getDoc(
+            doc(db, "teachersinfo", currentUser.uid)
+          );
+          if (userDoc.exists()) {
+            const userData = userDoc.data();
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+        }
+      }
+    };
+    fetchUserData();
+  }, []);
 
   const fetchTeachers = async () => {
     setLoading(true);
     try {
-      // Firestore query for the selected department
-      const q = query(
+      let q = query(
         collection(db, "teachersinfo"),
         where("department", "==", selectedDepartment)
       );
 
       const querySnapshot = await getDocs(q);
-
-      const fetchedTeachers = querySnapshot.docs.map((doc) => ({
+      let fetchedTeachers = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
 
-      // Filter teachers based on the search term
-      const filteredTeachers = fetchedTeachers.filter(
-        (teacher) =>
-          teacher.teachername
-            .toLowerCase()
-            .includes(searchTerm.toLowerCase()) ||
-          teacher.teacheremail.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+      if (searchTerm) {
+        fetchedTeachers = fetchedTeachers.filter(
+          (teacher) =>
+            teacher.teachername.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            teacher.teacheremail.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+      }
 
-      setTeachers(filteredTeachers);
+      setTeachers(fetchedTeachers);
     } catch (error) {
       console.error("Error fetching teachers:", error);
     } finally {
@@ -43,15 +69,14 @@ const Teachers = () => {
     }
   };
 
-  useEffect(() => {
-    // Fetch teachers on component mount or department change
+  const handleSeeListClick = () => {
     fetchTeachers();
-  }, [selectedDepartment, searchTerm]);
+  };
 
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
-      <div
+   
+        <div
         onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}
         className={`${
@@ -61,18 +86,18 @@ const Teachers = () => {
         <Sidebar />
       </div>
 
-      {/* Main Content */}
+      {/* Content Container */}
       <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Main Content Area */}
         <div className="flex-1 overflow-auto p-6">
-          {/* Department Selector */}
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-4xl font-bold text-blue-600">TEACHERS</h1>
+            <h1 className="text-3xl font-bold">Select Filters</h1>
             <select
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}
               className="px-4 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="Bsc.IT">Bsc.IT</option>
+              <option value="BSCIT">BSCIT</option>
               <option value="BCOM">BCOM</option>
               <option value="BMS">BMS</option>
               <option value="BBA">BBA</option>
@@ -80,7 +105,6 @@ const Teachers = () => {
             </select>
           </div>
 
-          {/* Search & Filter */}
           <div className="bg-white border rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4">Search & Filter</h2>
             <div className="flex items-center">
@@ -92,7 +116,7 @@ const Teachers = () => {
                 className="px-4 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
               />
               <button
-                onClick={fetchTeachers}
+                onClick={handleSeeListClick}
                 className="bg-blue-600 text-white px-5 py-2 rounded-lg ml-5 hover:bg-blue-900"
               >
                 Fetch
@@ -100,7 +124,6 @@ const Teachers = () => {
             </div>
           </div>
 
-          {/* Teachers Table */}
           {loading ? (
             <p>Loading...</p>
           ) : teachers.length > 0 ? (
@@ -120,11 +143,8 @@ const Teachers = () => {
                     <td className="py-2 px-4">{teacher.teacheremail}</td>
                     <td className="py-2 px-4">{teacher.phonenumber}</td>
                     <td className="py-2 px-4">
-                      <button
-                        onClick={() => console.log("View Profile", teacher.id)}
-                        className="px-4 py-2 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 transition duration-200"
-                      >
-                        View Profile
+                      <button className="text-blue-500 hover:text-blue-700">
+                        👁️‍🗨️ View Profile
                       </button>
                     </td>
                   </tr>

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom"; // Import Link for navigation
 import Sidebar from "../Components/Sidebar";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db, auth } from "../../config";
@@ -65,158 +64,116 @@ const Dashboard = () => {
   }, []);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Sidebar */}
       <div
         onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}
         className={`${
           isSidebarHovered ? "w-64" : "w-16"
-        } bg-blue-800 text-white h-full transition-all duration-300 overflow-hidden`}
+        } bg-blue-800 text-white h-screen transition-all duration-300 overflow-hidden`}
       >
         <Sidebar />
       </div>
 
       {/* Main Content */}
-      <div className="flex-grow grid grid-cols-1 lg:grid-cols-3 gap-6 p-8">
-        {/* Left Section */}
-        <div className="lg:col-span-2 overflow-hidden">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-blue-600">DASHBOARD</h1>
-            <p className="text-gray-600 mt-2 text-XL">
-              <p className="text-red-600 mt-2 text-large">Welcome back</p>
-              {teacherInfo.teachername || "Teacher"}
+      <div className="flex-grow p-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-800">Dashboard</h1>
+          <p className="text-gray-600 mt-2">
+            Welcome back, {teacherInfo.teachername || "Teacher"}!
+          </p>
+        </div>
+
+        {/* Profile Section */}
+        <div className="bg-white shadow-lg rounded-lg p-6 mb-8 flex items-center">
+          {/* Profile Picture Placeholder */}
+          <div className="w-20 h-20 bg-gray-300 rounded-full mr-6 border-4 border-blue-500"></div>
+
+          {/* Teacher Info */}
+          <div className="flex-grow">
+            <h2 className="text-2xl font-bold text-gray-800">
+              {teacherInfo.teachername || "Teacher Name"}
+            </h2>
+            <p className="text-gray-600 font-semibold">
+              Department: {teacherInfo.department || "Department"}
             </p>
+            <p className="text-gray-600">{teacherInfo.role || "Role"}</p>
           </div>
 
-          {/* Profile Section */}
-          <div className="bg-white shadow-lg rounded-lg p-6 mb-8 flex items-center">
-            {/* Profile Picture Placeholder */}
-            <div className="w-20 h-20 bg-gray-300 rounded-full mr-6 border-4 border-blue-500"></div>
+          {/* Edit Profile Button */}
+          <button className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors">
+            Edit Profile
+          </button>
+        </div>
 
-            {/* Teacher Info */}
-            <div className="flex-grow">
-              <h2 className="text-2xl font-bold text-gray-800">
-                {teacherInfo.teachername || "Teacher Name"}
-              </h2>
-              <p className="text-gray-600 font-semibold">
-                Department: {teacherInfo.department || "Department"}
-              </p>
-              <p className="text-gray-600">{teacherInfo.role || "Role"}</p>
-            </div>
-
-            {/* Edit Profile Button */}
-            <Link to="/edit-profile">
-              <button className="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600 transition-colors">
-                Edit Profile
-              </button>
-            </Link>
+        {/* Statistics Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
+            <h2 className="text-3xl font-bold text-blue-600">{totalStudents}</h2>
+            <p className="text-gray-600 mt-2">Total Students</p>
           </div>
-
-          {/* Statistics Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
-              <h2 className="text-3xl font-bold text-blue-600">
-                {totalStudents}
-              </h2>
-              <p className="text-gray-600 mt-2">Total Students</p>
-            </div>
-            <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
-              <h2 className="text-3xl font-bold text-green-600">
-                {totalTeachers}
-              </h2>
-              <p className="text-gray-600 mt-2">Total Teachers</p>
-            </div>
-            <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
-              <h2 className="text-3xl font-bold text-red-600">
-                {totalSubjects}
-              </h2>
-              <p className="text-gray-600 mt-2">Total Subjects</p>
-            </div>
-            <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
-              <h2 className="text-3xl font-bold text-yellow-600">
-                {attendance}%
-              </h2>
-              <p className="text-gray-600 mt-2">Attendance</p>
-            </div>
+          <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
+            <h2 className="text-3xl font-bold text-green-600">{totalTeachers}</h2>
+            <p className="text-gray-600 mt-2">Total Teachers</p>
           </div>
-
-          {/* Quick Actions Section */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <Link
-              to="/edittimetable"
-              className="bg-blue-500 text-white px-6 py-4 rounded-lg font-bold text-center hover:bg-blue-600 transition-colors"
-            >
-              Timetable
-            </Link>
-            <Link
-              to="/attendance"
-              className="bg-green-500 text-white px-6 py-4 rounded-lg font-bold text-center hover:bg-green-600 transition-colors"
-            >
-              Attendance
-            </Link>
-            <Link
-              to="/notes"
-              className="bg-purple-500 text-white px-6 py-4 rounded-lg font-bold text-center hover:bg-purple-600 transition-colors"
-            >
-              Notes
-            </Link>
-            <Link
-              to="/assignments"
-              className="bg-yellow-500 text-white px-6 py-4 rounded-lg font-bold text-center hover:bg-yellow-600 transition-colors"
-            >
-              Assignments
-            </Link>
+          <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
+            <h2 className="text-3xl font-bold text-red-600">{totalSubjects}</h2>
+            <p className="text-gray-600 mt-2">Total Subjects</p>
+          </div>
+          <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
+            <h2 className="text-3xl font-bold text-yellow-600">{attendance}%</h2>
+            <p className="text-gray-600 mt-2">Attendance</p>
           </div>
         </div>
 
-        {/* Right Section (Notice Board) */}
-        <div>
-          <div>
-            <div className="bg-white shadow-lg rounded-lg p-6 h-Screen">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                Notice Board
-              </h2>
-              {notices.length > 0 ? (
-                <div className="space-y-6 overflow-hidden">
-                  {notices.map((notice) => (
-                    <div
-                      key={notice.id}
-                      className="bg-gray-100 shadow-md rounded-lg p-4 border border-gray-300"
+        {/* Quick Actions Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <button className="bg-blue-500 text-white px-6 py-4 rounded-lg font-bold hover:bg-blue-600 transition-colors">
+            Timetable
+          </button>
+          <button className="bg-green-500 text-white px-6 py-4 rounded-lg font-bold hover:bg-green-600 transition-colors">
+            Attendance
+          </button>
+          <button className="bg-purple-500 text-white px-6 py-4 rounded-lg font-bold hover:bg-purple-600 transition-colors">
+            Notes
+          </button>
+          <button className="bg-orange-500 text-white px-6 py-4 rounded-lg font-bold hover:bg-orange-600 transition-colors">
+            Assignments
+          </button>
+        </div>
+
+        {/* Notice Board Section */}
+        <div className="bg-white shadow-lg rounded-lg p-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Notice Board</h2>
+          {notices.length > 0 ? (
+            <ul className="space-y-4">
+              {notices.map((notice) => (
+                <li key={notice.id} className="border-b pb-4 last:border-b-0">
+                  <h3 className="text-lg font-semibold text-blue-600">
+                    {notice.title}
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-2">
+                    By: {notice.author}
+                  </p>
+                  <p className="text-gray-800">{notice.content}</p>
+                  {notice.attachment && (
+                    <a
+                      href={notice.attachment}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 underline block mt-2"
                     >
-                      <h3 className="text-lg font-bold text-gray-900">
-                        Title: {notice.title}
-                      </h3>
-                      <p className="text-sm text-gray-600 mt-1">
-                        By: {notice.noticeBy}
-                      </p>
-                      <p className="text-base text-gray-800 mt-2">
-                        Content: {notice.content || "No content available."}
-                      </p>
-                      <hr className="my-4" />
-                      <p className="font-semibold text-gray-700">
-                        {notice.attachment ? (
-                          <a
-                            href={notice.attachment}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-500 underline"
-                          >
-                            View Attachment
-                          </a>
-                        ) : (
-                          "No Attachments"
-                        )}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-600">No notices available.</p>
-              )}
-            </div>
-          </div>
+                      View Attachment
+                    </a>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-gray-600">No notices available.</p>
+          )}
         </div>
       </div>
     </div>

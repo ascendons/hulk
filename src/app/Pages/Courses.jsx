@@ -37,14 +37,14 @@ const Courses = () => {
 
   const renderSkeleton = () => {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
         {daysOfWeek.map((day, idx) => (
           <div
             key={idx}
-            className="border rounded-lg bg-gray-200 p-4 h-32 animate-pulse"
+            className="border rounded-lg bg-gray-200 p-4 h-24 animate-pulse"
           >
-            <div className="h-6 bg-gray-300 rounded w-3/4 mb-4"></div>
-            <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+            <div className="h-4 bg-gray-300 rounded w-1/2 mb-4"></div>
+            <div className="h-3 bg-gray-300 rounded w-3/4"></div>
           </div>
         ))}
       </div>
@@ -58,7 +58,7 @@ const Courses = () => {
       if (expiry > Date.now()) {
         return data;
       } else {
-        localStorage.removeItem(`lectures-${course}`);
+        localStorage.removeItem(`lectures-${course}`); // Remove expired data
       }
     }
     return null;
@@ -87,12 +87,10 @@ const Courses = () => {
       for (let day of daysOfWeek) {
         const docRef = doc(db, `timetable/Bsc.IT/${selectedCourse}/${day}`);
         const docSnap = await getDoc(docRef);
-        weekLectures[day] = docSnap.exists()
-          ? docSnap.data().lectures || []
-          : [];
+        weekLectures[day] = docSnap.exists() ? docSnap.data().lectures || [] : [];
       }
       setLectures(weekLectures);
-      cacheLectures(selectedCourse, weekLectures);
+      cacheLectures(selectedCourse, weekLectures); // Cache the fetched data
     } catch (error) {
       console.error("Error fetching lectures:", error);
     }
@@ -109,62 +107,78 @@ const Courses = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-100">
       <div
         onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}
         className={`${
           isSidebarHovered ? "w-64" : "w-16"
-        } bg-blue-800 text-white h-full transition-all duration-300 overflow-hidden`}
+        } bg-blue-800 text-white h-screen transition-all duration-300 overflow-hidden`}
       >
         <Sidebar />
       </div>
 
       <div className="flex-1 p-6">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold text-blue-600">Timetable</h1>
-          <p className="text-lg text-gray-600">{`Today: ${formattedDate}`}</p>
+        <div className="flex justify-between items-center mb-6">
+          <a href="/home">
+            <h1 className="text-3xl font-bold">Courses</h1>
+          </a>
+          <div>
+            <p className="text-xl text-gray-600">{`Today's Date: ${formattedDate}`}</p>
+          </div>
         </div>
 
-        {/* Dropdown and Edit Timetable */}
-        <div className="flex justify-between items-center mb-8">
+        {/* Dropdown and Edit Timetable Button */}
+        <div className="flex justify-between items-center mb-6">
           <button
             onClick={() => navigate("/edittimetable")}
-            className="px-6 py-3 bg-orange-500 text-white rounded-lg shadow hover:bg-orange-600"
+            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
           >
             Edit Timetable
           </button>
           <div className="relative">
             <button
               onClick={toggleDropdown}
-              className="px-6 py-3 bg-orange-500 text-white rounded-lg shadow hover:bg-orange-600"
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
             >
               {selectedCourse}
             </button>
             {isDropdownOpen && (
-              <ul className="absolute mt-2 bg-white border rounded-lg shadow-lg w-40 z-10">
-                {["All Courses", "First Year", "Second Year", "Third Year"].map(
-                  (course, idx) => (
-                    <li
-                      key={idx}
-                      className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                      onClick={() => handleCourseChange(course)}
-                    >
-                      {course}
-                    </li>
-                  )
-                )}
+              <ul className="absolute mt-2 bg-white border rounded-md shadow-md w-40 z-10">
+                <li
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  onClick={() => handleCourseChange("All Courses")}
+                >
+                  All Courses
+                </li>
+                <li
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  onClick={() => handleCourseChange("First Year")}
+                >
+                  First Year
+                </li>
+                <li
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  onClick={() => handleCourseChange("Second Year")}
+                >
+                  Second Year
+                </li>
+                <li
+                  className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                  onClick={() => handleCourseChange("Third Year")}
+                >
+                  Third Year
+                </li>
               </ul>
             )}
           </div>
         </div>
 
-        {/* Weekly Timetable */}
+        {/* Weekly Timetable or Skeleton Loader */}
         {loading ? (
           renderSkeleton()
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
             {daysOfWeek.map((day) => {
               const lecturesForDay = lectures[day] || [];
               return (
@@ -172,23 +186,23 @@ const Courses = () => {
                   key={day}
                   className="border rounded-lg bg-white shadow-md p-4 flex flex-col"
                 >
-                  <h2 className="text-lg font-bold text-center text-gray-700 mb-2">
-                    {day}
-                  </h2>
+                  <h2 className="text-lg font-bold text-center">{day}</h2>
                   {lecturesForDay.length > 0 ? (
                     lecturesForDay.map((lecture, idx) => (
                       <div
                         key={idx}
-                        className="text-sm bg-green-100 p-3 rounded-lg mb-2"
+                        className="text-sm bg-green-100 p-2 rounded-lg mb-2"
                       >
                         <strong>{lecture.timeSlot}</strong> - {lecture.subject}
-                        <p className="text-gray-600 text-xs">
+                        <div className="text-gray-600">
                           {lecture.teacher} ({lecture.location})
-                        </p>
+                        </div>
                       </div>
                     ))
                   ) : (
-                    <p className="text-center text-gray-500">No lectures</p>
+                    <p className="text-center text-gray-500 text-sm">
+                      No lectures
+                    </p>
                   )}
                 </div>
               );

@@ -19,7 +19,6 @@ import AddNotes from "./app/Pages/AddNotes";
 import Assignments from "./app/Pages/Assignments";
 import AddAssignment from "./app/Pages/AddAssignment";
 import AssignmentDetail from "./app/Components/AssignmentDetail";
-import TeacherEditProfile from "./app/Components/TeacherEditprofile";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -50,10 +49,9 @@ function App() {
         <Route path="Notes" element={<Notes />} />
         <Route path="/subject/:subjectName" element={<SubjectDetails />} />
         <Route path="/add-notes" element={<AddNotes />} />
-        // <Route path="/assignments" element={<Assignments />} />
+      //  <Route path="/assignments" element={<Assignments />} />
         <Route path="/add-assignment" element={<AddAssignment />} />
         <Route path="/assignment/:id" element={<AssignmentDetail />} />
-        <Route path="/edit-profile" element={<TeacherEditProfile />} />
       </Routes>
     </BrowserRouter>
   );
