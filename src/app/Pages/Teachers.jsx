@@ -13,7 +13,9 @@ const Teachers = () => {
   const fetchTeachers = async () => {
     setLoading(true);
     try {
-      let q = query(
+      console.log("Fetching teachers for department:", selectedDepartment);
+
+      const q = query(
         collection(db, "teachersinfo"),
         where("department", "==", selectedDepartment)
       );
@@ -24,6 +26,8 @@ const Teachers = () => {
         id: doc.id,
         ...doc.data(),
       }));
+
+      console.log("Fetched teachers before filtering:", fetchedTeachers);
 
       if (searchTerm) {
         fetchedTeachers = fetchedTeachers.filter(
@@ -37,6 +41,7 @@ const Teachers = () => {
         );
       }
 
+      console.log("Fetched teachers after filtering:", fetchedTeachers);
       setTeachers(fetchedTeachers);
     } catch (error) {
       console.error("Error fetching teachers:", error);
@@ -50,10 +55,13 @@ const Teachers = () => {
   };
 
   const handleViewProfile = (teacherId) => {
-    // Navigate to the teacher's profile page or display additional details
     console.log("View profile for teacher ID:", teacherId);
     alert(`View Profile for Teacher ID: ${teacherId}`);
   };
+
+  useEffect(() => {
+    fetchTeachers();
+  }, [selectedDepartment]);
 
   return (
     <div className="flex h-screen bg-gray-100">

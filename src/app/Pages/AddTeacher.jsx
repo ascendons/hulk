@@ -17,9 +17,15 @@ const AddTeacher = () => {
     role: "",
   });
 
-  const [departments, setDepartments] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
+
+  // Hardcoded department options
+  const departmentOptions = [
+    { value: "Bsc.IT", label: "Bsc.IT" },
+    { value: "BCOM", label: "BCOM" },
+    { value: "BMS", label: "BMS" },
+  ];
 
   const roleOptions = [
     { value: "Admin", label: "Admin" },
@@ -33,23 +39,6 @@ const AddTeacher = () => {
     { value: "C", label: "C" },
     { value: "D", label: "D" },
   ];
-
-  useEffect(() => {
-    const fetchDepartments = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, "departments"));
-        const departmentList = querySnapshot.docs.map((doc) => ({
-          value: doc.data().departmentName,
-          label: doc.data().departmentName,
-        }));
-        setDepartments(departmentList);
-      } catch (error) {
-        console.error("Error fetching departments:", error);
-      }
-    };
-
-    fetchDepartments();
-  }, []);
 
   useEffect(() => {
     if (formData.department) {
@@ -73,7 +62,7 @@ const AddTeacher = () => {
 
       fetchSubjects();
     } else {
-      setSubjects([]);
+      setSubjects([]); // Reset subjects when no department is selected
     }
   }, [formData.department]);
 
@@ -113,6 +102,11 @@ const AddTeacher = () => {
       return;
     }
 
+    if (formData.password.length < 6) {
+      alert("Password must be at least 6 characters long.");
+      return;
+    }
+
     try {
       const teacherData = {
         ...formData,
@@ -142,7 +136,7 @@ const AddTeacher = () => {
   };
 
   return (
-    <div className="flex flex-col  bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 p-6">
+    <div className="flex flex-col bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 p-6">
       <div className="bg-white p-8 rounded-2xl shadow-2xl h-screen w-full ">
         <h2 className="text-3xl font-bold text-center mb-6 text-blue-600">
           Add Teacher
@@ -151,7 +145,6 @@ const AddTeacher = () => {
           <div className="grid grid-cols-2 gap-6">
             {/* Left Section */}
             <div>
-              {/* Name Field */}
               <div className="mb-5">
                 <label
                   htmlFor="name"
@@ -171,7 +164,6 @@ const AddTeacher = () => {
                 />
               </div>
 
-              {/* Teacher ID Field */}
               <div className="mb-5">
                 <label
                   htmlFor="teacherId"
@@ -191,7 +183,6 @@ const AddTeacher = () => {
                 />
               </div>
 
-              {/* Email Field */}
               <div className="mb-5">
                 <label
                   htmlFor="email"
@@ -211,7 +202,25 @@ const AddTeacher = () => {
                 />
               </div>
 
-              {/* Phone */}
+              <div className="mb-5">
+                <label
+                  htmlFor="password"
+                  className="block text-gray-700 font-medium mb-2"
+                >
+                  Password
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  className="w-full px-4 py-2 border rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter a password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  required
+                />
+              </div>
+
               <div className="mb-5">
                 <label
                   htmlFor="phone"
@@ -232,9 +241,7 @@ const AddTeacher = () => {
               </div>
             </div>
 
-            {/* Right Section */}
             <div>
-              {/* Department */}
               <div className="mb-5">
                 <label
                   htmlFor="department"
@@ -243,8 +250,10 @@ const AddTeacher = () => {
                   Department
                 </label>
                 <Select
-                  options={departments}
-                  value={formData.department}
+                  options={departmentOptions}
+                  value={departmentOptions.find(
+                    (option) => option.value === formData.department
+                  )}
                   onChange={(value) =>
                     handleDropdownChange("department", value.value)
                   }
@@ -253,7 +262,6 @@ const AddTeacher = () => {
                 />
               </div>
 
-              {/* Divisions */}
               <div className="mb-5">
                 <label
                   htmlFor="divisions"
@@ -271,7 +279,6 @@ const AddTeacher = () => {
                 />
               </div>
 
-              {/* Subjects */}
               <div className="mb-5">
                 <label
                   htmlFor="subjects"
@@ -292,7 +299,6 @@ const AddTeacher = () => {
                 />
               </div>
 
-              {/* Role */}
               <div className="mb-5">
                 <label
                   htmlFor="role"
@@ -311,7 +317,6 @@ const AddTeacher = () => {
             </div>
           </div>
 
-          {/* Submit Button */}
           <div className="flex justify-center">
             <button
               type="submit"
