@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import Select from "react-select";
 import { collection, getDocs, addDoc } from "firebase/firestore";
 import { db } from "../../config";
+import { DEPARTMENTS , ROLE, DIVISIONS} from "../constants";
 
 const AddTeacher = () => {
   const [formData, setFormData] = useState({
@@ -20,25 +21,22 @@ const AddTeacher = () => {
   const [subjects, setSubjects] = useState([]);
   const [loadingSubjects, setLoadingSubjects] = useState(false);
 
-  // Hardcoded department options
-  const departmentOptions = [
-    { value: "Bsc.IT", label: "Bsc.IT" },
-    { value: "BCOM", label: "BCOM" },
-    { value: "BMS", label: "BMS" },
-  ];
-
+  const departmentOptions = DEPARTMENTS.map((dept) => ({
+    value: dept,
+    label: dept,
+  }));
+  
   const roleOptions = [
     { value: "Admin", label: "Admin" },
     { value: "Teacher", label: "Teacher" },
     { value: "Coordinator", label: "Coordinator" },
   ];
 
-  const divisionOptions = [
-    { value: "A", label: "A" },
-    { value: "B", label: "B" },
-    { value: "C", label: "C" },
-    { value: "D", label: "D" },
-  ];
+
+  const divisionOptions = DIVISIONS.map((div) => ({
+    value: div,
+    label: div,
+  }));
 
   useEffect(() => {
     if (formData.department) {
@@ -62,7 +60,7 @@ const AddTeacher = () => {
 
       fetchSubjects();
     } else {
-      setSubjects([]); // Reset subjects when no department is selected
+      setSubjects([]);
     }
   }, [formData.department]);
 
@@ -70,7 +68,6 @@ const AddTeacher = () => {
     const { name, value } = e.target;
 
     if (name === "teacherId" && !/^\d*$/.test(value)) {
-      // Allow only numbers in teacher ID
       return;
     }
 
@@ -92,8 +89,8 @@ const AddTeacher = () => {
       return;
     }
 
-    if (!formData.phone.startsWith("+91") || formData.phone.length !== 13) {
-      alert("Phone number must start with +91 and be 10 digits long.");
+    if (!/^\+91\d{10}$/.test(formData.phone)) {
+      alert("Phone number must start with +91 and contain exactly 10 digits.");
       return;
     }
 
@@ -107,16 +104,41 @@ const AddTeacher = () => {
       return;
     }
 
+    if (!formData.divisions.length) {
+      alert("Please select at least one division.");
+      return;
+    }
+
+    if (!formData.subjects.length) {
+      alert("Please select at least one subject.");
+      return;
+    }
+
     try {
-      const teacherData = {
-        ...formData,
-        divisions: formData.divisions.map((div) => div.value),
-        subjects: formData.subjects.map((subj) => subj.value),
+      const userData = {
+        name: formData.name,
+        email: formData.email,
         role: formData.role.value,
       };
 
-      await addDoc(collection(db, "teachersinfo"), teacherData);
+      const teacherData = {
+        teacherId: formData.teacherId,
+        phone: formData.phone,
+        password: formData.password,
+        classTeacher: formData.classTeacher,
+        department: formData.department,
+        divisions: formData.divisions.map((div) => div.value),
+        subjects: formData.subjects.map((subj) => subj.value),
+      };
+
+      const userDoc = await addDoc(collection(db, "users"), userData);
+      await addDoc(collection(db, "teachersinfo"), {
+        ...teacherData,
+        userId: userDoc.id,
+      });
+
       alert("Teacher added successfully!");
+
       setFormData({
         name: "",
         email: "",
@@ -143,7 +165,6 @@ const AddTeacher = () => {
         </h2>
         <form onSubmit={handleSubmit}>
           <div className="grid grid-cols-2 gap-6">
-            {/* Left Section */}
             <div>
               <div className="mb-5">
                 <label
@@ -241,6 +262,7 @@ const AddTeacher = () => {
               </div>
             </div>
 
+            {/* Right Section */}
             <div>
               <div className="mb-5">
                 <label

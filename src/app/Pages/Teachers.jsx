@@ -1,54 +1,53 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import Sidebar from "../Components/Sidebar";
 import { db } from "../../config";
+import { DEPARTMENTS } from "../constants";
 
 const Teachers = () => {
-  const [selectedDepartment, setSelectedDepartment] = useState("Bsc.IT");
+  const [selectedDepartment, setSelectedDepartment] = useState(DEPARTMENTS[0]);
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
 
-  const fetchTeachers = async () => {
+  const fetchTeachers = useCallback(async () => {
     setLoading(true);
     try {
       console.log("Fetching teachers for department:", selectedDepartment);
-
+  
       const q = query(
         collection(db, "teachersinfo"),
         where("department", "==", selectedDepartment)
       );
-
+  
       const querySnapshot = await getDocs(q);
-
-      let fetchedTeachers = querySnapshot.docs.map((doc) => ({
+      const fetchedTeachers = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
-
-      console.log("Fetched teachers before filtering:", fetchedTeachers);
-
+  
+      console.log("Query Snapshot Docs:", querySnapshot.docs);
+      console.log("Fetched Teachers Before Filtering:", fetchedTeachers);
+  
       if (searchTerm) {
-        fetchedTeachers = fetchedTeachers.filter(
+        const filteredTeachers = fetchedTeachers.filter(
           (teacher) =>
-            teacher.teachername
-              .toLowerCase()
-              .includes(searchTerm.toLowerCase()) ||
-            teacher.teacheremail
-              .toLowerCase()
-              .includes(searchTerm.toLowerCase())
+            teacher.teachername?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            teacher.teacheremail?.toLowerCase().includes(searchTerm.toLowerCase())
         );
+        console.log("Fetched Teachers After Filtering:", filteredTeachers);
+        setTeachers(filteredTeachers);
+      } else {
+        setTeachers(fetchedTeachers);
       }
-
-      console.log("Fetched teachers after filtering:", fetchedTeachers);
-      setTeachers(fetchedTeachers);
     } catch (error) {
       console.error("Error fetching teachers:", error);
+      alert("An error occurred while fetching teachers.");
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedDepartment, searchTerm]);
 
   const handleSeeListClick = () => {
     fetchTeachers();
@@ -61,22 +60,20 @@ const Teachers = () => {
 
   useEffect(() => {
     fetchTeachers();
-  }, [selectedDepartment]);
+  }, [fetchTeachers]);
 
   return (
     <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
       <div
         onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}
         className={`${
           isSidebarHovered ? "w-64" : "w-16"
-        } bg-indigo-800 text-white h-screen transition-all duration-300 overflow-hidden`}
+        } bg-indigo-800 text-white h-screen transition-all duration-300 overflow-x-hidden`}
       >
         <Sidebar />
       </div>
 
-      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="flex-1 overflow-auto p-6">
           <div className="flex justify-between items-center mb-6">
@@ -86,11 +83,11 @@ const Teachers = () => {
               onChange={(e) => setSelectedDepartment(e.target.value)}
               className="px-4 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="Bsc.IT">Bsc.IT</option>
-              <option value="BCOM">BCOM</option>
-              <option value="BMS">BMS</option>
-              <option value="BBA">BBA</option>
-              <option value="BCA">BCA</option>
+            {DEPARTMENTS.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -114,7 +111,9 @@ const Teachers = () => {
           </div>
 
           {loading ? (
-            <p>Loading...</p>
+            <div className="flex justify-center items-center">
+              <p className="text-blue-600 text-lg font-semibold">Loading...</p>
+            </div>
           ) : teachers.length > 0 ? (
             <table className="w-full bg-white border rounded-lg shadow-md">
               <thead>
@@ -144,7 +143,9 @@ const Teachers = () => {
               </tbody>
             </table>
           ) : (
-            <p>No teachers found for the selected filters.</p>
+            <p className="text-gray-600 text-lg">
+              No teachers found for the selected filters.
+            </p>
           )}
         </div>
       </div>
