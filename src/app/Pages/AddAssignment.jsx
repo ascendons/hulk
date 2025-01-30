@@ -3,6 +3,8 @@ import { db, storage, auth } from "../../config"; // Firebase configuration
 import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import Sidebar from "../Components/Sidebar";
+import FileUploadModal from "../Components/FileUploadModal";
+import { DEPARTMENTS, DIVISIONS, YEARS } from "../constants"; // Constants for dropdowns
 
 const AddAssignment = () => {
   const [title, setTitle] = useState("");
@@ -15,10 +17,8 @@ const AddAssignment = () => {
   const [marks, setMarks] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [file, setFile] = useState(null);
-  const [youtubeLink, setYoutubeLink] = useState("");
-  const [assignedBy, setAssignedBy] = useState(""); // Assigned By field
+  const [assignedBy, setAssignedBy] = useState("");
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
-  const [isYoutubeModalOpen, setIsYoutubeModalOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
   useEffect(() => {
@@ -26,7 +26,7 @@ const AddAssignment = () => {
       try {
         const user = auth.currentUser;
         if (user) {
-          // Fetch the user's name from the Firestore `users` collection
+          // Fetch user details from Firestore
           const usersQuery = query(
             collection(db, "users"),
             where("email", "==", user.email)
@@ -34,9 +34,10 @@ const AddAssignment = () => {
           const usersSnapshot = await getDocs(usersQuery);
           if (!usersSnapshot.empty) {
             const userData = usersSnapshot.docs[0].data();
-            setAssignedBy(userData.name || user.email); // Use name if available, otherwise email
+            setAssignedBy(userData.name || user.email); // Use name if available
           }
 
+          // Fetch teacher details from Firestore
           const teachersQuery = query(
             collection(db, "teachersinfo"),
             where("teacheremail", "==", user.email)
@@ -44,12 +45,7 @@ const AddAssignment = () => {
           const teachersSnapshot = await getDocs(teachersQuery);
           if (!teachersSnapshot.empty) {
             const teacherData = teachersSnapshot.docs[0].data();
-            setDepartment(teacherData.department);
-            setDivision(
-              teacherData.department === "BSCIT"
-                ? "A"
-                : teacherData.divisions[0]
-            );
+            setDepartment(teacherData.department || "");
           }
         }
       } catch (error) {
@@ -63,6 +59,7 @@ const AddAssignment = () => {
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
+        if (!department) return;
         const q = query(
           collection(db, "subjects"),
           where("department", "==", department)
@@ -70,7 +67,7 @@ const AddAssignment = () => {
         const querySnapshot = await getDocs(q);
         const fetchedSubjects = querySnapshot.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data(),
+          name: doc.data().subjectName,
         }));
         setSubjects(fetchedSubjects);
       } catch (error) {
@@ -78,28 +75,12 @@ const AddAssignment = () => {
       }
     };
 
-    if (department) {
-      fetchSubjects();
-    }
+    fetchSubjects();
   }, [department]);
 
-  const handleFileUpload = (e) => {
-    setFile(e.target.files[0]);
+  const handleFileUpload = (selectedFile) => {
+    setFile(selectedFile);
     setIsUploadModalOpen(false);
-  };
-
-  const removeFile = () => {
-    setFile(null);
-  };
-
-  const handleYoutubeSubmit = (e) => {
-    e.preventDefault();
-    if (!youtubeLink) {
-      alert("Please provide a YouTube link.");
-    } else {
-      alert(`YouTube Link Added: ${youtubeLink}`);
-      setIsYoutubeModalOpen(false);
-    }
   };
 
   const handleSubmit = async (e) => {
@@ -147,7 +128,6 @@ const AddAssignment = () => {
         marks,
         dueDate,
         fileURL,
-        youtubeLink,
         assignedBy,
         timestamp: new Date(),
       });
@@ -156,12 +136,12 @@ const AddAssignment = () => {
 
       setTitle("");
       setDescription("");
+      setDivision("");
       setYear("");
       setSubject("");
       setMarks("");
       setDueDate("");
       setFile(null);
-      setYoutubeLink("");
     } catch (error) {
       console.error("Error adding assignment:", error);
       alert("Failed to add assignment. Please try again.");
@@ -170,6 +150,7 @@ const AddAssignment = () => {
 
   return (
     <div className="w-screen h-screen bg-gray-100 flex">
+      {/* Sidebar */}
       <div
         onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}
@@ -179,44 +160,39 @@ const AddAssignment = () => {
       >
         <Sidebar />
       </div>
+
       <form
-        className="bg-white shadow-lg rounded-lg p-8 w-full h-full flex"
+        className="bg-white shadow-lg rounded-lg p-8 w-full h-screen flex flex-col"
         onSubmit={handleSubmit}
       >
-        {/* Left Section */}
-        <div className="w-2/3 pr-4">
-          <h1 className="text-3xl font-bold mb-6">ASSIGNMENT</h1>
-          <label className="block text-gray-700 font-bold mb-2">Title</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Enter title"
-            className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-6"
-            required
-          />
-          <label className="block text-gray-700 font-bold mb-2">
-            Description
-          </label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Enter description"
-            rows={6}
-            className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-6"
-          />
-          <div className="flex space-x-6">
-            <div
-              className="flex flex-col items-center justify-center border border-gray-300 rounded-lg p-4 cursor-pointer hover:shadow-md w-36 h-36 text-center"
-              onClick={() => setIsYoutubeModalOpen(true)}
-            >
-              <img
-                src="https://cdn-icons-png.flaticon.com/512/1384/1384060.png"
-                alt="YouTube"
-                className="w-12 h-12 mb-2"
-              />
-              <p>YouTube</p>
-            </div>
+        {/* Assignment Details */}
+        <h1 className="text-3xl font-bold mb-6">ASSIGNMENT</h1>
+
+        <div className="grid grid-cols-2 gap-6">
+          {/* Left Section */}
+          <div>
+            <label className="block text-gray-700 font-bold mb-2">Title</label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter title"
+              className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-6"
+              required
+            />
+
+            <label className="block text-gray-700 font-bold mb-2">
+              Description
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Enter description"
+              rows={6}
+              className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-6"
+            />
+
+            {/* File Upload Button */}
             <div
               className="flex flex-col items-center justify-center border border-gray-300 rounded-lg p-4 cursor-pointer hover:shadow-md w-36 h-36 text-center"
               onClick={() => setIsUploadModalOpen(true)}
@@ -228,11 +204,16 @@ const AddAssignment = () => {
               />
               <p>Upload</p>
             </div>
+            {/* Upload Modal */}
+            {isUploadModalOpen && (
+              <FileUploadModal
+                onFileUpload={handleFileUpload}
+                onClose={() => setIsUploadModalOpen(false)}
+              />
+            )}
           </div>
-        </div>
 
-        {/* Right Section */}
-        <div className="w-1/3 pl-4 flex flex-col justify-between">
+          {/* Right Section */}
           <div>
             <label className="block text-gray-700 font-bold mb-2">
               Assigned By
@@ -243,24 +224,40 @@ const AddAssignment = () => {
               disabled
               className="w-full p-4 border border-gray-300 rounded-md focus:outline-none mb-4 bg-gray-100"
             />
+
             <label className="block text-gray-700 font-bold mb-2">
               Department
             </label>
-            <input
-              type="text"
+            <select
               value={department}
-              disabled
-              className="w-full p-4 border border-gray-300 rounded-md focus:outline-none mb-4"
-            />
+              onChange={(e) => setDepartment(e.target.value)}
+              className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+              required
+            >
+              <option value="">Select Department</option>
+              {Object.values(DEPARTMENTS).map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
+
             <label className="block text-gray-700 font-bold mb-2">
               Division
             </label>
-            <input
-              type="text"
+            <select
               value={division}
-              disabled
-              className="w-full p-4 border border-gray-300 rounded-md focus:outline-none mb-4"
-            />
+              onChange={(e) => setDivision(e.target.value)}
+              className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+              required
+            >
+              <option value="">Select Division</option>
+              {Object.values(DIVISIONS).map((div) => (
+                <option key={div} value={div}>
+                  {div}
+                </option>
+              ))}
+            </select>
             <label className="block text-gray-700 font-bold mb-2">Year</label>
             <select
               value={year}
@@ -268,11 +265,13 @@ const AddAssignment = () => {
               className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
               required
             >
-              <option value="">Select Year</option>
-              <option value="First Year">First Year</option>
-              <option value="Second Year">Second Year</option>
-              <option value="Third Year">Third Year</option>
+              {Object.values(YEARS).map((yr) => (
+                <option key={yr} value={yr}>
+                  {yr}
+                </option>
+              ))}
             </select>
+
             <label className="block text-gray-700 font-bold mb-2">
               Subject
             </label>
@@ -282,13 +281,13 @@ const AddAssignment = () => {
               className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
               required
             >
-              <option value="">Select Subject</option>
               {subjects.map((subj) => (
-                <option key={subj.id} value={subj.subjectName}>
-                  {subj.subjectName}
+                <option key={subj.id} value={subj.name}>
+                  {subj.name}
                 </option>
               ))}
             </select>
+
             <label className="block text-gray-700 font-bold mb-2">Marks</label>
             <input
               type="number"
@@ -298,6 +297,7 @@ const AddAssignment = () => {
               className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
               required
             />
+
             <label className="block text-gray-700 font-bold mb-2">
               Due Date
             </label>
@@ -308,79 +308,15 @@ const AddAssignment = () => {
               className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
               required
             />
+            <button
+              type="submit"
+              className="bg-blue-500 text-white py-3 px-8 rounded-lg hover:bg-blue-600"
+            >
+              POST
+            </button>
           </div>
-          <button
-            type="submit"
-            className="bg-blue-500 text-white py-3 px-8 rounded-lg hover:bg-blue-600"
-          >
-            POST
-          </button>
         </div>
       </form>
-
-      {/* YouTube Modal */}
-      {isYoutubeModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white w-full max-w-2xl p-8 rounded-lg">
-            <h2 className="text-xl font-bold mb-4">Add YouTube Link</h2>
-            <form onSubmit={handleYoutubeSubmit}>
-              <input
-                type="url"
-                placeholder="Paste YouTube URL"
-                value={youtubeLink}
-                onChange={(e) => setYoutubeLink(e.target.value)}
-                className="w-full p-4 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
-                required
-              />
-              <div className="flex justify-end space-x-4">
-                <button
-                  type="button"
-                  className="bg-gray-300 text-black py-2 px-6 rounded-lg hover:bg-gray-400"
-                  onClick={() => setIsYoutubeModalOpen(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="bg-blue-500 text-white py-2 px-6 rounded-lg hover:bg-blue-600"
-                >
-                  Add Link
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Upload Modal */}
-      {isUploadModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white w-full max-w-md p-8 rounded-lg shadow-lg">
-            <h2 className="text-xl font-bold mb-6 text-center">Upload File</h2>
-            <div className="flex flex-col items-center justify-center space-y-6">
-              <label
-                htmlFor="file-upload"
-                className="bg-blue-500 text-white py-3 px-8 rounded-lg cursor-pointer hover:bg-blue-600 text-center"
-              >
-                Browse
-              </label>
-              <input
-                id="file-upload"
-                type="file"
-                className="hidden"
-                onChange={handleFileUpload}
-              />
-              <button
-                type="button"
-                className="bg-gray-300 text-black py-2 px-8 rounded-lg hover:bg-gray-400"
-                onClick={() => setIsUploadModalOpen(false)}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

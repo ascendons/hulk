@@ -90,7 +90,15 @@ const Sidebar = () => {
             Notes
           </Link>
         </li>
-
+        <li>
+          <Link
+            to="/assignments"
+            className="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors"
+          >
+            <FileText className="mr-3 text-green-400" />
+            Assignment
+          </Link>
+        </li>
         <li>
           <Link
             to="/addstudent"
