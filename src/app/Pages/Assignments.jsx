@@ -31,7 +31,6 @@ const Assignments = () => {
     fetchUserData();
   }, []);
 
-  // Fetch assignments based on the username
   useEffect(() => {
     const fetchAssignments = async () => {
       if (userName) {
