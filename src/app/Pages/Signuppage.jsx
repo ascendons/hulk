@@ -1,30 +1,51 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
 import { auth } from "../../config";
 import bglogin from "../../bglogin.png";
-
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Signuppage = ({ onLogin }) => {
   const navigate = useNavigate();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
     setIsLoading(true);
-    setError("");
 
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      toast.success("Successfully signed in!");
       onLogin();
       navigate("/home");
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async (event) => {
+    event.preventDefault();
+    setIsLoading(true);
+
+    if (!email) {
+      toast.error("Please enter your email to reset your password.");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      // Note: sendPasswordResetEmail only requires auth and email
+      await sendPasswordResetEmail(auth, email);
+      toast.success("Password reset email sent successfully");
+    } catch (err) {
+      toast.error(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -42,22 +63,10 @@ const Signuppage = ({ onLogin }) => {
           </h2>
           <p className="text-sm text-gray-500">Sign in to your account</p>
         </div>
-        {error && (
-          <div
-            className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
-            role="alert"
-          >
-            <strong className="font-bold">Error!</strong>
-            <span className="block sm:inline"> {error}</span>
-          </div>
-        )}
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
           <div className="space-y-4">
             <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email address
               </label>
               <input
@@ -65,19 +74,13 @@ const Signuppage = ({ onLogin }) => {
                 type="email"
                 placeholder="Enter your email"
                 value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setError("");
-                }}
+                onChange={(e) => setEmail(e.target.value)}
                 className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm shadow-sm placeholder-gray-400
-                         focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                           focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
               />
             </div>
             <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
-              >
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Password
               </label>
               <div className="relative">
@@ -86,12 +89,9 @@ const Signuppage = ({ onLogin }) => {
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    setError("");
-                  }}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm shadow-sm placeholder-gray-400
-                         focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
+                           focus:outline-none focus:border-gray-500 focus:ring-1 focus:ring-gray-500"
                 />
                 <button
                   type="button"
@@ -144,7 +144,7 @@ const Signuppage = ({ onLogin }) => {
               disabled={isLoading}
               className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors duration-200"
             >
-              {isLoading ? "Signing in..." : "Sign in"}
+              {isLoading ? "Processing..." : "Sign in"}
             </button>
           </div>
         </form>
@@ -160,18 +160,18 @@ const Signuppage = ({ onLogin }) => {
           <div className="mt-6 text-center">
             <a
               href="#"
+              onClick={handleResetPassword}
               className="text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200"
             >
               Forgot your password?
             </a>
           </div>
           <div className="mt-6 text-center">
-            <button onClick={() => navigate("/create-account")}>
-              create account
-            </button>
+            <button onClick={() => navigate("/create-account")}>Create account</button>
           </div>
         </div>
       </div>
+      <ToastContainer />
     </div>
   );
 };
