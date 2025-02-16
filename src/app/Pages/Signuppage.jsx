@@ -4,8 +4,10 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../config";
 import bglogin from "../../bglogin.png";
 
+
 const Signuppage = ({ onLogin }) => {
   const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -164,12 +166,9 @@ const Signuppage = ({ onLogin }) => {
             </a>
           </div>
           <div className="mt-6 text-center">
-            <a
-              href="/signup"
-              className="text-sm text-gray-600 hover:text-gray-900 transition-colors duration-200"
-            >
-              SignUp
-            </a>
+            <button onClick={() => navigate("/create-account")}>
+              create account
+            </button>
           </div>
         </div>
       </div>

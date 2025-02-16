@@ -1,49 +1,46 @@
 import React, { useState } from "react";
-import { collection, doc, setDoc } from "firebase/firestore"; // Firestore functions
-import { createUserWithEmailAndPassword } from "firebase/auth"; // Firebase Authentication
-import { db, auth } from "../../config"; // Firebase configuration
+import { doc, setDoc } from "firebase/firestore";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { db, auth } from "../../config";
 
 const AddStudent = () => {
-  const [formData, setFormData] = useState({
+  const initialState = {
     studentid: "",
     studentname: "",
     studentemail: "",
     studentpassword: "",
-    phonenumber: "", // New phone number field
+    phonenumber: "",
     studentcourse: "",
     studentyear: "",
     division: "",
     studentrollno: "",
-  });
+  };
 
+  const [formData, setFormData] = useState(initialState);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData((prevData) => ({
+      ...prevData,
+      [name]: value,
+    }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (
-      !formData.studentid ||
-      !formData.studentname ||
-      !formData.studentemail ||
-      !formData.studentpassword ||
-      !formData.phonenumber || // Validate phone number
-      !formData.studentcourse ||
-      !formData.studentyear ||
-      !formData.division ||
-      !formData.studentrollno
-    ) {
+    const isAnyFieldEmpty = Object.entries(formData).some(([key, value]) =>
+      typeof value === "string" ? value.trim() === "" : !value
+    );
+    if (isAnyFieldEmpty) {
       alert("Please fill in all fields before submitting!");
       return;
     }
 
     setIsLoading(true);
+
     try {
-      // Create a user in Firebase Authentication
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         formData.studentemail,
@@ -51,36 +48,24 @@ const AddStudent = () => {
       );
       const user = userCredential.user;
 
-      // Add student information to Firestore
-      const studentDocRef = doc(db, "students", user.uid);
-      await setDoc(studentDocRef, {
+      const studentData = {
         studentid: formData.studentid,
         studentname: formData.studentname,
         studentemail: formData.studentemail,
-        phonenumber: formData.phonenumber, // Add phone number to Firestore
+        phonenumber: formData.phonenumber,
         studentcourse: formData.studentcourse,
         studentyear: formData.studentyear,
         division: formData.division,
         studentrollno: formData.studentrollno,
         userId: user.uid,
-      });
+      };
+
+      await setDoc(doc(db, "students", user.uid), studentData);
 
       alert("Student added successfully!");
-
-      // Reset form fields
-      setFormData({
-        studentid: "",
-        studentname: "",
-        studentemail: "",
-        studentpassword: "",
-        phonenumber: "",
-        studentcourse: "",
-        studentyear: "",
-        division: "",
-        studentrollno: "",
-      });
+      setFormData(initialState);
     } catch (error) {
-      console.error("Error adding student:", error.message);
+      console.error("Error adding student:", error);
       alert(`Failed to add student. ${error.message}`);
     } finally {
       setIsLoading(false);
@@ -92,7 +77,6 @@ const AddStudent = () => {
       <div className="bg-white shadow-md rounded-lg p-8 w-96">
         <h1 className="text-center text-2xl font-bold mb-6">Add Student</h1>
         <form onSubmit={handleSubmit}>
-          {/* Student ID */}
           <input
             type="text"
             name="studentid"
@@ -100,10 +84,10 @@ const AddStudent = () => {
             onChange={handleChange}
             placeholder="Student ID"
             className="w-full mb-4 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={isLoading}
             required
           />
 
-          {/* Student Name */}
           <input
             type="text"
             name="studentname"
@@ -111,10 +95,10 @@ const AddStudent = () => {
             onChange={handleChange}
             placeholder="Student Name"
             className="w-full mb-4 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={isLoading}
             required
           />
 
-          {/* Student Email */}
           <input
             type="email"
             name="studentemail"
@@ -122,10 +106,10 @@ const AddStudent = () => {
             onChange={handleChange}
             placeholder="Student Email"
             className="w-full mb-4 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={isLoading}
             required
           />
 
-          {/* Student Password */}
           <input
             type="password"
             name="studentpassword"
@@ -133,10 +117,10 @@ const AddStudent = () => {
             onChange={handleChange}
             placeholder="Student Password"
             className="w-full mb-4 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={isLoading}
             required
           />
 
-          {/* Phone Number */}
           <input
             type="text"
             name="phonenumber"
@@ -144,6 +128,7 @@ const AddStudent = () => {
             onChange={handleChange}
             placeholder="Phone Number"
             className="w-full mb-4 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={isLoading}
             required
           />
 
@@ -157,6 +142,7 @@ const AddStudent = () => {
               value={formData.studentcourse}
               onChange={handleChange}
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={isLoading}
               required
             >
               <option value="" disabled>
@@ -179,6 +165,7 @@ const AddStudent = () => {
               value={formData.studentyear}
               onChange={handleChange}
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={isLoading}
               required
             >
               <option value="" disabled>
@@ -200,6 +187,7 @@ const AddStudent = () => {
               value={formData.division}
               onChange={handleChange}
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={isLoading}
               required
             >
               <option value="" disabled>
@@ -212,7 +200,6 @@ const AddStudent = () => {
             </select>
           </div>
 
-          {/* Student Roll Number */}
           <input
             type="number"
             name="studentrollno"
@@ -220,10 +207,10 @@ const AddStudent = () => {
             onChange={handleChange}
             placeholder="Student Roll No"
             className="w-full mb-4 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={isLoading}
             required
           />
 
-          {/* Submit Button */}
           <button
             type="submit"
             className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600"

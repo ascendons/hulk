@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Select from "react-select";
 import { collection, getDocs, addDoc } from "firebase/firestore";
 import { db } from "../../config";
-import { DEPARTMENTS , ROLE, DIVISIONS} from "../constants";
+import { DEPARTMENTS, DIVISIONS } from "../constants";
 
 const AddTeacher = () => {
   const [formData, setFormData] = useState({
@@ -10,12 +10,11 @@ const AddTeacher = () => {
     email: "",
     phone: "",
     password: "",
-    teacherId: "",
     classTeacher: "No",
     department: "",
     divisions: [],
     subjects: [],
-    role: "",
+    role: null, // Initialize role as null for React Select
   });
 
   const [subjects, setSubjects] = useState([]);
@@ -25,13 +24,12 @@ const AddTeacher = () => {
     value: dept,
     label: dept,
   }));
-  
+
   const roleOptions = [
     { value: "Admin", label: "Admin" },
     { value: "Teacher", label: "Teacher" },
     { value: "Coordinator", label: "Coordinator" },
   ];
-
 
   const divisionOptions = DIVISIONS.map((div) => ({
     value: div,
@@ -66,11 +64,6 @@ const AddTeacher = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-
-    if (name === "teacherId" && !/^\d*$/.test(value)) {
-      return;
-    }
-
     setFormData({
       ...formData,
       [name]: name === "name" ? value.toUpperCase() : value,
@@ -94,11 +87,6 @@ const AddTeacher = () => {
       return;
     }
 
-    if (!formData.teacherId) {
-      alert("Teacher ID is required and must contain only numbers.");
-      return;
-    }
-
     if (formData.password.length < 6) {
       alert("Password must be at least 6 characters long.");
       return;
@@ -114,6 +102,11 @@ const AddTeacher = () => {
       return;
     }
 
+    if (!formData.role) {
+      alert("Please select a role.");
+      return;
+    }
+
     try {
       const userData = {
         name: formData.name,
@@ -122,7 +115,6 @@ const AddTeacher = () => {
       };
 
       const teacherData = {
-        teacherId: formData.teacherId,
         phone: formData.phone,
         password: formData.password,
         classTeacher: formData.classTeacher,
@@ -144,12 +136,11 @@ const AddTeacher = () => {
         email: "",
         phone: "",
         password: "",
-        teacherId: "",
         classTeacher: "No",
         department: "",
         divisions: [],
         subjects: [],
-        role: "",
+        role: null,
       });
     } catch (error) {
       console.error("Error adding teacher:", error);
@@ -159,7 +150,7 @@ const AddTeacher = () => {
 
   return (
     <div className="flex flex-col bg-gradient-to-r from-blue-100 via-purple-100 to-pink-100 p-6">
-      <div className="bg-white p-8 rounded-2xl shadow-2xl h-screen w-full ">
+      <div className="bg-white p-8 rounded-2xl shadow-2xl h-screen w-full">
         <h2 className="text-3xl font-bold text-center mb-6 text-blue-600">
           Add Teacher
         </h2>
@@ -167,10 +158,7 @@ const AddTeacher = () => {
           <div className="grid grid-cols-2 gap-6">
             <div>
               <div className="mb-5">
-                <label
-                  htmlFor="name"
-                  className="block text-gray-700 font-medium mb-2"
-                >
+                <label htmlFor="name" className="block text-gray-700 font-medium mb-2">
                   Name
                 </label>
                 <input
@@ -186,29 +174,7 @@ const AddTeacher = () => {
               </div>
 
               <div className="mb-5">
-                <label
-                  htmlFor="teacherId"
-                  className="block text-gray-700 font-medium mb-2"
-                >
-                  Teacher ID (Numbers Only)
-                </label>
-                <input
-                  type="text"
-                  id="teacherId"
-                  name="teacherId"
-                  className="w-full px-4 py-2 border rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter Teacher ID"
-                  value={formData.teacherId}
-                  onChange={handleInputChange}
-                  required
-                />
-              </div>
-
-              <div className="mb-5">
-                <label
-                  htmlFor="email"
-                  className="block text-gray-700 font-medium mb-2"
-                >
+                <label htmlFor="email" className="block text-gray-700 font-medium mb-2">
                   Email
                 </label>
                 <input
@@ -224,10 +190,7 @@ const AddTeacher = () => {
               </div>
 
               <div className="mb-5">
-                <label
-                  htmlFor="password"
-                  className="block text-gray-700 font-medium mb-2"
-                >
+                <label htmlFor="password" className="block text-gray-700 font-medium mb-2">
                   Password
                 </label>
                 <input
@@ -237,16 +200,17 @@ const AddTeacher = () => {
                   className="w-full px-4 py-2 border rounded-lg shadow focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter a password"
                   value={formData.password}
-                  onChange={handleInputChange}
+                  onC
+                  
+                  
+                  
+                  hange={handleInputChange}
                   required
                 />
               </div>
 
               <div className="mb-5">
-                <label
-                  htmlFor="phone"
-                  className="block text-gray-700 font-medium mb-2"
-                >
+                <label htmlFor="phone" className="block text-gray-700 font-medium mb-2">
                   Phone Number (+91 required)
                 </label>
                 <input
@@ -262,13 +226,9 @@ const AddTeacher = () => {
               </div>
             </div>
 
-            {/* Right Section */}
             <div>
               <div className="mb-5">
-                <label
-                  htmlFor="department"
-                  className="block text-gray-700 font-medium mb-2"
-                >
+                <label htmlFor="department" className="block text-gray-700 font-medium mb-2">
                   Department
                 </label>
                 <Select
@@ -285,10 +245,7 @@ const AddTeacher = () => {
               </div>
 
               <div className="mb-5">
-                <label
-                  htmlFor="divisions"
-                  className="block text-gray-700 font-medium mb-2"
-                >
+                <label htmlFor="divisions" className="block text-gray-700 font-medium mb-2">
                   Divisions
                 </label>
                 <Select
@@ -302,10 +259,7 @@ const AddTeacher = () => {
               </div>
 
               <div className="mb-5">
-                <label
-                  htmlFor="subjects"
-                  className="block text-gray-700 font-medium mb-2"
-                >
+                <label htmlFor="subjects" className="block text-gray-700 font-medium mb-2">
                   Subjects
                 </label>
                 <Select
@@ -313,19 +267,14 @@ const AddTeacher = () => {
                   isMulti
                   value={formData.subjects}
                   onChange={(value) => handleDropdownChange("subjects", value)}
-                  placeholder={
-                    loadingSubjects ? "Loading..." : "Select Subjects"
-                  }
+                  placeholder={loadingSubjects ? "Loading..." : "Select Subjects"}
                   isDisabled={loadingSubjects}
                   required
                 />
               </div>
 
               <div className="mb-5">
-                <label
-                  htmlFor="role"
-                  className="block text-gray-700 font-medium mb-2"
-                >
+                <label htmlFor="role" className="block text-gray-700 font-medium mb-2">
                   Role
                 </label>
                 <Select

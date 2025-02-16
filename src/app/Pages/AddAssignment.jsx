@@ -28,7 +28,6 @@ const AddAssignment = () => {
       try {
         const user = auth.currentUser;
         if (user) {
-          // Fetch user details from Firestore
           const usersQuery = query(
             collection(db, "users"),
             where("email", "==", user.email)
@@ -39,7 +38,6 @@ const AddAssignment = () => {
             setAssignedBy(userData.name || user.email); // Use name if available
           }
 
-          // Fetch teacher details from Firestore
           const teachersQuery = query(
             collection(db, "teachersinfo"),
             where("teacheremail", "==", user.email)
@@ -89,7 +87,6 @@ const AddAssignment = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Validate due date
     const currentDate = new Date();
     const selectedDueDate = new Date(dueDate);
     if (selectedDueDate < currentDate) {

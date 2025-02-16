@@ -23,7 +23,7 @@ import MarkAttendance from "./app/Pages/MarkAttendance";
 import SeeAttendance from "./app/Pages/SeeAttendance";
 import EditAttendance from "./app/Pages/EditAttendance";
 import TeacherViewProfile from "./app/Components/TeacherViewProfile";
-import SignUp from "./app/Pages/signup";
+import createAccount from "./app/Pages/createAccount";
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -55,14 +55,15 @@ function App() {
         <Route path="Notes" element={<Notes />} />
         <Route path="/subject/:subjectName" element={<SubjectDetails />} />
         <Route path="/add-notes" element={<AddNotes />} />
-        // <Route path="/assignments" element={<Assignments />} />
+        {/* // <Route path="/assignments" element={<Assignments />} /> */}
         <Route path="/add-assignment" element={<AddAssignment />} />
         <Route path="/assignment/:id" element={<AssignmentDetail />} />
         <Route path="/see-attendance" element={<SeeAttendance />} />
         <Route path="/edit-attendance" element={<EditAttendance />} />
         <Route path="/view-profile" element={<TeacherViewProfile />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/signup" element={<SignUp />} />
+        <Route path="/create-account" element={<createAccount />} />
+
       </Routes>
     </BrowserRouter>
   );
