@@ -4,6 +4,7 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import { db, auth } from "../../config";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
+
 const Dashboard = () => {
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [teacherInfo, setTeacherInfo] = useState({});
@@ -19,10 +20,10 @@ const Dashboard = () => {
       try {
         const user = auth.currentUser;
         if (user) {
-          // Fetch teacher info
+          // Fetch teacher info with correct field names
           const teacherQuery = query(
             collection(db, "teachersinfo"),
-            where("teacheremail", "==", user.email)
+            where("email", "==", user.email)
           );
           const teacherSnapshot = await getDocs(teacherQuery);
           if (!teacherSnapshot.empty) {
@@ -84,7 +85,7 @@ const Dashboard = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-8 text-blue-600">Dashboard</h1>
           <p className="text-gray-600 mt-2">
-            Welcome back, {teacherInfo.teachername || "Teacher"}!
+            Welcome back, {teacherInfo.name || "Teacher"}!
           </p>
         </div>
 
@@ -96,12 +97,12 @@ const Dashboard = () => {
           {/* Teacher Info */}
           <div className="flex-grow">
             <h2 className="text-2xl font-bold text-gray-800">
-              {teacherInfo.teachername || "Teacher Name"}
+              {teacherInfo.name || "Teacher Name"}
             </h2>
             <p className="text-gray-600 font-semibold">
               Department: {teacherInfo.department || "Department"}
             </p>
-            <p className="text-gray-600">{teacherInfo.role || "Role"}</p>
+            <p className="text-gray-600">Role:{teacherInfo.role || "Role"}</p>
           </div>
 
           {/* Edit Profile Button */}

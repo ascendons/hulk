@@ -1,37 +1,67 @@
 import React, { useState, useEffect } from "react";
-import { collection, getDocs, query } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
-import { db } from "../../config";
+import { db, auth } from "../../config";
 import ChangePasswordModal from "./ChangePasswordModal";
 
 const TeacherViewProfile = () => {
-  const [profileData, setProfileData] = useState(null);
+  const [teachersinfo, setTeachersinfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchProfileData = async () => {
+    const fetchTeacherInfo = async () => {
       try {
-        // Fetch the first teacher as an example or adjust the query based on your needs
-        const teachersQuery = query(collection(db, "teachersinfo"));
-        const querySnapshot = await getDocs(teachersQuery);
+        const user = auth.currentUser;
+        if (!user) {
+          console.error("No user is logged in.");
+          navigate("/login"); // Redirect to login if user is not authenticated
+          return;
+        }
 
-        if (!querySnapshot.empty) {
-          const teacher = querySnapshot.docs[0].data(); // Get the first document's data
-          setProfileData(teacher);
+        // Fetch user data from the 'users' collection to check the role
+        const usersQuery = query(
+          collection(db, "users"),
+          where("email", "==", user.email)
+        );
+        const usersSnapshot = await getDocs(usersQuery);
+
+        if (!usersSnapshot.empty) {
+          const userData = usersSnapshot.docs[0].data();
+          if (userData.role === "Teacher") {
+            // Fetch teacher data from teachersinfo based on the name
+            const teachersinfoQuery = query(
+              collection(db, "teachersinfo"),
+              where("name", "==", userData.name)
+            );
+            const teachersinfoSnapshot = await getDocs(teachersinfoQuery);
+
+            if (!teachersinfoSnapshot.empty) {
+              const teacher = teachersinfoSnapshot.docs[0].data();
+              setTeachersinfo(teacher);
+            } else {
+              console.error(
+                "No teacher profile found for the name:",
+                userData.name
+              );
+            }
+          } else {
+            console.error("User is not a teacher. Role is:", userData.role);
+            navigate("/dashboard"); // Redirect if not a teacher, adjust as needed
+          }
         } else {
-          console.error("No teacher profiles found.");
+          console.error("No user data found for the email:", user.email);
         }
       } catch (error) {
-        console.error("Error fetching profile data:", error);
+        console.error("Error fetching teacher info:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchProfileData();
-  }, []);
+    fetchTeacherInfo();
+  }, [navigate]);
 
   if (loading) {
     return (
@@ -41,16 +71,16 @@ const TeacherViewProfile = () => {
     );
   }
 
-  if (!profileData) {
+  if (!teachersinfo) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <p>Unable to fetch profile data. Please try again later.</p>
+        <p>Unable to fetch teacher info. Please try again later.</p>
       </div>
     );
   }
 
   return (
-    <div className="flex  bg-gray-100">
+    <div className="flex bg-gray-100">
       <div className="relative bg-white p-10 rounded-lg shadow-xl h-screen w-full">
         {/* Back to Dashboard Button */}
         <button
@@ -76,7 +106,7 @@ const TeacherViewProfile = () => {
               <span className="text-gray-500 font-bold text-xl">IMG</span>
             </div>
             <h2 className="text-2xl font-semibold text-gray-800">
-              {profileData.teachername}
+              {teachersinfo.name}
             </h2>
           </div>
 
@@ -84,40 +114,40 @@ const TeacherViewProfile = () => {
           <div className="w-2/3">
             <div className="mb-4">
               <p className="text-gray-600 font-medium">Teacher ID:</p>
-              <p className="text-gray-900 font-bold">{profileData.teacherid}</p>
+              <p className="text-gray-900 font-bold">
+                {teachersinfo.teacherId}
+              </p>
             </div>
             <div className="mb-4">
               <p className="text-gray-600 font-medium">Email:</p>
-              <p className="text-gray-900 font-bold">
-                {profileData.teacheremail}
-              </p>
+              <p className="text-gray-900 font-bold">{teachersinfo.email}</p>
             </div>
             <div className="mb-4">
               <p className="text-gray-600 font-medium">Phone:</p>
               <p className="text-gray-900 font-bold">
-                {profileData.phonenumber}
+                {teachersinfo.phoneNumber}
               </p>
             </div>
             <div className="mb-4">
               <p className="text-gray-600 font-medium">Role:</p>
-              <p className="text-gray-900 font-bold">{profileData.role}</p>
+              <p className="text-gray-900 font-bold">{teachersinfo.role}</p>
             </div>
             <div className="mb-4">
               <p className="text-gray-600 font-medium">Department:</p>
               <p className="text-gray-900 font-bold">
-                {profileData.department}
+                {teachersinfo.department}
               </p>
             </div>
             <div className="mb-4">
               <p className="text-gray-600 font-medium">Divisions:</p>
               <p className="text-gray-900 font-bold">
-                {profileData.divisions && profileData.divisions.join(", ")}
+                {teachersinfo.divisions && teachersinfo.divisions.join(", ")}
               </p>
             </div>
             <div>
               <p className="text-gray-600 font-medium">Subjects:</p>
               <p className="text-gray-900 font-bold">
-                {profileData.subjects && profileData.subjects.join(", ")}
+                {teachersinfo.subjects && teachersinfo.subjects.join(", ")}
               </p>
             </div>
           </div>
@@ -126,7 +156,7 @@ const TeacherViewProfile = () => {
 
       {/* Change Password Modal */}
       <ChangePasswordModal
-        userId={profileData.teacherid} // Or any other identifier for changing the password
+        userId={teachersinfo.teacherId}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />

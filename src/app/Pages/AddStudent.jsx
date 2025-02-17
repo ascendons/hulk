@@ -3,21 +3,21 @@ import { doc, setDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { db, auth } from "../../config";
 
-const AddStudent = () => {
-  const initialState = {
+const SignupStudent = () => {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
     studentid: "",
-    studentname: "",
-    studentemail: "",
-    studentpassword: "",
     phonenumber: "",
-    studentcourse: "",
-    studentyear: "",
+    course: "",
+    year: "",
     division: "",
-    studentrollno: "",
-  };
-
-  const [formData, setFormData] = useState(initialState);
+    rollno: "",
+    role: "student", // Role is set to student by default
+  });
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -30,43 +30,85 @@ const AddStudent = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const isAnyFieldEmpty = Object.entries(formData).some(([key, value]) =>
-      typeof value === "string" ? value.trim() === "" : !value
+    // Check if any field is empty
+    const isAnyFieldEmpty = Object.values(formData).some(
+      (value) => value.trim() === ""
     );
     if (isAnyFieldEmpty) {
-      alert("Please fill in all fields before submitting!");
+      setError("Please fill in all fields before submitting!");
       return;
     }
 
     setIsLoading(true);
+    setError(null);
 
     try {
+      // Create user with email and password
       const userCredential = await createUserWithEmailAndPassword(
         auth,
-        formData.studentemail,
-        formData.studentpassword
+        formData.email,
+        formData.password
       );
       const user = userCredential.user;
 
-      const studentData = {
-        studentid: formData.studentid,
-        studentname: formData.studentname,
-        studentemail: formData.studentemail,
-        phonenumber: formData.phonenumber,
-        studentcourse: formData.studentcourse,
-        studentyear: formData.studentyear,
-        division: formData.division,
-        studentrollno: formData.studentrollno,
-        userId: user.uid,
+      // Store additional user information in appropriate collection
+      const userData = {
+        email: formData.email,
+        name: formData.name,
+        expoPushToken: "", // Placeholder for push notification token
+        role: formData.role,
       };
 
-      await setDoc(doc(db, "students", user.uid), studentData);
+      // Determine the correct collection based on role
+      const collectionName =
+        formData.role === "student" ? "students" : "teachersinfo";
 
-      alert("Student added successfully!");
-      setFormData(initialState);
+      // Store role-specific data
+      const roleSpecificData = {
+        ...(formData.role === "student"
+          ? {
+              studentid: formData.studentid,
+              phonenumber: formData.phonenumber,
+              studentcourse: formData.course,
+              studentyear: formData.year,
+              division: formData.division,
+              studentrollno: formData.rollno,
+              userId: user.uid,
+            }
+          : {
+              // Teacher-specific fields would go here if needed
+            }),
+        ...userData, // Adding common user data
+      };
+
+      // Save to Firestore
+      await setDoc(doc(db, collectionName, user.uid), roleSpecificData);
+
+      // Clear form data and show success message
+      setFormData({
+        name: "",
+        email: "",
+        password: "",
+        studentid: "",
+        phonenumber: "",
+        course: "",
+        year: "",
+        division: "",
+        rollno: "",
+        role: "student", // Reset role to student
+      });
+      alert(
+        `${
+          formData.role === "student" ? "Student" : "Teacher"
+        } account created successfully!`
+      );
     } catch (error) {
-      console.error("Error adding student:", error);
-      alert(`Failed to add student. ${error.message}`);
+      console.error(`Error signing up ${formData.role}:`, error);
+      if (error.code === "auth/email-already-in-use") {
+        setError("This email is already in use. Please use a different email.");
+      } else {
+        setError(`Failed to sign up ${formData.role}: ${error.message}`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -75,8 +117,38 @@ const AddStudent = () => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white shadow-md rounded-lg p-8 w-96">
-        <h1 className="text-center text-2xl font-bold mb-6">Add Student</h1>
+        <h1 className="text-center text-2xl font-bold mb-6">Student Sign Up</h1>
         <form onSubmit={handleSubmit}>
+          <input
+            type="text"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            placeholder="Full Name"
+            className="w-full mb-4 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+
+          <input
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="Email Address"
+            className="w-full mb-4 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+
+          <input
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Password"
+            className="w-full mb-4 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            required
+          />
+
           <input
             type="text"
             name="studentid"
@@ -84,40 +156,6 @@ const AddStudent = () => {
             onChange={handleChange}
             placeholder="Student ID"
             className="w-full mb-4 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={isLoading}
-            required
-          />
-
-          <input
-            type="text"
-            name="studentname"
-            value={formData.studentname}
-            onChange={handleChange}
-            placeholder="Student Name"
-            className="w-full mb-4 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={isLoading}
-            required
-          />
-
-          <input
-            type="email"
-            name="studentemail"
-            value={formData.studentemail}
-            onChange={handleChange}
-            placeholder="Student Email"
-            className="w-full mb-4 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={isLoading}
-            required
-          />
-
-          <input
-            type="password"
-            name="studentpassword"
-            value={formData.studentpassword}
-            onChange={handleChange}
-            placeholder="Student Password"
-            className="w-full mb-4 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={isLoading}
             required
           />
 
@@ -128,21 +166,19 @@ const AddStudent = () => {
             onChange={handleChange}
             placeholder="Phone Number"
             className="w-full mb-4 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={isLoading}
             required
           />
 
           {/* Student Course Dropdown */}
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-bold mb-2">
-              Student Course
+              Course
             </label>
             <select
-              name="studentcourse"
-              value={formData.studentcourse}
+              name="course"
+              value={formData.course}
               onChange={handleChange}
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={isLoading}
               required
             >
               <option value="" disabled>
@@ -158,14 +194,13 @@ const AddStudent = () => {
           {/* Student Year Dropdown */}
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-bold mb-2">
-              Student Year
+              Year
             </label>
             <select
-              name="studentyear"
-              value={formData.studentyear}
+              name="year"
+              value={formData.year}
               onChange={handleChange}
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={isLoading}
               required
             >
               <option value="" disabled>
@@ -187,7 +222,6 @@ const AddStudent = () => {
               value={formData.division}
               onChange={handleChange}
               className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              disabled={isLoading}
               required
             >
               <option value="" disabled>
@@ -202,21 +236,22 @@ const AddStudent = () => {
 
           <input
             type="number"
-            name="studentrollno"
-            value={formData.studentrollno}
+            name="rollno"
+            value={formData.rollno}
             onChange={handleChange}
-            placeholder="Student Roll No"
+            placeholder="Roll Number"
             className="w-full mb-4 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            disabled={isLoading}
             required
           />
+
+          {error && <p className="text-red-500 mb-4">{error}</p>}
 
           <button
             type="submit"
             className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600"
             disabled={isLoading}
           >
-            {isLoading ? "Saving..." : "Save"}
+            {isLoading ? "Signing Up..." : "Sign Up"}
           </button>
         </form>
       </div>
@@ -224,4 +259,4 @@ const AddStudent = () => {
   );
 };
 
-export default AddStudent;
+export default SignupStudent;

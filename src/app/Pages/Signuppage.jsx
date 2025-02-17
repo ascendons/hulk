@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { signInWithEmailAndPassword, sendPasswordResetEmail } from "firebase/auth";
+import {
+  signInWithEmailAndPassword,
+  sendPasswordResetEmail,
+} from "firebase/auth";
 import { auth } from "../../config";
 import bglogin from "../../bglogin.png";
 import { ToastContainer, toast } from "react-toastify";
@@ -66,7 +69,10 @@ const Signuppage = ({ onLogin }) => {
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Email address
               </label>
               <input
@@ -80,7 +86,10 @@ const Signuppage = ({ onLogin }) => {
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700"
+              >
                 Password
               </label>
               <div className="relative">
@@ -167,7 +176,9 @@ const Signuppage = ({ onLogin }) => {
             </a>
           </div>
           <div className="mt-6 text-center">
-            <button onClick={() => navigate("/create-account")}>Create account</button>
+            <button onClick={() => navigate("/Create-account")}>
+              Create account
+            </button>
           </div>
         </div>
       </div>

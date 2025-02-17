@@ -23,8 +23,8 @@ import MarkAttendance from "./app/Pages/MarkAttendance";
 import SeeAttendance from "./app/Pages/SeeAttendance";
 import EditAttendance from "./app/Pages/EditAttendance";
 import TeacherViewProfile from "./app/Components/TeacherViewProfile";
-import createAccount from "./app/Pages/createAccount";
-
+import CreateAccount from "./app/Pages/CreatesAccount";
+import StudentDashboard from "./app/Pages/StudentDashboard";
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -62,8 +62,8 @@ function App() {
         <Route path="/edit-attendance" element={<EditAttendance />} />
         <Route path="/view-profile" element={<TeacherViewProfile />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/create-account" element={<createAccount />} />
-
+        <Route path="/Create-account" element={<CreateAccount />} />
+        <Route path="/student-dashboard" element={<StudentDashboard />} />
       </Routes>
     </BrowserRouter>
   );
