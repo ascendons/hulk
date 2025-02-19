@@ -8,12 +8,11 @@ const ChangePasswordModal = ({ userId, isOpen, onClose }) => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
-  if (!isOpen) return null; // Don't render anything if modal is not open
+  if (!isOpen) return null; 
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
 
-    // Reset success and error messages
     setSuccess("");
     setError("");
 
@@ -34,7 +33,6 @@ const ChangePasswordModal = ({ userId, isOpen, onClose }) => {
     }
 
     try {
-      // Update the password in Firestore
       const userDocRef = doc(db, "teachersinfo", userId); // `userId` should be passed as a prop
       await updateDoc(userDocRef, {
         password: newPassword,

@@ -14,7 +14,7 @@ const SignupStudent = () => {
     year: "",
     division: "",
     rollno: "",
-    role: "student", // Role is set to student by default
+    role: "student", 
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -32,88 +32,66 @@ const SignupStudent = () => {
 
     // Check if any field is empty
     const isAnyFieldEmpty = Object.values(formData).some(
-      (value) => value.trim() === ""
+        (value) => value.trim() === ""
     );
     if (isAnyFieldEmpty) {
-      setError("Please fill in all fields before submitting!");
-      return;
+        setError("Please fill in all fields before submitting!");
+        return;
     }
 
     setIsLoading(true);
     setError(null);
 
     try {
-      // Create user with email and password
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
-      const user = userCredential.user;
+        const userCredential = await createUserWithEmailAndPassword(
+            auth,
+            formData.email,
+            formData.password
+        );
+        const user = userCredential.user;
 
-      // Store additional user information in appropriate collection
-      const userData = {
-        email: formData.email,
-        name: formData.name,
-        expoPushToken: "", // Placeholder for push notification token
-        role: formData.role,
-      };
+        await setDoc(doc(db, "users", user.uid), {
+            email: formData.email,
+            name: formData.name,
+            role: formData.role,
+        });
 
-      // Determine the correct collection based on role
-      const collectionName =
-        formData.role === "student" ? "students" : "teachersinfo";
+        const studentData = {
+            studentid: formData.studentid,
+            phonenumber: formData.phonenumber,
+            course: formData.course,
+            year: formData.year,
+            division: formData.division,
+            rollno: formData.rollno,
+            userId: user.uid, 
+        };
 
-      // Store role-specific data
-      const roleSpecificData = {
-        ...(formData.role === "student"
-          ? {
-              studentid: formData.studentid,
-              phonenumber: formData.phonenumber,
-              studentcourse: formData.course,
-              studentyear: formData.year,
-              division: formData.division,
-              studentrollno: formData.rollno,
-              userId: user.uid,
-            }
-          : {
-              // Teacher-specific fields would go here if needed
-            }),
-        ...userData, // Adding common user data
-      };
+        await setDoc(doc(db, "students", user.uid), studentData);
 
-      // Save to Firestore
-      await setDoc(doc(db, collectionName, user.uid), roleSpecificData);
-
-      // Clear form data and show success message
-      setFormData({
-        name: "",
-        email: "",
-        password: "",
-        studentid: "",
-        phonenumber: "",
-        course: "",
-        year: "",
-        division: "",
-        rollno: "",
-        role: "student", // Reset role to student
-      });
-      alert(
-        `${
-          formData.role === "student" ? "Student" : "Teacher"
-        } account created successfully!`
-      );
+        setFormData({
+            name: "",
+            email: "",
+            password: "",
+            studentid: "",
+            phonenumber: "",
+            course: "",
+            year: "",
+            division: "",
+            rollno: "",
+            role: "student", 
+        });
+        alert("Student account created successfully!");
     } catch (error) {
-      console.error(`Error signing up ${formData.role}:`, error);
-      if (error.code === "auth/email-already-in-use") {
-        setError("This email is already in use. Please use a different email.");
-      } else {
-        setError(`Failed to sign up ${formData.role}: ${error.message}`);
-      }
+        console.error(`Error signing up student:`, error);
+        if (error.code === "auth/email-already-in-use") {
+            setError("This email is already in use. Please use a different email.");
+        } else {
+            setError(`Failed to sign up student: ${error.message}`);
+        }
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
-  };
-
+};
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white shadow-md rounded-lg p-8 w-96">

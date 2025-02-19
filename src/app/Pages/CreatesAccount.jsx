@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { createUserWithEmailAndPassword } from "firebase/auth";
-import { auth, db } from "../../config"; // Assuming you have exported your Firebase auth and Firestore db instances
+import { auth, db } from "../../config";  
 import { DEPARTMENTS, DIVISIONS, ROLE } from "../constants.js";
 import {
   collection,
@@ -18,15 +18,15 @@ const CreateAccount = () => {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [teacherId, setTeacherId] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phone, setPhone] = useState("");
   const [department, setDepartment] = useState("");
   const [divisions, setDivisions] = useState("");
   const [subjects, setSubjects] = useState([]);
   const [availableSubjects, setAvailableSubjects] = useState([]);
   const [role, setRole] = useState("");
+  const [userId] = useState("");
 
   useEffect(() => {
-    // Fetch subjects when department changes
     const fetchSubjects = async () => {
       if (department) {
         const q = query(
@@ -54,56 +54,55 @@ const CreateAccount = () => {
         password,
         name,
         teacherId,
-        phoneNumber,
+        phone,
         department,
         divisions,
         subjects,
         role,
       });
-
+  
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
         password
       );
       console.log("User created:", userCredential.user);
-
-      // Preparing the data to be stored in Firestore
-      const userData = {
+  
+      await setDoc(doc(db, "users", userCredential.user.uid), {
         name: name,
-        teacherId: teacherId,
-        phoneNumber: phoneNumber,
         email: email,
+        role: role,
+      });
+  
+      const teacherData = {
+        teacherId: teacherId,
+        phone: phone,
         department: department,
         divisions: divisions,
-        subjects: subjects.map((sub) => sub.value), // Convert selected options to values
-        role: role,
-        classTeacher: "Yes", // Assuming all new accounts are class teachers by default
+        subjects: subjects.map((sub) => sub.value),  
+        classTeacher: divisions ? "Yes" : "No",  
+        userId :userCredential.user.uid
       };
-
-      // Storing the user data in the 'teachersinfo' collection
-      await setDoc(doc(db, "teachersinfo", userCredential.user.uid), userData);
-
-      // Show success popup
+  
+      await setDoc(doc(db, "teachersinfo", userCredential.user.uid), teacherData);
+  
       Swal.fire({
         icon: "success",
         title: "Account Created",
         text: "Your account has been created successfully!",
       });
-
-      // Optionally, reset form fields here
+  
       setName("");
       setTeacherId("");
       setEmail("");
       setPassword("");
-      setPhoneNumber("");
+      setPhone("");
       setDepartment("");
       setDivisions("");
       setSubjects([]);
       setRole("");
     } catch (error) {
       console.error("Error signing up:", error.message);
-      // Show error popup
       Swal.fire({
         icon: "error",
         title: "Oops...",
@@ -167,8 +166,8 @@ const CreateAccount = () => {
           <input
             type="tel"
             placeholder="Phone Number (+91 required)"
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
             className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
