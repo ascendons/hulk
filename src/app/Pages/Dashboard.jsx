@@ -30,7 +30,6 @@ const Dashboard = () => {
             setTeacherInfo(teacherSnapshot.docs[0].data());
           }
 
-          // Fetch total students
           const studentsSnapshot = await getDocs(collection(db, "students"));
           setTotalStudents(studentsSnapshot.size);
 
@@ -68,7 +67,6 @@ const Dashboard = () => {
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Sidebar */}
       <div
         onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}

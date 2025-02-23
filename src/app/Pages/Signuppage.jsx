@@ -5,6 +5,8 @@ import {
   sendPasswordResetEmail,
 } from "firebase/auth";
 import { auth } from "../../config";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../../config";
 import bglogin from "../../bglogin.png";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -22,11 +24,43 @@ const Signuppage = ({ onLogin }) => {
     setIsLoading(true);
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      toast.success("Successfully signed in!");
+      console.log("Attempting to sign in with email:", email);
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = userCredential.user;
+      console.log("User signed in with UID:", user.uid);
+
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        console.log("User document found:", userDoc.data());
+        const userData = userDoc.data();
+        const role = userData.role;
+
+        if (role === "teacher") {
+          console.log("Redirecting teacher to /dashboard");
+          toast.success("Welcome, Teacher!");
+          navigate("/dashboard");
+        } else if (role === "student") {
+          console.log("Redirecting student to /student-dashboard");
+          toast.success("Welcome, Student!");
+          navigate("/student-dashboard");
+        } else {
+          console.error("Unknown role detected:", role);
+          toast.error("Unknown role detected. Please contact support.");
+        }
+      } else {
+        console.error("User document not found for UID:", user.uid);
+        toast.error("User data not found in Firestore.");
+      }
+
       onLogin();
-      navigate("/home");
     } catch (err) {
+      console.error("Sign-in error:", err.message);
       toast.error(err.message);
     } finally {
       setIsLoading(false);
@@ -44,7 +78,6 @@ const Signuppage = ({ onLogin }) => {
     }
 
     try {
-      // Note: sendPasswordResetEmail only requires auth and email
       await sendPasswordResetEmail(auth, email);
       toast.success("Password reset email sent successfully");
     } catch (err) {
