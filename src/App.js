@@ -35,7 +35,7 @@ import CreateAccount from "./app/Pages/CreatesAccount";
 import StudentDashboard from "./app/Pages/StudentDashboard";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "./config";
-
+import StudentNotice from "./app/Pages/StudentNotice";
 const ProtectedRoute = ({ children, roleRequired }) => {
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
@@ -143,7 +143,7 @@ function App() {
         <Route path="/edit-attendance" element={<EditAttendance />} />
         <Route path="/view-profile" element={<TeacherViewProfile />} />
         <Route path="/Create-account" element={<CreateAccount />} />
-
+        <Route path="/student-notice" element={<StudentNotice />} />
         <Route path="*" element={<Navigate to="/signup" />} />
       </Routes>
     </BrowserRouter>

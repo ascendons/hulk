@@ -38,7 +38,7 @@ const StudentSidebar = () => {
         </li>
         <li>
           <Link
-            to="/Notices"
+            to="/student-notice"
             className="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors"
           >
             <Bell className="mr-3 text-green-400" />
