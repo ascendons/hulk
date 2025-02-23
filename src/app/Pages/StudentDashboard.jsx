@@ -105,12 +105,9 @@ const StudentDashboard = () => {
         <StudentSidebar />
       </div>
 
-      {/* Main Dashboard Content */}
       <div className="flex-1 p-6">
-        {/* Header */}
         <h1 className="text-3xl font-bold text-blue-600 mb-6">Dashboard</h1>
 
-        {/* User Profile Section */}
         <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex items-center justify-between border border-gray-200">
           <div className="flex items-center">
             <div className="w-12 h-12 bg-gray-300 rounded-full mr-4 flex items-center justify-center">

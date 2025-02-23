@@ -1,121 +1,90 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { onAuthStateChanged } from "firebase/auth";
 import { collection, query, orderBy, getDocs } from "firebase/firestore";
 import { auth, db } from "../../config"; // Ensure you have your Firebase config file
 import StudentSidebar from "../Components/StudentSidebar"; // Import StudentSidebar component
+import { useNavigate } from "react-router-dom";
+
 const StudentNotice = () => {
   const [notices, setNotices] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      if (currentUser) {
-        try {
-          // Fetch notices from Firestore, ordered by createdAt (most recent first)
-          const noticesQuery = query(
-            collection(db, "notices"),
-            orderBy("createdAt", "desc") // Match the field name from your Notices.jsx
-          );
-          const querySnapshot = await getDocs(noticesQuery);
-
-          const noticesList = querySnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
-
-          setNotices(noticesList);
-        } catch (error) {
-          console.error("Error fetching notices:", error);
-        }
-      } else {
-        setNotices([]);
+    const fetchNotices = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "notices"));
+        const fetchedNotices = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setNotices(fetchedNotices);
+      } catch (error) {
+        console.error("Error fetching notices:", error);
       }
-      setLoading(false);
-    });
+    };
 
-    return () => unsubscribe();
+    fetchNotices();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        Loading...
-      </div>
-    );
-  }
-
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex h-screen">
       {/* Sidebar */}
       <div
         onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}
         className={`${
           isSidebarHovered ? "w-64" : "w-16"
-        } bg-gray-900 text-white h-screen transition-all duration-300 overflow-hidden`}
+        } bg-blue-800 text-white h-screen transition-all duration-300 overflow-hidden`}
       >
-        <StudentSidebar /> {/* Assuming you have a StudentSidebar component */}
+        <StudentSidebar />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-6 overflow-y-auto">
-        {/* Header */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-blue-600">NOTICES</h1>
+      <div className="flex-1 p-6 bg-gray-100 overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-bold mb-8 text-blue-600">NOTICES</h1>
         </div>
 
-        {/* Notices List */}
-        <div className="space-y-4">
-          {notices.length > 0 ? (
-            notices.map((notice) => (
-              <div
-                key={notice.id}
-                className="bg-white p-4 rounded-lg shadow-md border border-gray-200"
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <p className="text-gray-800 font-semibold">
-                      Title: {notice.title || "No Title"}
-                    </p>
-                    <p className="text-gray-600">
-                      By: {notice.noticeBy || "Unknown"}
-                    </p>
-                  </div>
-                  <div className="text-right text-gray-500 text-sm">
-                    <p>
-                      Date: {new Date(notice.createdAt).toLocaleDateString()}
-                    </p>
-                    <p>
-                      Time: {new Date(notice.createdAt).toLocaleTimeString()}
-                    </p>
-                  </div>
-                </div>
-                <p className="text-gray-700 mb-2">
-                  Content: {notice.content || "No content available"}
-                </p>
-                <p className="text-gray-600">
-                  Attachments:{" "}
-                  {notice.file ? (
-                    <a
-                      href={notice.file}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-500 underline hover:text-blue-700"
-                    >
-                      Download File
-                    </a>
-                  ) : (
-                    "No attachments"
-                  )}
-                </p>
+        {notices.map((notice, index) => (
+          <div
+            key={index}
+            className="bg-white shadow-md rounded-md p-4 mb-4 border border-gray-300"
+          >
+            <div className="flex justify-between items-center mb-2">
+              <div>
+                <h2 className="text-lg font-bold">
+                  Title: {notice.title}{" "}
+                  <span className="text-gray-500">
+                    By:{notice.noticeBy || "Unknown"}
+                  </span>
+                </h2>
               </div>
-            ))
-          ) : (
-            <p className="text-gray-600">No notices available.</p>
-          )}
-        </div>
+              <div className="text-sm text-gray-500">
+                <p>Date: {new Date(notice.createdAt).toLocaleDateString()}</p>
+                <p>Time: {new Date(notice.createdAt).toLocaleTimeString()}</p>
+              </div>
+            </div>
+            <p className="mb-2 text-gray-700">
+              <strong>Content:</strong> {notice.content}
+            </p>
+            <p>
+              <strong>Attachments:</strong>{" "}
+              {notice.file ? (
+                <a
+                  href={notice.file}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 underline hover:text-blue-700"
+                >
+                  Download File
+                </a>
+              ) : (
+                "No attachments"
+              )}
+            </p>
+          </div>
+        ))}
       </div>
     </div>
   );

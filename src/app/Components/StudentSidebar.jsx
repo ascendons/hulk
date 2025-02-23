@@ -29,7 +29,7 @@ const StudentSidebar = () => {
       <ul className="flex-grow space-y-2">
         <li>
           <Link
-            to="/home"
+            to="/student-dashboard"
             className="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors"
           >
             <LayoutDashboard className="mr-3 text-green-400" />
@@ -47,31 +47,14 @@ const StudentSidebar = () => {
         </li>
         <li>
           <Link
-            to="/courses"
+            to="/student-timetable"
             className="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors"
           >
             <Calendar className="mr-3 text-green-400" />
             Timetable
           </Link>
         </li>
-        <li>
-          <Link
-            to="/students"
-            className="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors"
-          >
-            <Users className="mr-3 text-green-400" />
-            Students
-          </Link>
-        </li>
-        <li>
-          <Link
-            to="/Teachers"
-            className="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors"
-          >
-            <BookOpen className="mr-3 text-green-400" />
-            Teachers
-          </Link>
-        </li>
+
         <li>
           <Link
             to="/Attendance"

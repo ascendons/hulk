@@ -36,6 +36,7 @@ import StudentDashboard from "./app/Pages/StudentDashboard";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "./config";
 import StudentNotice from "./app/Pages/StudentNotice";
+import StudentTimetable from "./app/Pages/StudentTimetable";
 const ProtectedRoute = ({ children, roleRequired }) => {
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
@@ -72,7 +73,7 @@ const ProtectedRoute = ({ children, roleRequired }) => {
   }, []);
 
   if (isLoading) {
-    return <div>Loading...</div>; // Show loading while checking auth and role
+    return <div>Loading...</div>;
   }
 
   if (!user) {
@@ -144,6 +145,7 @@ function App() {
         <Route path="/view-profile" element={<TeacherViewProfile />} />
         <Route path="/Create-account" element={<CreateAccount />} />
         <Route path="/student-notice" element={<StudentNotice />} />
+        <Route path="/student-timetable" element={<StudentTimetable />} />
         <Route path="*" element={<Navigate to="/signup" />} />
       </Routes>
     </BrowserRouter>

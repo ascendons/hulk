@@ -4,6 +4,7 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import { db, auth } from "../../config";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
+import { renderSkeleton } from "../Components/reactSkelton";
 
 const Dashboard = () => {
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
@@ -11,9 +12,10 @@ const Dashboard = () => {
   const [totalStudents, setTotalStudents] = useState(0);
   const [totalTeachers, setTotalTeachers] = useState(0);
   const [totalSubjects, setTotalSubjects] = useState(0);
-  const [attendance, setAttendance] = useState(75); // Placeholder for attendance data
-  const [notices, setNotices] = useState([]); // Notices state
-  const navigate = useNavigate(); // For navigation
+  const [attendance, setAttendance] = useState(75);
+  const [notices, setNotices] = useState([]);
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -64,6 +66,10 @@ const Dashboard = () => {
     fetchDashboardData();
     fetchNotices();
   }, []);
+
+  if (loading) {
+    return renderSkeleton();
+  }
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
