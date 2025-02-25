@@ -18,7 +18,7 @@ const SubjectDetails = ({ userDepartment }) => {
         const q = query(
           collection(db, "Notes"),
           where("subject", "==", subjectName),
-          where("department", "==", userDepartment) // Filter by department
+          where("department", "==", userDepartment)
         );
         const querySnapshot = await getDocs(q);
         const fetchedNotes = querySnapshot.docs.map((doc) => ({
@@ -38,7 +38,6 @@ const SubjectDetails = ({ userDepartment }) => {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
       <div
         onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}
@@ -49,7 +48,6 @@ const SubjectDetails = ({ userDepartment }) => {
         <Sidebar />
       </div>
 
-      {/* Main Content */}
       <div className="flex-grow p-6">
         <h1 className="text-2xl font-bold">Notes</h1>
         {notes.length > 0 ? (

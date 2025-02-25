@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { db, storage } from "../../config";
 import { collection, addDoc, getDoc, doc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
@@ -8,7 +8,7 @@ import Sidebar from "../Components/Sidebar";
 import FileUploadModal from "../Components/FileUploadModal";
 import YoutubeLinkModal from "../Components/YoutubeLinkModal";
 import { DEPARTMENTS, DIVISIONS, YEARS } from "../constants";
-import { useParams, useNavigate } from "react-router-dom"; // For editing functionality
+import { useParams, useNavigate } from "react-router-dom";
 
 const AddNotes = () => {
   const { noteId } = useParams(); // Get noteId from URL for editing
@@ -25,16 +25,17 @@ const AddNotes = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [isYoutubeModalOpen, setIsYoutubeModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
-  // const [isDepartmentDivisionLocked, setIsDepartmentDivisionLocked] = useState(false);
   const [isRestricted] = useState(false);
+  const hoverTimeoutRef = useRef(null);
 
-  // Fetch note data if in edit mode
   useEffect(() => {
     if (noteId) {
       const fetchNote = async () => {
+        setIsFetching(true);
         try {
-          const noteDoc = await getDoc(doc(db, "Notes", noteId));
+          const noteDoc = await getDoc(doc(db, "notes", noteId));
           if (noteDoc.exists()) {
             const noteData = noteDoc.data();
             setTitle(noteData.title);
@@ -45,14 +46,15 @@ const AddNotes = () => {
             setSubject(noteData.subject);
             setUnit(noteData.unit);
             setYoutubeLink(noteData.youtubeLink || "");
-            // Note: File URL is not editable directly; re-upload if needed
           } else {
             toast.error("Note not found.");
-            navigate("/notes"); // Redirect if note doesn't exist
+            navigate("/notes");
           }
         } catch (error) {
           console.error("Error fetching note:", error);
           toast.error("Failed to fetch note.");
+        } finally {
+          setIsFetching(false);
         }
       };
 
@@ -65,6 +67,7 @@ const AddNotes = () => {
     setIsUploadModalOpen(false);
   }, []);
 
+  // Handle YouTube link submission
   const handleYoutubeSubmit = useCallback(
     (e) => {
       e.preventDefault();
@@ -74,7 +77,7 @@ const AddNotes = () => {
       }
 
       const youtubeRegex =
-        /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/;
+        /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
       if (!youtubeRegex.test(youtubeLink)) {
         toast.error("Please provide a valid YouTube link.");
         return;
@@ -86,35 +89,137 @@ const AddNotes = () => {
     [youtubeLink]
   );
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   console.log("Submit button clicked"); // Debugging line
+
+  //   if (!title || !department || !division || !year || !subject || !unit) {
+  //     toast.error("Please fill out all required fields.");
+  //     return;
+  //   }
+
+  //   setIsLoading(true);
+
+  //   try {
+  //     let fileURL = "";
+
+  //     if (file) {
+  //       const storageRef = ref(storage, `notes/${file.name}`);
+  //       const uploadTask = uploadBytesResumable(storageRef, file);
+
+  //       const toastId = toast.loading("Uploading file...");
+
+  //       await new Promise((resolve, reject) => {
+  //         uploadTask.on(
+  //           "state_changed",
+  //           (snapshot) => {
+  //             const progress =
+  //               (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+  //             toast.update(toastId, { progress: progress });
+  //           },
+  //           (error) => {
+  //             toast.update(toastId, {
+  //               render: `Upload failed: ${error.message}`,
+  //               type: toast.TYPE.ERROR,
+  //               isLoading: false,
+  //               autoClose: 3000,
+  //             });
+  //             reject(error);
+  //           },
+  //           async () => {
+  //             fileURL = await getDownloadURL(uploadTask.snapshot.ref);
+  //             toast.update(toastId, {
+  //               render: "Upload complete!",
+  //               type: toast.TYPE.SUCCESS,
+  //               isLoading: false,
+  //               autoClose: 3000,
+  //             });
+  //             resolve();
+  //           }
+  //         );
+  //       });
+  //     }
+
+  //     const newNote = {
+  //       title,
+  //       description,
+  //       department,
+  //       division,
+  //       year,
+  //       subject,
+  //       unit,
+  //       youtubeLink,
+  //       fileURL: fileURL || (noteId ? undefined : ""),
+  //       timestamp: new Date(),
+  //     };
+
+  //     console.log("New note data:", newNote);
+
+  //     if (noteId) {
+  //       // Update existing note
+  //       await updateDoc(doc(db, "notes", noteId), newNote);
+  //       toast.success("Note updated successfully!");
+  //     } else {
+  //       // Add new note
+  //       await addDoc(collection(db, "notes"), newNote);
+  //       toast.success("Note added successfully!");
+  //     }
+
+  //     // Reset form and redirect
+  //     setTitle("");
+  //     setDescription("");
+  //     setDepartment(DEPARTMENTS.BSCIT);
+  //     setDivision(DIVISIONS.A);
+  //     setYear("");
+  //     setSubject("");
+  //     setUnit("");
+  //     setFile(null);
+  //     setYoutubeLink("");
+  //     navigate("/notes"); // Redirect to notes list after saving
+  //   } catch (error) {
+  //     console.error("Error saving note:", error); // Debugging line
+  //     toast.error(`Failed to save note: ${error.message}`);
+  //   } finally {
+  //     setIsLoading(false);
+  //   }
+  // };
+
+  // Sidebar hover handling with delay
+
+
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log("Submit button clicked"); // Debugging
+  
     if (!title || !department || !division || !year || !subject || !unit) {
       toast.error("Please fill out all required fields.");
       return;
     }
-
+  
     setIsLoading(true);
-
+  
     try {
       let fileURL = "";
-
+  
       if (file) {
         const storageRef = ref(storage, `notes/${file.name}`);
         const uploadTask = uploadBytesResumable(storageRef, file);
-
+  
         const toastId = toast.loading("Uploading file...");
-
+  
         await new Promise((resolve, reject) => {
           uploadTask.on(
             "state_changed",
             (snapshot) => {
               const progress =
                 (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-              toast.update(toastId, { progress: progress });
+              console.log(`Upload Progress: ${progress}%`);
             },
             (error) => {
+              console.error("Upload failed:", error);
               toast.update(toastId, {
-                render: "Upload failed!",
+                render: `Upload failed: ${error.message}`,
                 type: toast.TYPE.ERROR,
                 isLoading: false,
                 autoClose: 3000,
@@ -123,6 +228,7 @@ const AddNotes = () => {
             },
             async () => {
               fileURL = await getDownloadURL(uploadTask.snapshot.ref);
+              console.log("File uploaded successfully:", fileURL);
               toast.update(toastId, {
                 render: "Upload complete!",
                 type: toast.TYPE.SUCCESS,
@@ -134,7 +240,7 @@ const AddNotes = () => {
           );
         });
       }
-
+  
       const newNote = {
         title,
         description,
@@ -144,21 +250,24 @@ const AddNotes = () => {
         subject,
         unit,
         youtubeLink,
-        fileURL: fileURL || (noteId ? undefined : ""), // Preserve existing fileURL if not uploading a new file
+        fileURL: fileURL || (noteId ? undefined : ""),
         timestamp: new Date(),
       };
-
+  
+      console.log("New note data:", newNote); // Debugging
+  
       if (noteId) {
-        // Update existing note
-        await updateDoc(doc(db, "Notes", noteId), newNote);
+        console.log("Updating note with ID:", noteId);
+        await updateDoc(doc(db, "notes", noteId), newNote);
         toast.success("Note updated successfully!");
       } else {
-        // Add new note
-        await addDoc(collection(db, "Notes"), newNote);
+        console.log("Adding new note to Firestore");
+        const docRef = await addDoc(collection(db, "notes"), newNote);
+        console.log("Document added with ID:", docRef.id);
         toast.success("Note added successfully!");
       }
-
-      // Reset form and redirect
+  
+      // Reset form and navigate
       setTitle("");
       setDescription("");
       setDepartment(DEPARTMENTS.BSCIT);
@@ -168,21 +277,38 @@ const AddNotes = () => {
       setUnit("");
       setFile(null);
       setYoutubeLink("");
-      navigate("/notes"); // Redirect to notes list after saving
+      navigate("/notes");
     } catch (error) {
       console.error("Error saving note:", error);
-      toast.error("Failed to save note. Please try again.");
+      toast.error(`Failed to save note: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleMouseEnter = () => {
+    clearTimeout(hoverTimeoutRef.current);
+    setIsSidebarHovered(true);
+  };
+
+  const handleMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsSidebarHovered(false);
+    }, 300); // 300ms delay
+  };
+
+  useEffect(() => {
+    return () => {
+      clearTimeout(hoverTimeoutRef.current);
+    };
+  }, []);
+
   return (
     <div className="w-screen h-screen bg-gray-100 flex">
       {/* Sidebar */}
       <div
-        onMouseEnter={() => setIsSidebarHovered(true)}
-        onMouseLeave={() => setIsSidebarHovered(false)}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
         className={`${
           isSidebarHovered ? "w-64" : "w-16"
         } bg-blue-800 text-white h-screen transition-all duration-300 overflow-hidden`}
@@ -197,6 +323,7 @@ const AddNotes = () => {
             {noteId ? "Edit Note" : "Add Note"}
           </h1>
 
+          {/* Form Fields */}
           {/* Title */}
           <div className="mb-6">
             <label className="block text-gray-700 font-bold mb-2">Title</label>
@@ -210,7 +337,6 @@ const AddNotes = () => {
             />
           </div>
 
-          {/* Description */}
           <div className="mb-6">
             <label className="block text-gray-700 font-bold mb-2">
               Description
@@ -224,7 +350,6 @@ const AddNotes = () => {
             />
           </div>
 
-          {/* Department, Division, Year, Subject, Unit */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <div>
               <label className="block text-gray-700 font-bold mb-2">
@@ -245,6 +370,7 @@ const AddNotes = () => {
               </select>
             </div>
 
+            {/* Division */}
             <div>
               <label className="block text-gray-700 font-bold mb-2">
                 Division
@@ -264,6 +390,7 @@ const AddNotes = () => {
               </select>
             </div>
 
+            {/* Year */}
             <div>
               <label className="block text-gray-700 font-bold mb-2">Year</label>
               <select
@@ -280,6 +407,7 @@ const AddNotes = () => {
               </select>
             </div>
 
+            {/* Subject */}
             <div>
               <label className="block text-gray-700 font-bold mb-2">
                 Subject
@@ -294,6 +422,7 @@ const AddNotes = () => {
               />
             </div>
 
+            {/* Unit */}
             <div>
               <label className="block text-gray-700 font-bold mb-2">Unit</label>
               <input
@@ -411,7 +540,7 @@ const AddNotes = () => {
           <div className="flex justify-end">
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || isFetching}
               className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition duration-300"
               onClick={handleSubmit}
             >
@@ -427,7 +556,6 @@ const AddNotes = () => {
         </div>
       </div>
 
-      {/* Modals */}
       {isYoutubeModalOpen && (
         <YoutubeLinkModal
           youtubeLink={youtubeLink}

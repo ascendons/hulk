@@ -11,25 +11,45 @@ const Teachers = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
 
+  
   const fetchTeachers = useCallback(async () => {
     setLoading(true);
     try {
       console.log("Fetching teachers for department:", selectedDepartment);
   
-      const q = query(
+      // Step 1: Fetch teacher details from the `teachersinfo` collection
+      const teachersInfoQuery = query(
         collection(db, "teachersinfo"),
         where("department", "==", selectedDepartment)
       );
+      const teachersInfoSnapshot = await getDocs(teachersInfoQuery);
+      console.log("Teachers Info Snapshot:", teachersInfoSnapshot.docs);
   
-      const querySnapshot = await getDocs(q);
-      const fetchedTeachers = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      // Step 2: Fetch teacher names from the `users` collection
+      const usersQuery = query(collection(db, "users"), where("role", "==", "teacher"));
+      const usersSnapshot = await getDocs(usersQuery);
+      console.log("Users Snapshot:", usersSnapshot.docs);
   
-      console.log("Query Snapshot Docs:", querySnapshot.docs);
+      // Step 3: Combine data from both collections
+      const fetchedTeachers = teachersInfoSnapshot.docs.map((teacherInfoDoc) => {
+        const teacherInfoData = teacherInfoDoc.data();
+  
+        // Find the corresponding user document using `userId`
+        const userDoc = usersSnapshot.docs.find(
+          (userDoc) => userDoc.id === teacherInfoData.userId
+        );
+  
+        return {
+          id: teacherInfoDoc.id,
+          teachername: userDoc ? userDoc.data().name : "Unknown",
+          teacheremail: userDoc ? userDoc.data().email : "Unknown",
+          ...teacherInfoData,
+        };
+      });
+  
       console.log("Fetched Teachers Before Filtering:", fetchedTeachers);
   
+      // Step 4: Filter teachers based on search term
       if (searchTerm) {
         const filteredTeachers = fetchedTeachers.filter(
           (teacher) =>
@@ -49,6 +69,7 @@ const Teachers = () => {
     }
   }, [selectedDepartment, searchTerm]);
 
+
   const handleSeeListClick = () => {
     fetchTeachers();
   };
@@ -64,6 +85,7 @@ const Teachers = () => {
 
   return (
     <div className="flex h-screen bg-gray-100">
+      {/* Sidebar */}
       <div
         onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}
@@ -74,6 +96,7 @@ const Teachers = () => {
         <Sidebar />
       </div>
 
+      {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="flex-1 overflow-auto p-6">
           <div className="flex justify-between items-center mb-6">
@@ -83,7 +106,7 @@ const Teachers = () => {
               onChange={(e) => setSelectedDepartment(e.target.value)}
               className="px-4 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-            {DEPARTMENTS.map((dept) => (
+              {DEPARTMENTS.map((dept) => (
                 <option key={dept} value={dept}>
                   {dept}
                 </option>
@@ -91,6 +114,7 @@ const Teachers = () => {
             </select>
           </div>
 
+          {/* Search & Filter Secxtion */}
           <div className="bg-white border rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4">Search & Filter</h2>
             <div className="flex items-center">
@@ -110,6 +134,7 @@ const Teachers = () => {
             </div>
           </div>
 
+          {/* Teachers Table */}
           {loading ? (
             <div className="flex justify-center items-center">
               <p className="text-blue-600 text-lg font-semibold">Loading...</p>
