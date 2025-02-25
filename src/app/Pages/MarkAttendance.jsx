@@ -1,6 +1,14 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "../Components/Sidebar";
-import { collection, query, where, getDocs, addDoc } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  addDoc,
+  getDoc,
+  doc,
+} from "firebase/firestore";
 import { db } from "../../config";
 import { Users } from "lucide-react";
 
@@ -11,9 +19,7 @@ const MarkAttendance = () => {
   const [selectedClass, setSelectedClass] = useState("Bsc.IT");
   const [selectedDivision, setSelectedDivision] = useState("A");
   const [selectedYear, setSelectedYear] = useState("Third Year");
-  const [date, setDate] = useState(
-    () => new Date().toISOString().split("T")[0]
-  );
+  const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [lectureName, setLectureName] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
@@ -24,16 +30,15 @@ const MarkAttendance = () => {
   const fetchStudents = async () => {
     try {
       setLoading(true);
-      const q = query(
+      const studentsQuery = query(
         collection(db, "students"),
-        where("studentcourse", "==", selectedClass),
+        where("course", "==", selectedClass),
         where("division", "==", selectedDivision),
-        where("studentyear", "==", selectedYear)
+        where("year", "==", selectedYear)
       );
 
-      const querySnapshot = await getDocs(q);
-
-      if (querySnapshot.empty) {
+      const studentsSnapshot = await getDocs(studentsQuery);
+      if (studentsSnapshot.empty) {
         alert("No students found for the selected filters.");
         setStudents([]);
         setAttendance({});
@@ -41,21 +46,35 @@ const MarkAttendance = () => {
         return;
       }
 
-      const fetchedStudents = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const fetchedStudents = await Promise.all(
+        studentsSnapshot.docs.map(async (docSnapshot) => {
+          const studentData = docSnapshot.data();
+          const userDocRef = doc(db, "users", studentData.userId);
+          const userDoc = await getDoc(userDocRef);
+
+          return {
+            id: docSnapshot.id,
+            course: studentData.course,
+            division: studentData.division,
+            phonenumber: studentData.phonenumber,
+            rollno: studentData.rollno,
+            studentid: studentData.studentid,
+            year: studentData.year,
+            studentname: userDoc.exists() ? userDoc.data().name : "Unknown",
+            email: userDoc.exists() ? userDoc.data().email : "Unknown",
+          };
+        })
+      );
 
       setStudents(fetchedStudents);
-
       const initialAttendance = {};
       fetchedStudents.forEach((student) => {
-        initialAttendance[student.id] = "Present";
+        initialAttendance[student.id] = "P";
       });
       setAttendance(initialAttendance);
       setIsDataFetched(true);
     } catch (error) {
-      console.error("Error fetching students:", error.message);
+      console.error("Error fetching students:", error);
       alert("Failed to fetch students. Please try again.");
     } finally {
       setLoading(false);
@@ -64,21 +83,16 @@ const MarkAttendance = () => {
 
   const fetchSubjects = async () => {
     try {
-      const q = query(
+      const subjectsQuery = query(
         collection(db, "subjects"),
         where("department", "==", selectedClass)
       );
-
-      const querySnapshot = await getDocs(q);
-
-      if (!querySnapshot.empty) {
-        const fetchedSubjects = querySnapshot.docs.map((doc) => doc.data());
-        setSubjects(fetchedSubjects);
-      } else {
-        setSubjects([]);
-      }
+      const subjectsSnapshot = await getDocs(subjectsQuery);
+      const fetchedSubjects = subjectsSnapshot.docs.map((doc) => doc.data());
+      setSubjects(fetchedSubjects);
     } catch (error) {
-      console.error("Error fetching subjects:", error.message);
+      console.error("Error fetching subjects:", error);
+      alert("Failed to fetch subjects. Please try again.");
     }
   };
 
@@ -105,7 +119,7 @@ const MarkAttendance = () => {
       const attendanceData = students.map((student) => ({
         date,
         name: student.studentname,
-        rollNo: student.studentrollno,
+        rollNo: student.rollno,
         subject: lectureName,
         status: attendance[student.id],
       }));
@@ -138,7 +152,6 @@ const MarkAttendance = () => {
       <div className="flex-grow p-4 md:p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
-            {/* <Users className="text-3xl md:text-4xl text-gray-400 mr-2" /> */}
             <h1 className="text-3xl font-bold mb-8 text-blue-600">
               MARK ATTENDANCE
             </h1>
@@ -251,7 +264,7 @@ const MarkAttendance = () => {
                         {student.studentname}
                       </td>
                       <td className="px-2 md:px-6 py-2 md:py-4 text-xs md:text-sm text-gray-700">
-                        {student.studentrollno}
+                        {student.rollno}
                       </td>
                       <td className="px-4 md:px-6 py-2 md:py-4 text-xs md:text-sm text-gray-700 flex justify-center gap-1 md:gap-3">
                         <button
@@ -278,18 +291,6 @@ const MarkAttendance = () => {
                         >
                           Absent
                         </button>
-                        {/* <button
-                          className={`px-2 md:px-4 py-1 md:py-2 rounded-lg text-xs md:text-sm ${
-                            attendance[student.id] === "Late"
-                              ? "bg-yellow-500 text-white"
-                              : "bg-gray-200"
-                          }`}
-                          onClick={() =>
-                            handleAttendanceChange(student.id, "Late")
-                          }
-                        >
-                          Late
-                        </button> */}
                       </td>
                     </tr>
                   ))}

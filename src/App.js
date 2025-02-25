@@ -35,12 +35,15 @@ import CreateAccount from "./app/Pages/CreatesAccount";
 import StudentDashboard from "./app/Pages/StudentDashboard";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "./config";
+import { AuthProvider } from "./authContext"; // Import AuthProvider
 import StudentNotice from "./app/Pages/StudentNotice";
+import StudentAttendance from "./app/Pages/StudentAttedence";
 import StudentTimetable from "./app/Pages/StudentTimetable";
+
 const ProtectedRoute = ({ children, roleRequired }) => {
   const [user, setUser] = useState(null);
   const [userRole, setUserRole] = useState(null);
-  const [isLoading, setIsLoading] = useState(true); // Add loading state
+  const [isLoading, setIsLoading] = useState(true);
   const location = useLocation();
 
   useEffect(() => {
@@ -56,7 +59,7 @@ const ProtectedRoute = ({ children, roleRequired }) => {
             setUserRole(userDoc.data().role);
           } else {
             console.error("User document not found for UID:", currentUser.uid);
-            setUserRole(null); // Handle user not found in Firestore
+            setUserRole(null);
           }
         } catch (error) {
           console.error("Error fetching user role:", error);
@@ -66,7 +69,7 @@ const ProtectedRoute = ({ children, roleRequired }) => {
         setUser(null);
         setUserRole(null);
       }
-      setIsLoading(false); // Set loading to false after fetching
+      setIsLoading(false);
     });
 
     return () => unsubscribe();
@@ -101,54 +104,228 @@ const ProtectedRoute = ({ children, roleRequired }) => {
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/signup" element={<Signuppage onLogin={() => {}} />} />
+    <AuthProvider>
+      {" "}
+      {/* Wrap with AuthProvider */}
+      <BrowserRouter>
+        <Routes>
+          <Route path="/signup" element={<Signuppage onLogin={() => {}} />} />
 
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute roleRequired="teacher">
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute roleRequired="teacher">
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
 
-        <Route
-          path="/student-dashboard"
-          element={
-            <ProtectedRoute roleRequired="student">
-              <StudentDashboard />
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/student-dashboard"
+            element={
+              <ProtectedRoute roleRequired="student">
+                <StudentDashboard />
+              </ProtectedRoute>
+            }
+          />
 
-        <Route path="/courses" element={<Courses />} />
-        <Route path="/students" element={<Students />} />
-        <Route path="/liststudents" element={<ListStudents />} />
-        <Route path="/edittimetable" element={<EditTimetable />} />
-        <Route path="/addstudent" element={<AddStudent />} />
-        <Route path="/addteacher" element={<AddTeacher />} />
-        <Route path="/Notices" element={<Notices />} />
-        <Route path="/create-notice" element={<CreateNotice />} />
-        <Route path="/Attendance" element={<Attendance />} />
-        <Route path="/mark-attendance" element={<MarkAttendance />} />
-        <Route path="/Teachers" element={<Teachers />} />
-        <Route path="/Addsubjects" element={<AddSubjects />} />
-        <Route path="/Notes" element={<Notes />} />
-        <Route path="/subject/:subjectName" element={<SubjectDetails />} />
-        <Route path="/add-notes" element={<AddNotes />} />
-        <Route path="/add-assignment" element={<AddAssignment />} />
-        <Route path="/assignment/:id" element={<AssignmentDetail />} />
-        <Route path="/see-attendance" element={<SeeAttendance />} />
-        <Route path="/edit-attendance" element={<EditAttendance />} />
-        <Route path="/view-profile" element={<TeacherViewProfile />} />
-        <Route path="/Create-account" element={<CreateAccount />} />
-        <Route path="/student-notice" element={<StudentNotice />} />
-        <Route path="/student-timetable" element={<StudentTimetable />} />
-        <Route path="*" element={<Navigate to="/signup" />} />
-      </Routes>
-    </BrowserRouter>
+          {/* Protect other routes as needed */}
+          <Route
+            path="/courses"
+            element={
+              <ProtectedRoute roleRequired="teacher">
+                <Courses />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/students"
+            element={
+              <ProtectedRoute roleRequired="teacher">
+                <Students />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/liststudents"
+            element={
+              <ProtectedRoute roleRequired="teacher">
+                <ListStudents />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/edittimetable"
+            element={
+              <ProtectedRoute roleRequired="teacher">
+                <EditTimetable />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/addstudent"
+            element={
+              <ProtectedRoute roleRequired="teacher">
+                <AddStudent />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/addteacher"
+            element={
+              <ProtectedRoute roleRequired="teacher">
+                <AddTeacher />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/Notices"
+            element={
+              <ProtectedRoute roleRequired="teacher">
+                <Notices />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/create-notice"
+            element={
+              <ProtectedRoute roleRequired="teacher">
+                <CreateNotice />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/Attendance"
+            element={
+              <ProtectedRoute roleRequired="teacher">
+                <Attendance />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/mark-attendance"
+            element={
+              <ProtectedRoute roleRequired="teacher">
+                <MarkAttendance />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/Teachers"
+            element={
+              <ProtectedRoute roleRequired="teacher">
+                <Teachers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/Addsubjects"
+            element={
+              <ProtectedRoute roleRequired="teacher">
+                <AddSubjects />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/Notes"
+            element={
+              <ProtectedRoute roleRequired="teacher">
+                <Notes />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/subject/:subjectName"
+            element={
+              <ProtectedRoute roleRequired="teacher">
+                <SubjectDetails />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/add-notes"
+            element={
+              <ProtectedRoute roleRequired="teacher">
+                <AddNotes />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/add-assignment"
+            element={
+              <ProtectedRoute roleRequired="teacher">
+                <AddAssignment />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/assignment/:id"
+            element={
+              <ProtectedRoute roleRequired="teacher">
+                <AssignmentDetail />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/see-attendance"
+            element={
+              <ProtectedRoute roleRequired="teacher">
+                <SeeAttendance />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/edit-attendance"
+            element={
+              <ProtectedRoute roleRequired="teacher">
+                <EditAttendance />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/view-profile"
+            element={
+              <ProtectedRoute roleRequired="teacher">
+                <TeacherViewProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/Create-account"
+            element={
+              <ProtectedRoute roleRequired="teacher">
+                <CreateAccount />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/student-notice"
+            element={
+              <ProtectedRoute roleRequired="student">
+                <StudentNotice />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/student-timetable"
+            element={
+              <ProtectedRoute roleRequired="student">
+                <StudentTimetable />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/StudentAttendance"
+            element={
+              <ProtectedRoute roleRequired="student">
+                <StudentAttendance />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/signup" />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

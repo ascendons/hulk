@@ -38,7 +38,7 @@ const Assignments = () => {
           setIsLoading(true);
           setError("");
           const q = query(
-            collection(db, "Assignments"),
+            collection(db, "assignments"),
             where("assignedBy", "==", userName)
           );
           const querySnapshot = await getDocs(q);

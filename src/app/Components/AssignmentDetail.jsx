@@ -10,7 +10,7 @@ const AssignmentDetail = () => {
   useEffect(() => {
     const fetchAssignment = async () => {
       try {
-        const docRef = doc(db, "Assignments", id);
+        const docRef = doc(db, "assignments", id);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           setAssignment(docSnap.data());

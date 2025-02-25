@@ -29,7 +29,7 @@ const Sidebar = () => {
       <ul className="flex-grow space-y-2">
         <li>
           <Link
-            to="/home"
+            to="/dashboard"
             className="flex items-center p-3 rounded-lg hover:bg-gray-700 transition-colors"
           >
             <LayoutDashboard className="mr-3 text-green-400" />

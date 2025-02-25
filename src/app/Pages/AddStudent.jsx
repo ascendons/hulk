@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { doc, setDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { db, auth } from "../../config";
+import { useNavigate } from "react-router-dom";
 
 const SignupStudent = () => {
   const [formData, setFormData] = useState({
@@ -14,84 +15,93 @@ const SignupStudent = () => {
     year: "",
     division: "",
     rollno: "",
-    role: "student", 
+    role: "student",
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
+    if (name === "name") {
+      const capitalizedName = value.charAt(0).toUpperCase() + value.slice(1);
+      setFormData((prevData) => ({
+        ...prevData,
+        [name]: capitalizedName,
+      }));
+    } else {
+      setFormData((prevData) => ({
+        ...prevData,
+        [name]: value,
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Check if any field is empty
     const isAnyFieldEmpty = Object.values(formData).some(
-        (value) => value.trim() === ""
+      (value) => value.trim() === ""
     );
     if (isAnyFieldEmpty) {
-        setError("Please fill in all fields before submitting!");
-        return;
+      setError("Please fill in all fields before submitting!");
+      return;
     }
 
     setIsLoading(true);
     setError(null);
 
     try {
-        const userCredential = await createUserWithEmailAndPassword(
-            auth,
-            formData.email,
-            formData.password
-        );
-        const user = userCredential.user;
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
+      const user = userCredential.user;
 
-        await setDoc(doc(db, "users", user.uid), {
-            email: formData.email,
-            name: formData.name,
-            role: formData.role,
-        });
+      await setDoc(doc(db, "users", user.uid), {
+        email: formData.email,
+        name: formData.name,
+        role: formData.role,
+      });
 
-        const studentData = {
-            studentid: formData.studentid,
-            phonenumber: formData.phonenumber,
-            course: formData.course,
-            year: formData.year,
-            division: formData.division,
-            rollno: formData.rollno,
-            userId: user.uid, 
-        };
+      const studentData = {
+        studentid: formData.studentid,
+        phonenumber: formData.phonenumber,
+        course: formData.course,
+        year: formData.year,
+        division: formData.division,
+        rollno: formData.rollno,
+        userId: user.uid,
+      };
 
-        await setDoc(doc(db, "students", user.uid), studentData);
+      await setDoc(doc(db, "students", user.uid), studentData);
 
-        setFormData({
-            name: "",
-            email: "",
-            password: "",
-            studentid: "",
-            phonenumber: "",
-            course: "",
-            year: "",
-            division: "",
-            rollno: "",
-            role: "student", 
-        });
-        alert("Student account created successfully!");
+      setFormData({
+        name: "",
+        email: "",
+        password: "",
+        studentid: "",
+        phonenumber: "",
+        course: "",
+        year: "",
+        division: "",
+        rollno: "",
+        role: "student",
+      });
+      alert("Student account created successfully!");
     } catch (error) {
-        console.error(`Error signing up student:`, error);
-        if (error.code === "auth/email-already-in-use") {
-            setError("This email is already in use. Please use a different email.");
-        } else {
-            setError(`Failed to sign up student: ${error.message}`);
-        }
+      console.error(`Error signing up student:`, error);
+      if (error.code === "auth/email-already-in-use") {
+        setError("This email is already in use. Please use a different email.");
+      } else {
+        setError(`Failed to sign up student: ${error.message}`);
+      }
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
+      navigate("/addstudent");
     }
-};
+  };
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white shadow-md rounded-lg p-8 w-96">
@@ -228,6 +238,7 @@ const SignupStudent = () => {
             type="submit"
             className="w-full bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600"
             disabled={isLoading}
+            onClick={() => navigate("/addstudent")}
           >
             {isLoading ? "Signing Up..." : "Sign Up"}
           </button>
