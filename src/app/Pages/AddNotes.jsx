@@ -1,8 +1,9 @@
 // src/components/AddNote.js
 import React, { useState, useEffect } from "react";
-import { DEPARTMENTS, DIVISIONS, YEARS, ROLE, SUBJECTS } from "../constants";
+import { DEPARTMENTS, DIVISIONS, YEARS, SUBJECTS } from "../constants";
 import { db } from "../../config"; // Import Firestore instance
 import { collection, addDoc } from "firebase/firestore"; // Import addDoc for writing to Firestore
+import supabase from "../../supabaseclient"; // Import Supabase client
 
 const AddNote = () => {
   const [formData, setFormData] = useState({
@@ -13,12 +14,13 @@ const AddNote = () => {
     year: "Third Year", // Default value from YEARS
     subject: "", // Will be updated dynamically
     unit: "1",
-    role: "Admin", // Default value from ROLE
+    fileUrl: "", // To store the uploaded file URL
   });
 
   const [subjects, setSubjects] = useState([]); // State to store filtered subjects
   const [loading, setLoading] = useState(false); // Loading state
   const [error, setError] = useState(null); // Error state
+  const [file, setFile] = useState(null); // State to store the uploaded file
 
   // Filter subjects based on the selected department
   useEffect(() => {
@@ -27,16 +29,7 @@ const AddNote = () => {
 
     try {
       console.log("Filtering subjects for department:", formData.department);
-      // For this example, we'll assume all subjects in SUBJECTS are for BSc.IT
-      let filteredSubjects = SUBJECTS;
-
-      // If you have a specific mapping of subjects to departments, you could use:
-      // const departmentSubjects = {
-      //   "BSc.IT": ["SQA", "SIC", "ITSM", "GIS"],
-      //   "BCOM": ["Subject1", "Subject2"], // Add other departments and their subjects
-      //   // ... more mappings
-      // };
-      // filteredSubjects = departmentSubjects[formData.department] || [];
+      let filteredSubjects = SUBJECTS;  
 
       if (!filteredSubjects || filteredSubjects.length === 0) {
         console.log("No subjects found for department:", formData.department);
@@ -49,7 +42,6 @@ const AddNote = () => {
       console.log("Filtered subjects:", filteredSubjects);
       setSubjects(filteredSubjects);
 
-      // Set the first subject as default if available
       if (filteredSubjects.length > 0) {
         setFormData((prev) => ({
           ...prev,
@@ -76,10 +68,31 @@ const AddNote = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError(null); // Reset error state
+    setError(null);
 
     try {
-      // Add the form data to the Firestore 'Notes' collection
+      let fileUrl = null;
+      if (file) {
+        // Upload file to Supabase storage
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${Math.random()}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from("notes") 
+          .upload(filePath, file);
+
+        if (uploadError) {
+          throw uploadError;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from("notes")
+          .getPublicUrl(filePath);
+
+        fileUrl = publicUrl;
+      }
+
       const notesRef = collection(db, "Notes");
       await addDoc(notesRef, {
         title: formData.title,
@@ -89,12 +102,12 @@ const AddNote = () => {
         year: formData.year,
         subject: formData.subject,
         unit: formData.unit,
-        role: formData.role,
+        fileUrl: fileUrl, // Save the file URL
         timestamp: new Date().toISOString(), // Optional: Add a timestamp for when the note was created
       });
 
       console.log("Note added successfully to Firestore!");
-      // Optionally, reset the form or show a success message
+      // Reset the form
       setFormData({
         title: "new",
         description: "",
@@ -103,9 +116,10 @@ const AddNote = () => {
         year: "Third Year",
         subject: "",
         unit: "1",
-        role: "Admin",
+        fileUrl: "",
       });
       setSubjects(SUBJECTS); // Reset subjects to default (for BSc.IT)
+      setFile(null); // Reset file input
     } catch (error) {
       console.error("Error adding note to Firestore:", error);
       setError("Failed to save note. Check console for details.");
@@ -121,7 +135,7 @@ const AddNote = () => {
           onSubmit={handleSubmit}
           className="flex flex-col md:flex-row gap-6 h-full"
         >
-          {/* Left Column: Title, Description, Role, and Attachments */}
+          {/* Left Column: Title, Description, and Attachments */}
           <div className="w-full md:w-1/2">
             <h2 className="text-2xl font-bold text-blue-600 mb-4">Add Note</h2>
             {/* Title */}
@@ -151,45 +165,18 @@ const AddNote = () => {
               ></textarea>
             </div>
 
-            {/* Role (Added as a dropdown) */}
+            
+
+            {/* File Upload */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700">
-                Role
+                Upload File
               </label>
-              <select
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
+              <input
+                type="file"
+                onChange={(e) => setFile(e.target.files[0])}
                 className="mt-1 block w-full border-gray-300 rounded-md focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50"
-              >
-                {ROLE.map((role) => (
-                  <option key={role} value={role}>
-                    {role}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Attachments */}
-            <div className="mb-4 flex space-x-2">
-              <button
-                type="button"
-                className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600"
-                aria-label="Add YouTube Link"
-              >
-                <span className="sr-only">YouTube</span>
-                {/* YouTube icon (simulated with text or you can use an icon library like react-icons) */}
-                YouTube
-              </button>
-              <button
-                type="button"
-                className="bg-gray-300 text-white p-2 rounded-full hover:bg-gray-400"
-                aria-label="Upload File"
-              >
-                <span className="sr-only">Upload</span>
-                {/* Upload icon (simulated with text or you can use an icon library) */}
-                Uploaded
-              </button>
+              />
             </div>
           </div>
 
@@ -276,7 +263,6 @@ const AddNote = () => {
               {error && <p className="text-sm text-red-500">{error}</p>}
             </div>
 
-            {/* Unit */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700">
                 Unit
@@ -290,7 +276,6 @@ const AddNote = () => {
               />
             </div>
 
-            {/* POST Button */}
             <button
               type="submit"
               className="mt-4 w-full bg-gray-300 text-black px-4 py-2 rounded-md hover:bg-gray-400"
