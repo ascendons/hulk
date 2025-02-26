@@ -259,7 +259,7 @@ function App() {
             }
           />
           <Route
-            path="/assignment/:id"
+            path="/assignment"
             element={
               <ProtectedRoute roleRequired="teacher">
                 <AssignmentDetail />
