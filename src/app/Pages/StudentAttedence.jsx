@@ -1,9 +1,10 @@
+// src/components/StudentAttendance.jsx
 import React, { useState, useEffect, useContext } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../config";
-import Sidebar from "../Components/Sidebar";
 import { AuthContext } from "../../authContext"; // Import your authentication context
 import StudentSidebar from "../Components/StudentSidebar";
+import Sidebar from "../Components/Sidebar";
 
 const StudentAttendance = () => {
   const [isSidebarHovered, setIsSidebarHovered] = useState(false); // Sidebar hover state
@@ -32,7 +33,7 @@ const StudentAttendance = () => {
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
-          alert("No attendance records found for this student.");
+          console.log("No attendance records found for this student.");
         } else {
           const fetchedRecords = [];
           let totalPresent = 0;
@@ -61,12 +62,11 @@ const StudentAttendance = () => {
               total: totalSessions,
             });
           } else {
-            alert("No attendance records found for this student.");
+            console.log("No attendance records found for this student.");
           }
         }
       } catch (error) {
         console.error("Error fetching attendance records:", error);
-        alert("Failed to fetch attendance records. Please try again.");
       } finally {
         setIsLoading(false);
       }
@@ -96,11 +96,12 @@ const StudentAttendance = () => {
         </h1>
 
         {/* Loading State */}
-        {isLoading && (
-          <p className="text-gray-600">Loading attendance records...</p>
-        )}
-
-        {attendanceRecords.length > 0 && (
+        {isLoading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        ) : /* Attendance Data */
+        attendanceRecords.length > 0 ? (
           <div className="mt-6 w-full bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-bold mb-4 text-gray-800">Attendance</h2>
             <div className="flex justify-between items-center mb-4">
@@ -148,6 +149,10 @@ const StudentAttendance = () => {
               </tbody>
             </table>
           </div>
+        ) : (
+          <p className="text-center text-gray-600">
+            No attendance records found.
+          </p>
         )}
       </div>
     </div>
