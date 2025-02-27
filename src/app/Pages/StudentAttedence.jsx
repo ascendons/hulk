@@ -4,7 +4,6 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../config";
 import { AuthContext } from "../../authContext"; // Import your authentication context
 import StudentSidebar from "../Components/StudentSidebar";
-import Sidebar from "../Components/Sidebar";
 
 const StudentAttendance = () => {
   const [isSidebarHovered, setIsSidebarHovered] = useState(false); // Sidebar hover state
@@ -18,9 +17,39 @@ const StudentAttendance = () => {
 
   const { user } = useContext(AuthContext);
 
+  // Fetch user name from Firestore based on user.uid
+  const [studentName, setStudentName] = useState("");
+
+  useEffect(() => {
+    const fetchStudentName = async () => {
+      if (!user) return;
+
+      setIsLoading(true);
+      try {
+        const usersRef = collection(db, "users"); // Use "users" collection as per your screenshot
+        const q = query(usersRef, where("email", "==", user.email)); // Query by email from AuthContext
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          const userData = querySnapshot.docs[0].data();
+          setStudentName(userData.name || "Unknown"); // Use name from Firestore
+        } else {
+          setStudentName(user.email || "Unknown"); // Fallback to email if no user record found
+        }
+      } catch (error) {
+        console.error("Error fetching student name:", error);
+        setStudentName(user.email || "Unknown"); // Fallback on error
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchStudentName();
+  }, [user]);
+
   useEffect(() => {
     const fetchAttendance = async () => {
-      if (!user) return; // Ensure user is logged in
+      if (!studentName || studentName === "Unknown") return; // Ensure we have a valid name
 
       setIsLoading(true);
       setAttendanceRecords([]); // Clear previous data
@@ -28,12 +57,10 @@ const StudentAttendance = () => {
 
       try {
         const attendanceRef = collection(db, "studentAttendance");
-        const q = query(attendanceRef, where("studentId", "==", user.uid)); // Fetch records for the logged-in student
-
-        const querySnapshot = await getDocs(q);
+        const querySnapshot = await getDocs(attendanceRef);
 
         if (querySnapshot.empty) {
-          console.log("No attendance records found for this student.");
+          console.log("No attendance records found.");
         } else {
           const fetchedRecords = [];
           let totalPresent = 0;
@@ -42,9 +69,12 @@ const StudentAttendance = () => {
           querySnapshot.forEach((doc) => {
             const data = doc.data();
             if (data.attendance) {
-              fetchedRecords.push(...data.attendance);
+              const studentRecords = data.attendance.filter(
+                (record) => record.name.trim() === studentName.trim()
+              );
+              fetchedRecords.push(...studentRecords);
 
-              data.attendance.forEach((record) => {
+              studentRecords.forEach((record) => {
                 totalSessions++;
                 if (record.status === "P") totalPresent++; // Count "P" for present
               });
@@ -73,7 +103,7 @@ const StudentAttendance = () => {
     };
 
     fetchAttendance();
-  }, [user]); // Fetch data when the user changes
+  }, [studentName]); // Fetch data when the studentName changes
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -95,6 +125,16 @@ const StudentAttendance = () => {
           SEE ATTENDANCE
         </h1>
 
+        {/* Student Name */}
+        <div className="mb-6">
+          <input
+            type="text"
+            value={`NAME: ${studentName}`}
+            disabled
+            className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 focus:outline-none"
+          />
+        </div>
+
         {/* Loading State */}
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
@@ -102,15 +142,15 @@ const StudentAttendance = () => {
           </div>
         ) : /* Attendance Data */
         attendanceRecords.length > 0 ? (
-          <div className="mt-6 w-full bg-white rounded-lg shadow-lg p-6">
+          <div className="w-full bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-bold mb-4 text-gray-800">Attendance</h2>
-            <div className="flex justify-between items-center mb-4">
+            <div className="mb-4">
               <p className="text-lg font-semibold">
                 Overall: {overallAttendance.percentage}% (
                 {overallAttendance.present}/{overallAttendance.total})
               </p>
             </div>
-            <table className="w-full text-left border-collapse border border-gray-200">
+            <table className="w-full text-left border-collapse">
               <thead className="bg-gray-100">
                 <tr>
                   <th className="px-4 py-2 border border-gray-200">Subject</th>
