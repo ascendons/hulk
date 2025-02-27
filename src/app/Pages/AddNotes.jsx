@@ -1,65 +1,109 @@
 // src/components/AddNotes.jsx
 import React, { useState, useEffect } from "react";
-import { DEPARTMENTS, DIVISIONS, YEARS, SUBJECTS } from "../constants";
+import { DEPARTMENTS, DIVISIONS, YEARS } from "../constants"; // Removed SUBJECTS since we’ll fetch from Firestore
 import { db } from "../../config"; // Import Firestore instance
-import { collection, addDoc } from "firebase/firestore"; // Import addDoc for writing to Firestore
+import { collection, addDoc, query, where, getDocs } from "firebase/firestore"; // Import Firestore functions
 import supabase from "../../supabaseclient"; // Import Supabase client
 import FileUploadModal from "../Components/FileUploadModal"; // Import the FileUploadModal component
+import Sidebar from "../Components/Sidebar";
 
 const AddNotes = () => {
   const [formData, setFormData] = useState({
     title: "new",
     description: "",
-    department: "BSc.IT", // Default value from DEPARTMENTS
+    department: "Bsc.IT", // Updated to match Firestore case ("Bsc.IT" instead of "BSc.IT")
     division: "A", // Default value from DIVISIONS
     year: "Third Year", // Default value from YEARS
-    subject: "", // Will be updated dynamically
+    subject: "", // Will be updated dynamically from Firestore
     unit: "1",
   });
 
-  const [subjects, setSubjects] = useState([]); // State to store filtered subjects
+  const [subjects, setSubjects] = useState([]); // State to store fetched subjects from Firestore
   const [loading, setLoading] = useState(false); // Loading state
   const [error, setError] = useState(null); // Error state
   const [isModalOpen, setIsModalOpen] = useState(false); // State to control modal visibility
   const [file, setFile] = useState(null); // State to store the selected file
   const [uploadProgress, setUploadProgress] = useState(0); // State for upload progress
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
 
-  // Filter subjects based on the selected department
+  // Fetch subjects from Firestore based on the selected department
   useEffect(() => {
-    setLoading(true);
-    setError(null); // Reset error state
+    const fetchSubjects = async () => {
+      setLoading(true);
+      setError(null); // Reset error state
 
-    try {
-      console.log("Filtering subjects for department:", formData.department);
-      let filteredSubjects = SUBJECTS;
+      try {
+        console.log("Fetching subjects for department:", formData.department);
+        if (!formData.department) {
+          setSubjects([]);
+          setFormData((prev) => ({ ...prev, subject: "" }));
+          return;
+        }
 
-      if (!filteredSubjects || filteredSubjects.length === 0) {
-        console.log("No subjects found for department:", formData.department);
+        const subjectsRef = collection(db, "subjects");
+        console.log("Firestore collection reference:", subjectsRef.path); // Debug log
+
+        // Query Firestore for subjects with the matching department (case-sensitive)
+        const q = query(
+          subjectsRef,
+          where("department", "==", formData.department.trim())
+        );
+        console.log("Query created:", q); // Debug log
+
+        const querySnapshot = await getDocs(q);
+        console.log("Query snapshot:", querySnapshot); // Debug log
+
+        if (querySnapshot.empty) {
+          console.log(
+            "No documents found for department:",
+            formData.department
+          );
+          setSubjects([]);
+          setFormData((prev) => ({ ...prev, subject: "" }));
+          setError("No subjects found for the selected department.");
+          return;
+        }
+
+        const fetchedSubjects = querySnapshot.docs.map((doc) => {
+          const data = doc.data();
+          console.log("Document data:", data); // Debug log for each document
+          return {
+            id: doc.id,
+            name:
+              data.subjectName ||
+              data.subject_name ||
+              data.SubjectName ||
+              "Unknown", // Handle variant field names
+          };
+        });
+
+        console.log("Fetched subjects from Firestore:", fetchedSubjects);
+        setSubjects(fetchedSubjects);
+
+        // Set the first subject as default if available
+        if (fetchedSubjects.length > 0) {
+          setFormData((prev) => ({
+            ...prev,
+            subject: fetchedSubjects[0].name,
+          }));
+        } else {
+          setFormData((prev) => ({ ...prev, subject: "" }));
+        }
+      } catch (error) {
+        console.error("Detailed error fetching subjects from Firestore:", {
+          message: error.message,
+          code: error.code,
+          stack: error.stack,
+        });
+        setError(`Failed to fetch subjects: ${error.message}`);
         setSubjects([]);
         setFormData((prev) => ({ ...prev, subject: "" }));
-        setError("No subjects available for the selected department.");
-        return;
+      } finally {
+        setLoading(false);
       }
+    };
 
-      console.log("Filtered subjects:", filteredSubjects);
-      setSubjects(filteredSubjects);
-
-      if (filteredSubjects.length > 0) {
-        setFormData((prev) => ({
-          ...prev,
-          subject: filteredSubjects[0],
-        }));
-      } else {
-        setFormData((prev) => ({ ...prev, subject: "" }));
-      }
-    } catch (error) {
-      console.error("Error filtering subjects:", error);
-      setError("Failed to filter subjects. Check console for details.");
-      setSubjects([]);
-      setFormData((prev) => ({ ...prev, subject: "" }));
-    } finally {
-      setLoading(false);
-    }
+    fetchSubjects();
   }, [formData.department]); // Re-run when department changes
 
   const handleChange = (e) => {
@@ -127,13 +171,13 @@ const AddNotes = () => {
       setFormData({
         title: "new",
         description: "",
-        department: "BSc.IT",
+        department: "Bsc.IT", // Match Firestore case
         division: "A",
         year: "Third Year",
         subject: "",
         unit: "1",
       });
-      setSubjects(SUBJECTS); // Reset subjects to default (for BSc.IT)
+      setSubjects([]); // Reset subjects since they’re fetched from Firestore
       setFile(null); // Reset file
       setUploadProgress(0); // Reset upload progress
     } catch (error) {
@@ -147,15 +191,25 @@ const AddNotes = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-0">
-      <div className="w-full h-full bg-white border border-gray-300 rounded-lg p-6">
+    <div className="bg-gray-100 flex p-0">
+      {/* Sidebar */}
+      <div
+        onMouseEnter={() => setIsSidebarHovered(true)}
+        onMouseLeave={() => setIsSidebarHovered(false)}
+        className={`${
+          isSidebarHovered ? "w-64" : "w-16"
+        } bg-blue-800 text-white h-screen transition-all duration-300 overflow-hidden`}
+      >
+        <Sidebar />
+      </div>
+      <div className="w-full h-screen bg-white border border-gray-300 rounded-lg p-6">
         <form
           onSubmit={handleSubmit}
           className="flex flex-col md:flex-row gap-6 h-full"
         >
           {/* Left Column: Title, Description, and File Upload */}
           <div className="w-full md:w-1/2">
-            <h2 className="text-2xl font-bold text-blue-600 mb-4">Add Note</h2>
+            <h2 className="text-5xl font-bold text-blue-600 mb-4">Add Notes</h2>
             {/* Title */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700">
@@ -297,7 +351,7 @@ const AddNotes = () => {
               </select>
             </div>
 
-            {/* Subject (Dropdown based on department from constants) */}
+            {/* Subject (Dropdown based on department from Firestore) */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-gray-700">
                 Subject
@@ -310,8 +364,8 @@ const AddNotes = () => {
               >
                 <option value="">Select Subject</option>
                 {subjects.map((subject) => (
-                  <option key={subject} value={subject}>
-                    {subject}
+                  <option key={subject.id} value={subject.name}>
+                    {subject.name}
                   </option>
                 ))}
               </select>
