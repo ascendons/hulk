@@ -29,7 +29,7 @@ const TeacherViewProfile = () => {
 
         if (!usersSnapshot.empty) {
           const userData = usersSnapshot.docs[0].data();
-          if (userData.role === "Teacher") {
+          if (userData.role === "teacher") {
             // Fetch teacher data from teachersinfo based on the name
             const teachersinfoQuery = query(
               collection(db, "teachersinfo"),
