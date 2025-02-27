@@ -129,7 +129,6 @@ function App() {
             }
           />
 
-          {/* Protect other routes as needed */}
           <Route
             path="/courses"
             element={

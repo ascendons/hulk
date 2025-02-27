@@ -1,13 +1,13 @@
 // src/components/ShowNotes.jsx
 import React, { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../../config"; // Adjust the import path as needed
-import { Link } from "react-router-dom"; // For navigation to Add Notes page
-import Sidebar from "../Components/Sidebar"; // Import Sidebar component
-import supabase from "../../supabaseclient"; // Import Supabase client
+import { db } from "../../config"; 
+import { Link } from "react-router-dom";  
+import Sidebar from "../Components/Sidebar";  
+import supabase from "../../supabaseclient";  
 
-const CACHE_KEY = "notes_cache"; // Key for localStorage
-const CACHE_EXPIRY = 5 * 60 * 1000; // Cache expiry time (5 minutes)
+const CACHE_KEY = "notes_cache";  
+const CACHE_EXPIRY = 5 * 60 * 1000;  
 
 const ShowNotes = () => {
   const [notes, setNotes] = useState([]);

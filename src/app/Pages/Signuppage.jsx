@@ -41,7 +41,7 @@ const Signuppage = ({ onLogin }) => {
         const userData = userDoc.data();
         const role = userData.role;
 
-        if (role === "teacher") {
+        if (role === "Teacher") {
           console.log("Redirecting teacher to /dashboard");
           toast.success("Welcome, Teacher!");
           navigate("/dashboard");
