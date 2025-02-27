@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  doc,
-  getDoc,
-  collection,
-  query,
-  where,
-  getDocs,
-} from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db, auth } from "../../config";
 import { onAuthStateChanged } from "firebase/auth";
 import StudentSidebar from "../Components/StudentSidebar";
@@ -50,17 +43,19 @@ const StudentTimetable = () => {
             const data = studentDoc.data();
             console.log("Student data found:", data);
             const studentInfo = {
-              year: data.year,
-              course: data.course,
-              division: data.division,
+              year: data.year || "",
+              course: data.course || "", // Use "course" as per your screenshot (e.g., "Bsc.IT")
+              division: data.division || "",
             };
 
-            if (!studentInfo.year) {
-              throw new Error("Missing required student data field: year");
+            if (!studentInfo.year || !studentInfo.course) {
+              throw new Error(
+                "Missing required student data fields: year or course"
+              );
             }
 
             setStudentData(studentInfo);
-            await fetchLecturesForWeek(studentInfo.year);
+            await fetchLecturesForWeek(studentInfo.course, studentInfo.year);
           } else {
             console.log("No student document found for UID:", user.uid);
             setError(
@@ -85,8 +80,8 @@ const StudentTimetable = () => {
     return () => unsubscribe();
   }, []);
 
-  const getCachedLectures = (year) => {
-    const cacheKey = `lectures-${year}`;
+  const getCachedLectures = (course, year) => {
+    const cacheKey = `lectures-${course}-${year}`;
     const cachedData = localStorage.getItem(cacheKey);
     if (cachedData) {
       const { data, expiry } = JSON.parse(cachedData);
@@ -102,19 +97,19 @@ const StudentTimetable = () => {
     return null;
   };
 
-  const cacheLectures = (year, data, expiryInMinutes = 60) => {
-    const cacheKey = `lectures-${year}`;
+  const cacheLectures = (course, year, data, expiryInMinutes = 60) => {
+    const cacheKey = `lectures-${course}-${year}`;
     const expiry = Date.now() + expiryInMinutes * 60 * 1000;
     localStorage.setItem(cacheKey, JSON.stringify({ data, expiry }));
     console.log("Cached lectures:", data);
   };
 
-  const fetchLecturesForWeek = async (year) => {
+  const fetchLecturesForWeek = async (course, year) => {
     setLoading(true);
-    console.log("Fetching lectures for year:", year);
+    console.log("Fetching lectures for course:", course, "year:", year);
 
     // Check cache first
-    const cachedData = getCachedLectures(year);
+    const cachedData = getCachedLectures(course, year);
     if (cachedData) {
       setLectures(cachedData);
       setLoading(false);
@@ -124,28 +119,25 @@ const StudentTimetable = () => {
     let weekLectures = {};
     try {
       for (let day of daysOfWeek) {
-        const timetableQuery = query(
-          collection(db, "timetable", year), // Only use year in the collection path
-          where("day", "==", day)
-        );
-        const querySnapshot = await getDocs(timetableQuery);
+        const docRef = doc(db, `timetable/${course}/${year}/${day}`);
+        const docSnap = await getDoc(docRef);
 
-        console.log(`Query results for ${day}:`, {
-          docsCount: querySnapshot.docs.length,
-          docs: querySnapshot.docs.map((doc) => doc.data()),
+        console.log(`Fetching data for ${day} in ${course}/${year}:`, {
+          exists: docSnap.exists(),
+          data: docSnap.data(),
         });
 
-        weekLectures[day] = querySnapshot.docs
-          .map((doc) => {
-            const lectures = doc.data().lectures || [];
-            console.log(`${day} lectures:`, lectures);
-            return lectures;
-          })
-          .flat();
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          // Ensure lectures is always an array, even if it's undefined or null
+          weekLectures[day] = Array.isArray(data.lectures) ? data.lectures : [];
+        } else {
+          weekLectures[day] = [];
+        }
       }
       console.log("Final week lectures:", weekLectures);
       setLectures(weekLectures);
-      cacheLectures(year, weekLectures);
+      cacheLectures(course, year, weekLectures);
     } catch (error) {
       console.error("Error fetching lectures:", error);
       setError(error.message || "Failed to fetch timetable data");
@@ -185,7 +177,7 @@ const StudentTimetable = () => {
           <Link to="/student-dashboard">
             <h1 className="text-3xl font-bold mb-8 text-blue-600">TIMETABLE</h1>
           </Link>
-          <p className="text-xl text-gray-600">{`Today's Date: ${formattedDate}`}</p>
+          <p className="text-xl text-gray-600">Today's Date: {formattedDate}</p>
         </div>
 
         {loading ? (

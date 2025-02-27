@@ -153,25 +153,25 @@ const StudentDashboard = () => {
         {/* Action Buttons */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <Link
-            to="/courses"
+            to="/student-timetable"
             className="bg-blue-500 text-white px-4 py-2 rounded-lg text-center hover:bg-blue-600 transition-colors flex items-center justify-center"
           >
             <Calendar className="mr-2" size={18} /> Timetable
           </Link>
           <Link
-            to="/Attendance"
+            to="/StudentAttendance"
             className="bg-green-500 text-white px-4 py-2 rounded-lg text-center hover:bg-green-600 transition-colors flex items-center justify-center"
           >
             <ClipboardList className="mr-2" size={18} /> Attendance
           </Link>
           <Link
-            to="/Notes"
+            to="/StudentNotes"
             className="bg-purple-500 text-white px-4 py-2 rounded-lg text-center hover:bg-purple-600 transition-colors flex items-center justify-center"
           >
             <FileText className="mr-2" size={18} /> Notes
           </Link>
           <Link
-            to="/assignments"
+            to="/StudentAssignments"
             className="bg-orange-500 text-white px-4 py-2 rounded-lg text-center hover:bg-orange-600 transition-colors flex items-center justify-center"
           >
             <Bell className="mr-2" size={18} /> Assignments
