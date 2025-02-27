@@ -24,7 +24,6 @@ import AddSubjects from "./app/Pages/AddSubjects";
 import Notes from "./app/Pages/Notes";
 import SubjectDetails from "./app/Components/SubjectDetails";
 import AddNotes from "./app/Pages/AddNotes";
-import Assignments from "./app/Pages/Assignments";
 import AddAssignment from "./app/Pages/AddAssignment";
 import AssignmentDetail from "./app/Components/AssignmentDetail";
 import MarkAttendance from "./app/Pages/MarkAttendance";
@@ -35,11 +34,12 @@ import CreateAccount from "./app/Pages/CreatesAccount";
 import StudentDashboard from "./app/Pages/StudentDashboard";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "./config";
-import { AuthProvider } from "./authContext"; // Import AuthProvider
+import { AuthProvider } from "./authContext";
 import StudentNotice from "./app/Pages/StudentNotice";
 import StudentAttendance from "./app/Pages/StudentAttedence";
 import StudentTimetable from "./app/Pages/StudentTimetable";
 import StudentNotes from "./app/Pages/StudentNotes";
+import Assignments from "./app/Pages/Assignments";
 
 const ProtectedRoute = ({ children, roleRequired }) => {
   const [user, setUser] = useState(null);
@@ -107,7 +107,6 @@ function App() {
   return (
     <AuthProvider>
       {" "}
-      {/* Wrap with AuthProvider */}
       <BrowserRouter>
         <Routes>
           <Route path="/signup" element={<Signuppage onLogin={() => {}} />} />
@@ -242,14 +241,16 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/add-notes"
             element={
               <ProtectedRoute roleRequired="teacher">
-                <AddNotes />
+                <AssignmentDetail />
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/add-assignment"
             element={
@@ -258,14 +259,25 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          <Route
+            path="/add-details"
+            element={
+              <ProtectedRoute roleRequired="teacher">
+                <AddAssignment />
+              </ProtectedRoute>
+            }
+          />
+
           <Route
             path="/assignment"
             element={
               <ProtectedRoute roleRequired="teacher">
-                <AssignmentDetail />
+                <Assignments />
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/see-attendance"
             element={
@@ -274,6 +286,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/edit-attendance"
             element={
@@ -282,6 +295,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/view-profile"
             element={
@@ -290,6 +304,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/Create-account"
             element={
@@ -298,6 +313,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/student-notice"
             element={
@@ -306,6 +322,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/student-timetable"
             element={
@@ -314,6 +331,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/StudentAttendance"
             element={
@@ -322,6 +340,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route
             path="/StudentNotes"
             element={
@@ -330,7 +349,9 @@ function App() {
               </ProtectedRoute>
             }
           />
+
           <Route path="*" element={<Navigate to="/signup" />} />
+          
         </Routes>
       </BrowserRouter>
     </AuthProvider>

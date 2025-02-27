@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { auth, db } from "../../config";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import Sidebar from "../Components/Sidebar";
+import supabase from "../../supabaseclient"; 
 
 const Assignments = () => {
   const navigate = useNavigate();
@@ -27,7 +28,6 @@ const Assignments = () => {
         }
       }
     };
-
     fetchUserData();
   }, []);
 
@@ -42,10 +42,31 @@ const Assignments = () => {
             where("assignedBy", "==", userName)
           );
           const querySnapshot = await getDocs(q);
-          const fetchedAssignments = querySnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
+          const fetchedAssignments = await Promise.all(
+            querySnapshot.docs.map(async (doc) => {
+              const assignmentData = doc.data();
+
+              // Fetch file URL from Supabase Storage
+              if (assignmentData.filePath) {
+                const { data: fileData } = await supabase
+                  .storage
+                  .from('assignments') // Replace with your bucket name
+                  .getPublicUrl(assignmentData.filePath);
+
+                return {
+                  id: doc.id,
+                  ...assignmentData,
+                  fileURL: fileData.publicUrl, // Add file URL to the assignment data
+                };
+              }
+
+              return {
+                id: doc.id,
+                ...assignmentData,
+              };
+            })
+          );
+
           setAssignments(fetchedAssignments);
         } catch (error) {
           console.error("Error fetching assignments:", error);
@@ -80,7 +101,6 @@ const Assignments = () => {
         <Sidebar />
       </div>
 
-      {/* Main Content */}
       <div className="flex-grow p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-800">ASSIGNMENTS</h1>
@@ -92,14 +112,12 @@ const Assignments = () => {
           </button>
         </div>
 
-        {/* Error Message */}
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-md mb-4">
             {error}
           </div>
         )}
 
-        {/* Assignments List */}
         {isLoading ? (
           <div className="bg-white shadow-md rounded-lg p-4 border border-gray-300">
             <p className="text-gray-600 text-center">Loading assignments...</p>
@@ -121,6 +139,16 @@ const Assignments = () => {
                 <p className="text-sm text-gray-600">
                   Marks: {assignment.marks}
                 </p>
+                {assignment.fileURL && (
+                  <a
+                    href={assignment.fileURL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-500 hover:text-blue-600 underline"
+                  >
+                    Download File
+                  </a>
+                )}
               </div>
             ))}
           </div>

@@ -4,7 +4,7 @@ import { db } from "../../config";
 import { doc, getDoc } from "firebase/firestore";
 
 const AssignmentDetail = () => {
-  const { id } = useParams(); // Get the assignment ID from the URL
+  const { id } = useParams();  
   const [assignment, setAssignment] = useState(null);
 
   useEffect(() => {

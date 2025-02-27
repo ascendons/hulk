@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { db, storage, auth } from "../../config"; // Firebase configuration
+import { db, auth } from "../../config";  
 import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import Sidebar from "../Components/Sidebar";
 import FileUploadModal from "../Components/FileUploadModal";
-import { DEPARTMENTS, DIVISIONS, YEARS } from "../constants"; // Constants for dropdowns
+import { DEPARTMENTS, DIVISIONS, YEARS } from "../constants";  
+import supabase from "../../supabaseclient";  
 
 const AddAssignment = () => {
   const [title, setTitle] = useState("");
@@ -106,25 +106,25 @@ const AddAssignment = () => {
       let fileURL = "";
 
       if (file) {
-        const storageRef = ref(storage, `assignments/${file.name}`);
-        const uploadTask = uploadBytesResumable(storageRef, file);
+        // Upload file to Supabase Storage
+        const filePath = `assignments/${file.name}`;
+        const { data, error } = await supabase.storage
+          .from("assignments") // Replace with your bucket name
+          .upload(filePath, file);
 
-        await new Promise((resolve, reject) => {
-          uploadTask.on(
-            "state_changed",
-            (snapshot) => {
-              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-              setUploadProgress(progress);
-            },
-            (error) => reject(error),
-            async () => {
-              fileURL = await getDownloadURL(uploadTask.snapshot.ref);
-              resolve();
-            }
-          );
-        });
+        if (error) {
+          throw error;
+        }
+
+        // Get public URL of the uploaded file
+        const { data: urlData } = await supabase.storage
+          .from("assignments")
+          .getPublicUrl(filePath);
+
+        fileURL = urlData.publicUrl;
       }
 
+      // Save assignment data to Firestore
       await addDoc(collection(db, "Assignments"), {
         title,
         description,
