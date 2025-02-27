@@ -1,8 +1,10 @@
+// src/components/ShowNotes.jsx
 import React, { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../config"; // Adjust the import path as needed
 import { Link } from "react-router-dom"; // For navigation to Add Notes page
 import Sidebar from "../Components/Sidebar"; // Import Sidebar component
+import supabase from "../../supabaseclient"; // Import Supabase client
 
 const CACHE_KEY = "notes_cache"; // Key for localStorage
 const CACHE_EXPIRY = 5 * 60 * 1000; // Cache expiry time (5 minutes)
@@ -12,6 +14,7 @@ const ShowNotes = () => {
   const [expandedSubject, setExpandedSubject] = useState(null);
   const [isLoading, setIsLoading] = useState(true); // Loading state
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+
   useEffect(() => {
     const fetchNotes = async () => {
       // Check if cached data exists and is not expired
@@ -29,12 +32,37 @@ const ShowNotes = () => {
 
       // Fetch fresh data from Firestore
       try {
-        const notesRef = collection(db, "Notes");
+        const notesRef = collection(db, "notes");
         const notesSnapshot = await getDocs(notesRef);
-        const notesData = notesSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+        const notesData = await Promise.all(
+          notesSnapshot.docs.map(async (doc) => {
+            const noteData = {
+              id: doc.id,
+              ...doc.data(),
+            };
+
+            // Fetch the public URL for the file from Supabase if filePath exists
+            if (noteData.filePath) {
+              const {
+                data: { publicUrl },
+                error,
+              } = await supabase.storage
+                .from("notes") // Supabase bucket name
+                .getPublicUrl(noteData.filePath);
+
+              if (error) {
+                console.error("Error fetching file URL from Supabase:", error);
+                noteData.fileUrl = null; // Set to null if there's an error
+              } else {
+                noteData.fileUrl = publicUrl; // Store the public URL for the attachment
+              }
+            } else {
+              noteData.fileUrl = null; // No filePath, so no URL
+            }
+
+            return noteData;
+          })
+        );
 
         // Update state and cache
         setNotes(notesData);
@@ -159,26 +187,16 @@ const ShowNotes = () => {
                           </p>
                         </div>
 
-                        {/* File and YouTube Links */}
+                        {/* File Attachment Link */}
                         <div className="mt-2 space-x-4">
-                          {note.fileURL && (
+                          {note.fileUrl && (
                             <a
-                              href={note.fileURL}
+                              href={note.fileUrl}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-blue-500 hover:text-blue-600 underline"
                             >
-                              Download File
-                            </a>
-                          )}
-                          {note.youtubeLink && (
-                            <a
-                              href={note.youtubeLink}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-red-500 hover:text-red-600 underline"
-                            >
-                              Watch on YouTube
+                              Download Attachment
                             </a>
                           )}
                         </div>
