@@ -39,6 +39,7 @@ import { AuthProvider } from "./authContext"; // Import AuthProvider
 import StudentNotice from "./app/Pages/StudentNotice";
 import StudentAttendance from "./app/Pages/StudentAttedence";
 import StudentTimetable from "./app/Pages/StudentTimetable";
+import StudentNotes from "./app/Pages/StudentNotes";
 
 const ProtectedRoute = ({ children, roleRequired }) => {
   const [user, setUser] = useState(null);
@@ -318,6 +319,14 @@ function App() {
             element={
               <ProtectedRoute roleRequired="student">
                 <StudentAttendance />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/StudentNotes"
+            element={
+              <ProtectedRoute roleRequired="student">
+                <StudentNotes />
               </ProtectedRoute>
             }
           />
