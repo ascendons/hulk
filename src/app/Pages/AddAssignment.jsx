@@ -1,10 +1,11 @@
+// src/components/AddAssignment.jsx
 import React, { useState, useEffect } from "react";
-import { db, auth } from "../../config";  
+import { db, auth } from "../../config";
 import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import Sidebar from "../Components/Sidebar";
 import FileUploadModal from "../Components/FileUploadModal";
-import { DEPARTMENTS, DIVISIONS, YEARS } from "../constants";  
-import supabase from "../../supabaseclient";  
+import { DEPARTMENTS, DIVISIONS, YEARS } from "../constants";
+import supabase from "../../supabaseclient";
 
 const AddAssignment = () => {
   const [title, setTitle] = useState("");
@@ -19,7 +20,7 @@ const AddAssignment = () => {
   const [file, setFile] = useState(null);
   const [assignedBy, setAssignedBy] = useState("");
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false); // State to control modal visibility
   const [isLoading, setIsLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
@@ -79,8 +80,9 @@ const AddAssignment = () => {
   }, [department]);
 
   const handleFileUpload = (selectedFile) => {
+    console.log("File selected in modal:", selectedFile); // Debug log
     setFile(selectedFile);
-    setIsUploadModalOpen(false);
+    setIsModalOpen(false); // Close the modal after selecting a file
   };
 
   const handleSubmit = async (e) => {
@@ -106,26 +108,31 @@ const AddAssignment = () => {
       let fileURL = "";
 
       if (file) {
-        // Upload file to Supabase Storage
         const filePath = `assignments/${file.name}`;
-        const { data, error } = await supabase.storage
-          .from("assignments") // Replace with your bucket name
-          .upload(filePath, file);
+        const { error: uploadError } = await supabase.storage
+          .from("assignments") // Supabase bucket name
+          .upload(filePath, file, {
+            upsert: true,
+            onUploadProgress: (progressEvent) => {
+              const progress =
+                (progressEvent.loaded / progressEvent.total) * 100;
+              setUploadProgress(progress);
+            },
+          });
 
-        if (error) {
-          throw error;
+        if (uploadError) {
+          throw uploadError;
         }
 
-        // Get public URL of the uploaded file
-        const { data: urlData } = await supabase.storage
-          .from("assignments")
-          .getPublicUrl(filePath);
+        const {
+          data: { publicUrl },
+        } = await supabase.storage.from("assignments").getPublicUrl(filePath);
 
-        fileURL = urlData.publicUrl;
+        fileURL = publicUrl;
       }
 
       // Save assignment data to Firestore
-      await addDoc(collection(db, "Assignments"), {
+      await addDoc(collection(db, "assignments"), {
         title,
         description,
         department,
@@ -213,7 +220,18 @@ const AddAssignment = () => {
               </label>
               <div
                 className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 cursor-pointer hover:bg-gray-50 transition-all"
-                onClick={() => setIsUploadModalOpen(true)}
+                onClick={() => {
+                  console.log("Drop zone clicked, opening modal"); // Debug log
+                  setIsModalOpen(true);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    console.log("Drop zone key pressed, opening modal");
+                    setIsModalOpen(true);
+                  }
+                }}
+                role="button"
+                tabIndex={0} // Make it focusable for accessibility
               >
                 {file ? (
                   <div className="text-center">
@@ -248,14 +266,6 @@ const AddAssignment = () => {
                 </div>
               )}
             </div>
-
-            {/* Upload Modal */}
-            {isUploadModalOpen && (
-              <FileUploadModal
-                onFileUpload={handleFileUpload}
-                onClose={() => setIsUploadModalOpen(false)}
-              />
-            )}
           </div>
 
           {/* Right Section */}
@@ -311,6 +321,7 @@ const AddAssignment = () => {
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-6"
               required
             >
+              <option value="">Select Year</option>
               {Object.values(YEARS).map((yr) => (
                 <option key={yr} value={yr}>
                   {yr}
@@ -371,6 +382,16 @@ const AddAssignment = () => {
             </button>
           </div>
         </div>
+
+        {/* File Upload Modal */}
+        <FileUploadModal
+          isOpen={isModalOpen}
+          onClose={() => {
+            console.log("Modal closed"); // Debug log
+            setIsModalOpen(false);
+          }}
+          onFileUpload={handleFileUpload}
+        />
       </form>
     </div>
   );

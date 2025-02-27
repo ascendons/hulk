@@ -40,6 +40,7 @@ import StudentAttendance from "./app/Pages/StudentAttedence";
 import StudentTimetable from "./app/Pages/StudentTimetable";
 import StudentNotes from "./app/Pages/StudentNotes";
 import Assignments from "./app/Pages/Assignments";
+import StudentAssignments from "./app/Pages/StudentAssigenment";
 
 const ProtectedRoute = ({ children, roleRequired }) => {
   const [user, setUser] = useState(null);
@@ -350,8 +351,16 @@ function App() {
             }
           />
 
+          <Route
+            path="/StudentAssignments"
+            element={
+              <ProtectedRoute roleRequired="student">
+                <StudentAssignments />
+              </ProtectedRoute>
+            }
+          />
+
           <Route path="*" element={<Navigate to="/signup" />} />
-          
         </Routes>
       </BrowserRouter>
     </AuthProvider>
