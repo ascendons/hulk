@@ -1,77 +1,94 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../../config";
 import Sidebar from "../Components/Sidebar";
 
 const SeeAttendance = () => {
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false); // Sidebar hover state
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [overallAttendance, setOverallAttendance] = useState({
-    percentage: 0,
-    present: 0,
-    total: 0,
-  });
+  const [overallAttendanceByStudent, setOverallAttendanceByStudent] = useState({});
 
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) {
-      alert("Please enter a student's name to search.");
-      return;
-    }
+  useEffect(() => {
+    const fetchAttendanceData = async () => {
+      setIsLoading(true);
+      setAttendanceRecords([]);
+      setOverallAttendanceByStudent({});
 
-    setIsLoading(true);
-    setAttendanceRecords([]); // Clear previous data
-    setOverallAttendance({ percentage: 0, present: 0, total: 0 });
+      try {
+        const attendanceRef = collection(db, "studentAttendance");
+        const querySnapshot = await getDocs(attendanceRef);
 
-    try {
-      const attendanceRef = collection(db, "studentAttendance");
-      const querySnapshot = await getDocs(attendanceRef);
-
-      if (querySnapshot.empty) {
-        alert("No attendance records found for this student.");
-      } else {
-        const fetchedRecords = [];
-        let totalPresent = 0;
-        let totalSessions = 0;
+        const allRecords = [];
+        const studentStats = {};
 
         querySnapshot.forEach((doc) => {
           const data = doc.data();
           if (data.attendance) {
-            const studentRecords = data.attendance.filter(
-              (record) => record.name.trim() === searchQuery.trim()
-            );
-            fetchedRecords.push(...studentRecords);
-
-            // Calculate overall attendance stats
-            studentRecords.forEach((record) => {
-              totalSessions++;
-              if (record.status === "P") totalPresent++; // Count "P" for present
+            data.attendance.forEach((record) => {
+              allRecords.push(record);
+              const studentName = record.name.trim().toLowerCase();
+              if (!studentStats[studentName]) {
+                studentStats[studentName] = { present: 0, total: 0 };
+              }
+              studentStats[studentName].total += 1;
+              if (record.status === "P") studentStats[studentName].present += 1;
             });
           }
         });
 
-        if (fetchedRecords.length > 0) {
-          setAttendanceRecords(fetchedRecords);
-          setOverallAttendance({
-            percentage:
-              totalSessions > 0
-                ? Math.round((totalPresent / totalSessions) * 100)
-                : 0,
-            present: totalPresent,
-            total: totalSessions,
-          });
-        } else {
-          alert("No attendance records found for this student.");
-        }
+        setAttendanceRecords(allRecords);
+        setOverallAttendanceByStudent(
+          Object.fromEntries(
+            Object.entries(studentStats).map(([name, { present, total }]) => [
+              name,
+              {
+                percentage: total > 0 ? Math.round((present / total) * 100) : 0,
+                present,
+                total,
+              },
+            ])
+          )
+        );
+      } catch (error) {
+        console.error("Error fetching attendance records:", error);
+        alert("Failed to fetch attendance records. Please try again.");
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching attendance records:", error);
-      alert("Failed to fetch attendance records. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
+
+    fetchAttendanceData();
+  }, []);
+
+  const filteredRecords = searchQuery.trim()
+    ? attendanceRecords.filter(
+        (record) =>
+          record.name.trim().toLowerCase() === searchQuery.trim().toLowerCase()
+      )
+    : [];
+
+  const groupedBySubject = filteredRecords.reduce((subjects, record) => {
+    const subject = subjects[record.subject] || {
+      name: record.subject,
+      present: 0,
+      total: 0,
+    };
+    subject.total += 1;
+    if (record.status === "P") subject.present += 1;
+    subjects[record.subject] = subject;
+    return subjects;
+  }, {});
+
+  const overallStats = filteredRecords.reduce(
+    (stats, record) => {
+      stats.total += 1;
+      if (record.status === "P") stats.present += 1;
+      return stats;
+    },
+    { present: 0, total: 0 }
+  );
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -94,82 +111,112 @@ const SeeAttendance = () => {
         </h1>
 
         {/* Search Bar and Button */}
-        <div className="flex items-center w-full  mb-6">
+        <div className="flex items-center space-x-4 mb-6">
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search the student"
-            className="flex-grow p-4 border border-gray-300 rounded-l-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Enter student name"
+            className="flex-1 p-4 border border-gray-300 rounded-l-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
-            onClick={handleSearch}
-            disabled={isLoading}
-            className="p-4 bg-green-600 text-white rounded-r-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+            onClick={() => setSearchQuery("")} // Clear search to show all
+            disabled={isLoading || !searchQuery}
+            className="p-4 bg-gray-500 text-white rounded-r-lg shadow-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
           >
-            {isLoading ? "Searching..." : "Search"}
+            Show All
           </button>
         </div>
 
         {/* Attendance Data */}
-        {attendanceRecords.length > 0 && (
-          <div className="mt-6 w-full  bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-bold mb-4 text-gray-800">Attendance</h2>
-            <div className="flex justify-between items-center mb-4">
-              <p className="text-lg font-semibold">
-                Overall: {overallAttendance.percentage}% (
-                {overallAttendance.present}/{overallAttendance.total})
-              </p>
-            </div>
-            <table className="w-full text-left border-collapse border border-gray-200">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-4 py-2 border border-gray-200">Subject</th>
-                  <th className="px-4 py-2 border border-gray-200">%</th>
-                  <th className="px-4 py-2 border border-gray-200">Present</th>
-                </tr>
-              </thead>
-              <tbody>
-                {attendanceRecords.reduce((subjects, record) => {
-                  const subject = subjects[record.subject] || {
-                    name: record.subject,
-                    present: 0,
-                    total: 0,
-                  };
-
-                  subject.total += 1;
-                  if (record.status === "P") subject.present += 1;
-
-                  subjects[record.subject] = subject;
-                  return subjects;
-                }, {}) &&
-                  Object.entries(
-                    attendanceRecords.reduce((subjects, record) => {
-                      const subject = subjects[record.subject] || {
-                        name: record.subject,
-                        present: 0,
-                        total: 0,
-                      };
-
-                      subject.total += 1;
-                      if (record.status === "P") subject.present += 1;
-
-                      subjects[record.subject] = subject;
-                      return subjects;
-                    }, {})
-                  ).map(([subject, { present, total }]) => (
-                    <tr key={subject} className="hover:bg-gray-50">
+        {isLoading ? (
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full">
+            <p className="text-gray-600 text-center">Loading attendance...</p>
+          </div>
+        ) : searchQuery.trim() ? (
+          attendanceRecords.length > 0 && filteredRecords.length > 0 ? (
+            <div className="mt-6 w-full bg-white rounded-lg shadow-lg p-6">
+              <h2 className="text-xl font-bold mb-4 text-gray-800">
+                Attendance for {searchQuery}
+              </h2>
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-lg font-semibold">
+                  Overall: {overallStats.total > 0 ? Math.round((overallStats.present / overallStats.total) * 100) : 0}% (
+                  {overallStats.present}/{overallStats.total})
+                </p>
+              </div>
+              <table className="w-full text-left border-collapse border border-gray-200">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="px-4 py-2 border border-gray-200">Subject</th>
+                    <th className="px-4 py-2 border border-gray-200">Date</th>
+                    <th className="px-4 py-2 border border-gray-200">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredRecords.map((record, index) => (
+                    <tr key={index} className="hover:bg-gray-50">
+                      <td className="px-4 py-2 border border-gray-200">{record.subject}</td>
+                      <td className="px-4 py-2 border border-gray-200">{record.date}</td>
                       <td className="px-4 py-2 border border-gray-200">
-                        {subject}
-                      </td>
-                      <td className="px-4 py-2 border border-gray-200">
-                        {Math.round((present / total) * 100)}%
-                      </td>
-                      <td className="px-4 py-2 border border-gray-200">
-                        {present}/{total}
+                        {record.status === "P" ? "Present" : "Absent"}
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+              <div className="mt-6">
+                <h3 className="text-lg font-semibold mb-2">Subject-wise Summary</h3>
+                <table className="w-full text-left border-collapse border border-gray-200">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="px-4 py-2 border border-gray-200">Subject</th>
+                      <th className="px-4 py-2 border border-gray-200">%</th>
+                      <th className="px-4 py-2 border border-gray-200">Present</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(groupedBySubject).map(([subject, { present, total }]) => (
+                      <tr key={subject} className="hover:bg-gray-50">
+                        <td className="px-4 py-2 border border-gray-200">{subject}</td>
+                        <td className="px-4 py-2 border border-gray-200">
+                          {Math.round((present / total) * 100)}%
+                        </td>
+                        <td className="px-4 py-2 border border-gray-200">
+                          {present}/{total}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg shadow-lg p-6 w-full">
+              <p className="text-gray-600 text-center">No attendance records found for {searchQuery}.</p>
+            </div>
+          )
+        ) : (
+          <div className="mt-6 w-full bg-white rounded-lg shadow-lg p-6">
+            <h2 className="text-xl font-bold mb-4 text-gray-800">All Students Attendance</h2>
+            <table className="w-full text-left border-collapse border border-gray-200">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-4 py-2 border border-gray-200">Student Name</th>
+                  <th className="px-4 py-2 border border-gray-200">Overall %</th>
+                  <th className="px-4 py-2 border border-gray-200">Present</th>
+                  <th className="px-4 py-2 border border-gray-200">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Object.entries(overallAttendanceByStudent).map(([name, { percentage, present, total }]) => (
+                  <tr key={name} className="hover:bg-gray-50">
+                    <td className="px-4 py-2 border border-gray-200">{name}</td>
+                    <td className="px-4 py-2 border border-gray-200">{percentage}%</td>
+                    <td className="px-4 py-2 border border-gray-200">{present}</td>
+                    <td className="px-4 py-2 border border-gray-200">{total}</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

@@ -8,7 +8,6 @@ import { DEPARTMENTS, DIVISIONS, YEARS } from "../constants";
 import supabase from "../../supabaseclient";
 
 const AddAssignment = () => {
-  const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [department, setDepartment] = useState("");
   const [division, setDivision] = useState("");
@@ -97,7 +96,6 @@ const AddAssignment = () => {
       return;
     }
 
-    // Validate marks
     if (marks <= 0) {
       alert("Marks must be a positive number.");
       setIsLoading(false);
@@ -110,7 +108,7 @@ const AddAssignment = () => {
       if (file) {
         const filePath = `assignments/${file.name}`;
         const { error: uploadError } = await supabase.storage
-          .from("assignments") // Supabase bucket name
+          .from("assignments")  
           .upload(filePath, file, {
             upsert: true,
             onUploadProgress: (progressEvent) => {
@@ -133,7 +131,6 @@ const AddAssignment = () => {
 
       // Save assignment data to Firestore
       await addDoc(collection(db, "assignments"), {
-        title,
         description,
         department,
         division,
@@ -158,7 +155,6 @@ const AddAssignment = () => {
   };
 
   const resetForm = () => {
-    setTitle("");
     setDescription("");
     setDepartment("");
     setDivision("");
@@ -186,22 +182,10 @@ const AddAssignment = () => {
         className="bg-white shadow-lg rounded-lg p-8 w-full h-screen flex flex-col overflow-y-auto"
         onSubmit={handleSubmit}
       >
-        {/* Assignment Details */}
         <h1 className="text-3xl font-bold mb-6 text-blue-800">ASSIGNMENT</h1>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Left Section */}
           <div>
-            <label className="block text-gray-700 font-bold mb-2">Title</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter title"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-6"
-              required
-            />
-
             <label className="block text-gray-700 font-bold mb-2">
               Description
             </label>
