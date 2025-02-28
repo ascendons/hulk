@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import {
   BrowserRouter,
   Route,
@@ -7,361 +7,161 @@ import {
   useLocation,
 } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "./config";
-import Dashboard from "./app/Pages/Dashboard";
-import Signuppage from "./app/Pages/Signuppage";
-import Courses from "./app/Pages/Courses";
-import Students from "./app/Pages/Students";
-import ListStudents from "./app/Pages/ListStudents";
-import EditTimetable from "./app/Pages/EditTimetable";
-import AddStudent from "./app/Pages/AddStudent";
-import AddTeacher from "./app/Pages/AddTeacher";
-import Notices from "./app/Pages/Notices";
-import CreateNotice from "./app/Pages/createNotice";
-import Attendance from "./app/Pages/Attendance";
-import Teachers from "./app/Pages/Teachers";
-import AddSubjects from "./app/Pages/AddSubjects";
-import Notes from "./app/Pages/Notes";
-import SubjectDetails from "./app/Components/SubjectDetails";
-import AddNotes from "./app/Pages/AddNotes";
-import AddAssignment from "./app/Pages/AddAssignment";
-import AssignmentDetail from "./app/Components/AssignmentDetail";
-import MarkAttendance from "./app/Pages/MarkAttendance";
-import SeeAttendance from "./app/Pages/SeeAttendance";
-import EditAttendance from "./app/Pages/EditAttendance";
-import TeacherViewProfile from "./app/Components/TeacherViewProfile";
-import CreateAccount from "./app/Pages/CreatesAccount";
-import StudentDashboard from "./app/Pages/StudentDashboard";
 import { doc, getDoc } from "firebase/firestore";
-import { db } from "./config";
+import { auth, db } from "./config";
 import { AuthProvider } from "./authContext";
-import StudentNotice from "./app/Pages/StudentNotice";
-import StudentAttendance from "./app/Pages/StudentAttedence";
-import StudentTimetable from "./app/Pages/StudentTimetable";
-import StudentNotes from "./app/Pages/StudentNotes";
-import Assignments from "./app/Pages/Assignments";
-import StudentAssignments from "./app/Pages/StudentAssigenment";
+
+const Dashboard = React.lazy(() => import("./app/Pages/Dashboard"));
+const Signuppage = React.lazy(() => import("./app/Pages/Signuppage"));
+const StudentDashboard = React.lazy(() => import("./app/Pages/StudentDashboard"));
+
+
+const teacherRoutes = [
+  { path: "/dashboard", component: Dashboard },
+  { path: "/courses", component: React.lazy(() => import("./app/Pages/Courses")) },
+  { path: "/students", component: React.lazy(() => import("./app/Pages/Students")) },
+  { path: "/liststudents", component: React.lazy(() => import("./app/Pages/ListStudents")) },
+  { path: "/edittimetable", component: React.lazy(() => import("./app/Pages/EditTimetable")) },
+  { path: "/addstudent", component: React.lazy(() => import("./app/Pages/AddStudent")) },
+  { path: "/addteacher", component: React.lazy(() => import("./app/Pages/AddTeacher")) },
+  { path: "/Notices", component: React.lazy(() => import("./app/Pages/Notices")) },
+  { path: "/create-notice", component: React.lazy(() => import("./app/Pages/createNotice")) },
+  { path: "/Attendance", component: React.lazy(() => import("./app/Pages/Attendance")) },
+  { path: "/Teachers", component: React.lazy(() => import("./app/Pages/Teachers")) },
+  { path: "/Addsubjects", component: React.lazy(() => import("./app/Pages/AddSubjects")) },
+  { path: "/Notes", component: React.lazy(() => import("./app/Pages/Notes")) },
+  { path: "/subject/:subjectName", component: React.lazy(() => import("./app/Components/SubjectDetails")) },
+  { path: "/add-assignment", component: React.lazy(() => import("./app/Pages/AddAssignment")) },
+  { path: "/assignment", component: React.lazy(() => import("./app/Pages/Assignments")) },
+  { path: "/mark-attendance", component: React.lazy(() => import("./app/Pages/MarkAttendance")) },
+  { path: "/see-attendance", component: React.lazy(() => import("./app/Pages/SeeAttendance")) },
+  { path: "/edit-attendance", component: React.lazy(() => import("./app/Pages/EditAttendance")) },
+  { path: "/view-profile", component: React.lazy(() => import("./app/Components/TeacherViewProfile")) },
+  { path: "/Create-account", component: React.lazy(() => import("./app/Pages/CreatesAccount")) },
+];
+
+// Student Routes Configuration
+const studentRoutes = [
+  { path: "/student-dashboard", component: StudentDashboard },
+  { path: "/student-notice", component: React.lazy(() => import("./app/Pages/StudentNotice")) },
+  { path: "/student-timetable", component: React.lazy(() => import("./app/Pages/StudentTimetable")) },
+  { path: "/StudentAttendance", component: React.lazy(() => import("./app/Pages/StudentAttedence")) },
+  { path: "/StudentNotes", component: React.lazy(() => import("./app/Pages/StudentNotes")) },
+  { path: "/StudentAssignments", component: React.lazy(() => import("./app/Pages/StudentAssigenment")) },
+];
 
 const ProtectedRoute = ({ children, roleRequired }) => {
-  const [user, setUser] = useState(null);
-  const [userRole, setUserRole] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [authState, setAuthState] = useState({
+    user: null,
+    role: null,
+    loading: true,
+    error: null
+  });
   const location = useLocation();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      console.log("Auth state changed, currentUser:", currentUser);
-      if (currentUser) {
-        setUser(currentUser);
-        try {
-          const userDocRef = doc(db, "users", currentUser.uid);
-          const userDoc = await getDoc(userDocRef);
-          if (userDoc.exists()) {
-            console.log("User role from Firestore:", userDoc.data().role);
-            setUserRole(userDoc.data().role);
-          } else {
-            console.error("User document not found for UID:", currentUser.uid);
-            setUserRole(null);
-          }
-        } catch (error) {
-          console.error("Error fetching user role:", error);
-          setUserRole(null);
+      try {
+        if (!currentUser) {
+          setAuthState({ user: null, role: null, loading: false, error: null });
+          return;
         }
-      } else {
-        setUser(null);
-        setUserRole(null);
+
+        const userDocRef = doc(db, "users", currentUser.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (!userDoc.exists()) {
+          throw new Error("User document not found");
+        }
+
+        const role = userDoc.data().role;
+        setAuthState({
+          user: currentUser,
+          role,
+          loading: false,
+          error: null
+        });
+      } catch (error) {
+        console.error("Authentication error:", error);
+        setAuthState({
+          user: currentUser,
+          role: null,
+          loading: false,
+          error: error.message
+        });
       }
-      setIsLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
 
-  if (isLoading) {
-    return <div>Loading...</div>;
+  if (authState.loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
   }
 
-  if (!user) {
-    console.log("User not authenticated, redirecting to /signup");
+  if (!authState.user) {
     return <Navigate to="/signup" state={{ from: location }} replace />;
   }
 
-  if (userRole && roleRequired && userRole !== roleRequired) {
-    console.log(
-      "Role mismatch, userRole:",
-      userRole,
-      "required:",
-      roleRequired
-    );
-    if (userRole === "teacher") {
-      return <Navigate to="/dashboard" replace />;
-    } else if (userRole === "student") {
-      return <Navigate to="/student-dashboard" replace />;
-    }
+  if (authState.role && roleRequired && authState.role !== roleRequired) {
+    const redirectPath = authState.role === "teacher" ? "/dashboard" : "/student-dashboard";
+    return <Navigate to={redirectPath} replace />;
   }
 
-  console.log("Access granted to route, userRole:", userRole);
+  if (authState.error) {
+    return (
+      <div className="p-4 text-red-700 bg-red-100 rounded">
+        Error: {authState.error}
+      </div>
+    );
+  }
+
   return children;
 };
 
 function App() {
   return (
     <AuthProvider>
-      {" "}
       <BrowserRouter>
-        <Routes>
-          <Route path="/signup" element={<Signuppage onLogin={() => {}} />} />
+        <Suspense fallback={
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        }>
+          <Routes>
+            <Route path="/signup" element={<Signuppage onLogin={() => {}} />} />
 
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute roleRequired="teacher">
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
+            {teacherRoutes.map(({ path, component: Component }) => (
+              <Route
+                key={path}
+                path={path}
+                element={
+                  <ProtectedRoute roleRequired="teacher">
+                    <Component />
+                  </ProtectedRoute>
+                }
+              />
+            ))}
 
-          <Route
-            path="/student-dashboard"
-            element={
-              <ProtectedRoute roleRequired="student">
-                <StudentDashboard />
-              </ProtectedRoute>
-            }
-          />
+            {studentRoutes.map(({ path, component: Component }) => (
+              <Route
+                key={path}
+                path={path}
+                element={
+                  <ProtectedRoute roleRequired="student">
+                    <Component />
+                  </ProtectedRoute>
+                }
+              />
+            ))}
 
-          <Route
-            path="/courses"
-            element={
-              <ProtectedRoute roleRequired="teacher">
-                <Courses />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/students"
-            element={
-              <ProtectedRoute roleRequired="teacher">
-                <Students />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/liststudents"
-            element={
-              <ProtectedRoute roleRequired="teacher">
-                <ListStudents />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/edittimetable"
-            element={
-              <ProtectedRoute roleRequired="teacher">
-                <EditTimetable />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/addstudent"
-            element={
-              <ProtectedRoute roleRequired="teacher">
-                <AddStudent />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/addteacher"
-            element={
-              <ProtectedRoute roleRequired="teacher">
-                <AddTeacher />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/Notices"
-            element={
-              <ProtectedRoute roleRequired="teacher">
-                <Notices />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/create-notice"
-            element={
-              <ProtectedRoute roleRequired="teacher">
-                <CreateNotice />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/Attendance"
-            element={
-              <ProtectedRoute roleRequired="teacher">
-                <Attendance />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/mark-attendance"
-            element={
-              <ProtectedRoute roleRequired="teacher">
-                <MarkAttendance />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/Teachers"
-            element={
-              <ProtectedRoute roleRequired="teacher">
-                <Teachers />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/Addsubjects"
-            element={
-              <ProtectedRoute roleRequired="teacher">
-                <AddSubjects />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/Notes"
-            element={
-              <ProtectedRoute roleRequired="teacher">
-                <Notes />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/subject/:subjectName"
-            element={
-              <ProtectedRoute roleRequired="teacher">
-                <SubjectDetails />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/add-notes"
-            element={
-              <ProtectedRoute roleRequired="teacher">
-                <AssignmentDetail />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/add-assignment"
-            element={
-              <ProtectedRoute roleRequired="teacher">
-                <AddAssignment />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/add-details"
-            element={
-              <ProtectedRoute roleRequired="teacher">
-                <AddAssignment />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/assignment"
-            element={
-              <ProtectedRoute roleRequired="teacher">
-                <Assignments />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/see-attendance"
-            element={
-              <ProtectedRoute roleRequired="teacher">
-                <SeeAttendance />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/edit-attendance"
-            element={
-              <ProtectedRoute roleRequired="teacher">
-                <EditAttendance />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/view-profile"
-            element={
-              <ProtectedRoute roleRequired="teacher">
-                <TeacherViewProfile />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/Create-account"
-            element={
-              <ProtectedRoute roleRequired="teacher">
-                <CreateAccount />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/student-notice"
-            element={
-              <ProtectedRoute roleRequired="student">
-                <StudentNotice />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/student-timetable"
-            element={
-              <ProtectedRoute roleRequired="student">
-                <StudentTimetable />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/StudentAttendance"
-            element={
-              <ProtectedRoute roleRequired="student">
-                <StudentAttendance />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/StudentNotes"
-            element={
-              <ProtectedRoute roleRequired="student">
-                <StudentNotes />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route
-            path="/StudentAssignments"
-            element={
-              <ProtectedRoute roleRequired="student">
-                <StudentAssignments />
-              </ProtectedRoute>
-            }
-          />
-
-          <Route path="*" element={<Navigate to="/signup" />} />
-        </Routes>
+            <Route path="*" element={<Navigate to="/signup" replace />} />
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     </AuthProvider>
   );

@@ -1,4 +1,3 @@
-// src/Components/FileUploadModal.jsx
 import React from "react";
 
 const FileUploadModal = ({ isOpen, onClose, onFileUpload }) => {

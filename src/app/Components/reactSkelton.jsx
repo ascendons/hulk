@@ -3,15 +3,11 @@ import "react-loading-skeleton/dist/skeleton.css";
 
 export const renderSkeleton = () => (
   <div className="flex min-h-screen bg-gray-100">
-    {/* Sidebar Skeleton */}
     <div className="w-16 bg-gray-900 h-screen"></div>
 
-    {/* Main Content Skeleton */}
     <div className="flex-1 p-6">
-      {/* Header Skeleton */}
       <Skeleton height={40} width={200} className="mb-6" />
 
-      {/* Profile Section Skeleton */}
       <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex items-center justify-between border border-gray-200">
         <div className="flex items-center">
           <Skeleton circle height={48} width={48} className="mr-4" />
