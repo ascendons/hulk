@@ -16,12 +16,12 @@ import {
 
 const StudentSidebar = () => {
   return (
-    <div className="h-screen bg-gray-800 text-white w-64 p-6 flex flex-col">
+    <div className="h-screen bg-gray-800 text-white w-96 p-6 flex flex-col">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-xl font-bold flex items-center">
           <LayoutDashboard className="mr-2 text-orange-500" />
-          College Dashboard
+          CLASSMATE
         </h1>
       </div>
 

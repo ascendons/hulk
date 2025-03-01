@@ -47,15 +47,15 @@ const StudentAttendance = () => {
 
       setIsLoading(true);
       try {
-        const usersRef = collection(db, "users"); // Use "users" collection as per your screenshot
-        const q = query(usersRef, where("email", "==", user.email)); // Query by email from AuthContext
+        const usersRef = collection(db, "users"); // Use "users" collection
+        const q = query(usersRef, where("email", "==", user.email)); // Query by email
         const querySnapshot = await getDocs(q);
 
         if (!querySnapshot.empty) {
           const userData = querySnapshot.docs[0].data();
           setStudentName(userData.name || "Unknown"); // Use name from Firestore
         } else {
-          setStudentName(user.email || "Unknown"); // Fallback to email if no user record found
+          setStudentName(user.email || "Unknown"); // Fallback to email
         }
       } catch (error) {
         console.error("Error fetching student name:", error);
@@ -70,7 +70,7 @@ const StudentAttendance = () => {
 
   useEffect(() => {
     const fetchAttendance = async () => {
-      if (!studentName || studentName === "Unknown") return; // Ensure we have a valid name
+      if (!studentName || studentName === "Unknown") return;
 
       setIsLoading(true);
       setAttendanceRecords([]); // Clear previous data
@@ -124,7 +124,7 @@ const StudentAttendance = () => {
     };
 
     fetchAttendance();
-  }, [studentName]); // Fetch data when the studentName changes
+  }, [studentName]);
 
   // Prepare data for charts
   const pieChartData = {
@@ -178,11 +178,11 @@ const StudentAttendance = () => {
         display: true,
         text: "Overall Attendance",
         font: { size: 16, weight: "bold" },
-        color: "#374151", // Gray text
+        color: "#374151",
       },
       legend: {
         position: "bottom",
-        labels: { color: "#374151" }, // Gray legend text
+        labels: { color: "#374151" },
       },
     },
     maintainAspectRatio: false,
@@ -194,18 +194,18 @@ const StudentAttendance = () => {
         display: true,
         text: "Attendance by Subject",
         font: { size: 16, weight: "bold" },
-        color: "#374151", // Gray text
+        color: "#374151",
       },
-      legend: { display: false }, // Hide legend for bar chart
+      legend: { display: false },
     },
     scales: {
       y: {
         beginAtZero: true,
         max: 100,
         title: { display: true, text: "Percentage (%)", color: "#374151" },
-        ticks: { color: "#374151" }, // Gray ticks
+        ticks: { color: "#374151" },
       },
-      x: { ticks: { color: "#374151" } }, // Gray ticks
+      x: { ticks: { color: "#374151" } },
     },
     maintainAspectRatio: false,
   };
@@ -225,8 +225,6 @@ const StudentAttendance = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col p-6 ml-16">
-        {" "}
-        {/* Added margin-left to account for fixed sidebar */}
         {/* Header */}
         <h1 className="text-4xl font-bold mb-8 text-orange-500">ATTENDANCE</h1>
         {/* Student Name */}
@@ -246,14 +244,18 @@ const StudentAttendance = () => {
         ) : /* Attendance Data and Charts */
         attendanceRecords.length > 0 ? (
           <div className="w-full bg-white rounded-lg shadow-lg p-6 space-y-6">
-            {/* Overall Attendance Pie Chart */}
-            <div className="h-64">
-              <Pie data={pieChartData} options={pieChartOptions} />
-            </div>
-
-            {/* Attendance by Subject Bar Chart */}
-            <div className="h-64">
-              <Bar data={barChartData} options={barChartOptions} />
+            {/* Pie Chart and Bar Chart Side by Side */}
+            <div className="flex space-x-6">
+              {/* Pie Chart */}
+              <div className="w-1/2 h-96">
+                <Pie data={pieChartData} options={pieChartOptions} />
+              </div>
+              {/* Vertical Separator */}
+              <div className="w-px bg-gray-300"></div>
+              {/* Bar Chart */}
+              <div className="w-1/2 h-96">
+                <Bar data={barChartData} options={barChartOptions} />
+              </div>
             </div>
 
             {/* Table for Detailed Attendance */}

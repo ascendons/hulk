@@ -175,7 +175,7 @@ const StudentTimetable = () => {
       <div className="flex-1 p-6">
         <div className="flex justify-between items-center mb-6">
           <Link to="/student-dashboard">
-            <h1 className="text-3xl font-bold mb-8 text-blue-600">TIMETABLE</h1>
+            <h1 className="text-5xl font-bold mb-8 text-orange-500">TIMETABLE</h1>
           </Link>
           <p className="text-xl text-gray-600">Today's Date: {formattedDate}</p>
         </div>
