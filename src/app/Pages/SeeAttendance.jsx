@@ -32,7 +32,7 @@ Modal.setAppElement("#root"); // Ensure your app has a root element with id="roo
 const SeeAttendance = () => {
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [showDefaulters, setShowDefaulters] = useState(false); // State to toggle defaulters view
+  const [filterOption, setFilterOption] = useState("All"); // State to toggle between "All" and "Defaulters"
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [overallAttendanceByStudent, setOverallAttendanceByStudent] = useState(
@@ -120,10 +120,13 @@ const SeeAttendance = () => {
     { present: 0, total: 0 }
   );
 
-  // Filter defaulters (e.g., students with less than 75% attendance)
-  const defaulters = Object.entries(overallAttendanceByStudent).filter(
-    ([, { percentage }]) => percentage < 75
-  );
+  // Filter students based on the filterOption
+  const filteredStudents =
+    filterOption === "Defaulters"
+      ? Object.entries(overallAttendanceByStudent).filter(
+          ([, { percentage }]) => percentage < 40 // Show students with less than 40% attendance
+        )
+      : Object.entries(overallAttendanceByStudent); // Show all students
 
   // Chart data for subject-wise attendance (Bar Chart)
   const subjectChartData = {
@@ -187,8 +190,19 @@ const SeeAttendance = () => {
           SEE ATTENDANCE
         </h1>
 
-        {/* Search Bar and Buttons */}
+        {/* Filter and Search Bar */}
         <div className="flex items-center space-x-4 mb-6">
+          {/* Filter Dropdown */}
+          <select
+            value={filterOption}
+            onChange={(e) => setFilterOption(e.target.value)}
+            className="p-2 border border-gray-300 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="All">All</option>
+            <option value="Defaulters">Defaulters</option>
+          </select>
+
+          {/* Search Bar */}
           <input
             type="text"
             value={searchQuery}
@@ -196,25 +210,6 @@ const SeeAttendance = () => {
             placeholder="Enter student name"
             className="flex-1 p-4 border border-gray-300 rounded-l-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <button
-            onClick={() => {
-              setSearchQuery("");
-              setShowDefaulters(false); // Explicitly reset to show all
-            }}
-            disabled={isLoading || !searchQuery}
-            className="p-4 bg-gray-500 text-white rounded-r-lg shadow-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
-          >
-            Show All
-          </button>
-          <button
-            onClick={() => {
-              setSearchQuery("");
-              setShowDefaulters(true); // Show defaulters
-            }}
-            className="p-4 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            Show Defaulters
-          </button>
         </div>
 
         {/* Attendance Data */}
@@ -314,49 +309,12 @@ const SeeAttendance = () => {
               </p>
             </div>
           )
-        ) : showDefaulters ? (
-          <div className="mt-6 w-full bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-bold mb-4 text-gray-800">Defaulters List</h2>
-            <table className="w-full text-left border-collapse border border-gray-200">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-4 py-2 border border-gray-200">
-                    Student Name
-                  </th>
-                  <th className="px-4 py-2 border border-gray-200">Overall %</th>
-                  <th className="px-4 py-2 border border-gray-200">Present</th>
-                  <th className="px-4 py-2 border border-gray-200">Total</th>
-                </tr>
-              </thead>
-              <tbody>
-                {defaulters.length > 0 ? (
-                  defaulters.map(([name, { percentage, present, total }]) => (
-                    <tr key={name} className="hover:bg-gray-50">
-                      <td className="px-4 py-2 border border-gray-200">{name}</td>
-                      <td className="px-4 py-2 border border-gray-200">
-                        {percentage}%
-                      </td>
-                      <td className="px-4 py-2 border border-gray-200">{present}</td>
-                      <td className="px-4 py-2 border border-gray-200">{total}</td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan="4"
-                      className="px-4 py-2 border border-gray-200 text-center text-gray-600"
-                    >
-                      No defaulters found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
         ) : (
           <div className="mt-6 w-full bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-xl font-bold mb-4 text-gray-800">
-              All Students Attendance
+              {filterOption === "Defaulters"
+                ? "Defaulters List"
+                : "All Students Attendance"}
             </h2>
             <table className="w-full text-left border-collapse border border-gray-200">
               <thead className="bg-gray-100">
@@ -364,14 +322,16 @@ const SeeAttendance = () => {
                   <th className="px-4 py-2 border border-gray-200">
                     Student Name
                   </th>
-                  <th className="px-4 py-2 border border-gray-200">Overall %</th>
+                  <th className="px-4 py-2 border border-gray-200">
+                    Overall %
+                  </th>
                   <th className="px-4 py-2 border border-gray-200">Present</th>
                   <th className="px-4 py-2 border border-gray-200">Total</th>
                 </tr>
               </thead>
               <tbody>
-                {Object.keys(overallAttendanceByStudent).length > 0 ? (
-                  Object.entries(overallAttendanceByStudent).map(
+                {filteredStudents.length > 0 ? (
+                  filteredStudents.map(
                     ([name, { percentage, present, total }]) => (
                       <tr key={name} className="hover:bg-gray-50">
                         <td className="px-4 py-2 border border-gray-200">
@@ -383,7 +343,9 @@ const SeeAttendance = () => {
                         <td className="px-4 py-2 border border-gray-200">
                           {present}
                         </td>
-                        <td className="px-4 py-2 border border-gray-200">{total}</td>
+                        <td className="px-4 py-2 border border-gray-200">
+                          {total}
+                        </td>
                       </tr>
                     )
                   )
@@ -393,7 +355,9 @@ const SeeAttendance = () => {
                       colSpan="4"
                       className="px-4 py-2 border border-gray-200 text-center text-gray-600"
                     >
-                      No attendance records available.
+                      {filterOption === "Defaulters"
+                        ? "No defaulters found."
+                        : "No attendance records available."}
                     </td>
                   </tr>
                 )}
