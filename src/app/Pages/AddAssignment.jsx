@@ -35,7 +35,7 @@ const AddAssignment = () => {
           const usersSnapshot = await getDocs(usersQuery);
           if (!usersSnapshot.empty) {
             const userData = usersSnapshot.docs[0].data();
-            setAssignedBy(userData.name || user.email); // Use name if available
+            setAssignedBy(userData.name || user.email);  
           }
 
           const teachersQuery = query(
