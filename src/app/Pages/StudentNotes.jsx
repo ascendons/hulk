@@ -87,7 +87,7 @@ const StudentNotes = () => {
 
             // Filter notes by student name (assuming notes are associated with a student's name or department/division)
             if (
-              noteData.department === "BSc.IT" && // Adjust based on your data structure
+              noteData.department === "Bsc.IT" && // Adjust based on your data structure
               noteData.division === "A" && // Adjust based on your data structure
               noteData.subject // Ensure subject exists
             ) {
@@ -142,7 +142,7 @@ const StudentNotes = () => {
     };
 
     fetchNotes();
-  }, [studentName]); // Fetch data when the studentName changes
+  }, [studentName]);
 
   // Group notes by subject
   const groupedNotes = notes.reduce((acc, note) => {
@@ -153,7 +153,6 @@ const StudentNotes = () => {
     return acc;
   }, {});
 
-  // Handle subject click
   const handleSubjectClick = (subject) => {
     setExpandedSubject(expandedSubject === subject ? null : subject);
   };
@@ -175,11 +174,10 @@ const StudentNotes = () => {
       <div className="flex-1 p-6">
         {/* Header Section */}
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-blue-800">NOTES</h1>
+          <h1 className="text-3xl font-bold text-orange-500">NOTES</h1>
           {/* Removed Add Notes button as requested */}
         </div>
 
-        {/* Loading or Error State */}
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>

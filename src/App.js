@@ -16,6 +16,7 @@ const Signuppage = React.lazy(() => import("./app/Pages/Signuppage"));
 const StudentDashboard = React.lazy(() =>
   import("./app/Pages/StudentDashboard")
 );
+const CreatesAccount = React.lazy(() => import("./app/Pages/CreatesAccount")); // Import CreatesAccount
 
 const teacherRoutes = [
   { path: "/dashboard", component: Dashboard },
@@ -46,10 +47,6 @@ const teacherRoutes = [
   {
     path: "/Notices",
     component: React.lazy(() => import("./app/Pages/Notices")),
-  },
-  {
-    path: "/create-notice",
-    component: React.lazy(() => import("./app/Pages/createNotice")),
   },
   {
     path: "/Attendance",
@@ -91,10 +88,6 @@ const teacherRoutes = [
   {
     path: "/view-profile",
     component: React.lazy(() => import("./app/Components/TeacherViewProfile")),
-  },
-  {
-    path: "/Create-account",
-    component: React.lazy(() => import("./app/Pages/CreatesAccount")),
   },
   {
     path: "/add-notes",
@@ -214,6 +207,10 @@ function App() {
         >
           <Routes>
             <Route path="/signup" element={<Signuppage onLogin={() => {}} />} />
+            <Route
+              path="/Create-account"
+              element={<CreatesAccount />} // Public route, no ProtectedRoute
+            />
 
             {teacherRoutes.map(({ path, component: Component }) => (
               <Route

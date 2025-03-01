@@ -106,7 +106,7 @@ const StudentDashboard = () => {
       </div>
 
       <div className="flex-1 p-6">
-        <h1 className="text-3xl font-bold text-blue-600 mb-6">Dashboard</h1>
+        <h1 className="text-3xl font-bold text-orange-500 mb-6">Dashboard</h1>
 
         <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex items-center justify-between border border-gray-200">
           <div className="flex items-center">
@@ -115,7 +115,8 @@ const StudentDashboard = () => {
             </div>
             <div>
               <p className="text-gray-800 font-semibold">
-                Welcome back, Student!
+                Welcome back,{" "}
+                <p className="text-orange-500 font-semibold">Student!</p>
               </p>
               <p className="text-gray-600">Student Name: {studentData?.name}</p>
               <p className="text-gray-600">Department: {studentData?.course}</p>
@@ -124,7 +125,7 @@ const StudentDashboard = () => {
           </div>
           <Link
             to="/view-profile"
-            className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors"
+            className="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600 transition-colors"
           >
             View Profile
           </Link>

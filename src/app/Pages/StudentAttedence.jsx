@@ -1,9 +1,30 @@
-// src/components/StudentAttendance.jsx
 import React, { useState, useEffect, useContext } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../config";
 import { AuthContext } from "../../authContext"; // Import your authentication context
 import StudentSidebar from "../Components/StudentSidebar";
+import { Pie, Bar } from "react-chartjs-2"; // Import Pie and Bar charts from react-chartjs-2
+import {
+  Chart as ChartJS,
+  ArcElement,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js"; // Import Chart.js components
+
+// Register Chart.js components
+ChartJS.register(
+  ArcElement,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Title,
+  Tooltip,
+  Legend
+);
 
 const StudentAttendance = () => {
   const [isSidebarHovered, setIsSidebarHovered] = useState(false); // Sidebar hover state
@@ -105,6 +126,90 @@ const StudentAttendance = () => {
     fetchAttendance();
   }, [studentName]); // Fetch data when the studentName changes
 
+  // Prepare data for charts
+  const pieChartData = {
+    labels: ["Present", "Absent"],
+    datasets: [
+      {
+        data: [
+          overallAttendance.present,
+          overallAttendance.total - overallAttendance.present,
+        ],
+        backgroundColor: ["#F97316", "#D1D5DB"], // Orange for present, gray for absent
+        hoverOffset: 4,
+      },
+    ],
+  };
+
+  const barChartData = {
+    labels: Object.keys(
+      attendanceRecords.reduce((subjects, record) => {
+        subjects[record.subject] = true;
+        return subjects;
+      }, {})
+    ),
+    datasets: [
+      {
+        label: "Attendance Percentage",
+        data: Object.entries(
+          attendanceRecords.reduce((subjects, record) => {
+            const subject = subjects[record.subject] || {
+              present: 0,
+              total: 0,
+            };
+            subject.total += 1;
+            if (record.status === "P") subject.present += 1;
+            subjects[record.subject] = subject;
+            return subjects;
+          }, {})
+        ).map(([subject, { present, total }]) =>
+          Math.round((present / total) * 100)
+        ),
+        backgroundColor: "#F97316", // Orange for bars
+        borderColor: "#EA580C", // Darker orange for borders
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const pieChartOptions = {
+    plugins: {
+      title: {
+        display: true,
+        text: "Overall Attendance",
+        font: { size: 16, weight: "bold" },
+        color: "#374151", // Gray text
+      },
+      legend: {
+        position: "bottom",
+        labels: { color: "#374151" }, // Gray legend text
+      },
+    },
+    maintainAspectRatio: false,
+  };
+
+  const barChartOptions = {
+    plugins: {
+      title: {
+        display: true,
+        text: "Attendance by Subject",
+        font: { size: 16, weight: "bold" },
+        color: "#374151", // Gray text
+      },
+      legend: { display: false }, // Hide legend for bar chart
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 100,
+        title: { display: true, text: "Percentage (%)", color: "#374151" },
+        ticks: { color: "#374151" }, // Gray ticks
+      },
+      x: { ticks: { color: "#374151" } }, // Gray ticks
+    },
+    maintainAspectRatio: false,
+  };
+
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
@@ -113,18 +218,17 @@ const StudentAttendance = () => {
         onMouseLeave={() => setIsSidebarHovered(false)}
         className={`${
           isSidebarHovered ? "w-64" : "w-16"
-        } bg-blue-800 text-white h-screen transition-all duration-300 overflow-hidden`}
+        } bg-orange-800 text-white h-screen fixed top-0 left-0 transition-all duration-300 overflow-y-hidden`}
       >
         <StudentSidebar />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col p-6">
+      <div className="flex-1 flex flex-col p-6 ml-16">
+        {" "}
+        {/* Added margin-left to account for fixed sidebar */}
         {/* Header */}
-        <h1 className="text-4xl font-bold mb-8 text-blue-600">
-          SEE ATTENDANCE
-        </h1>
-
+        <h1 className="text-4xl font-bold mb-8 text-orange-500">ATTENDANCE</h1>
         {/* Student Name */}
         <div className="mb-6">
           <input
@@ -134,16 +238,28 @@ const StudentAttendance = () => {
             className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 focus:outline-none"
           />
         </div>
-
         {/* Loading State */}
         {isLoading ? (
           <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
           </div>
-        ) : /* Attendance Data */
+        ) : /* Attendance Data and Charts */
         attendanceRecords.length > 0 ? (
-          <div className="w-full bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-xl font-bold mb-4 text-gray-800">Attendance</h2>
+          <div className="w-full bg-white rounded-lg shadow-lg p-6 space-y-6">
+            {/* Overall Attendance Pie Chart */}
+            <div className="h-64">
+              <Pie data={pieChartData} options={pieChartOptions} />
+            </div>
+
+            {/* Attendance by Subject Bar Chart */}
+            <div className="h-64">
+              <Bar data={barChartData} options={barChartOptions} />
+            </div>
+
+            {/* Table for Detailed Attendance */}
+            <h2 className="text-xl font-bold mb-4 text-gray-800">
+              Attendance Details
+            </h2>
             <div className="mb-4">
               <p className="text-lg font-semibold">
                 Overall: {overallAttendance.percentage}% (

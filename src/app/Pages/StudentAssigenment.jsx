@@ -18,7 +18,11 @@ const StudentAssignments = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
-  const [studentData, setStudentData] = useState({ course: "", division: "", year: "" });
+  const [studentData, setStudentData] = useState({
+    course: "",
+    division: "",
+    year: "",
+  });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
@@ -86,15 +90,23 @@ const StudentAssignments = () => {
             querySnapshot.docs.map(async (doc) => {
               const assignmentData = doc.data();
               if (assignmentData.filePath) {
-                const { data: fileData, error: fileError } = await supabase.storage
-                  .from("assignments")
-                  .getPublicUrl(assignmentData.filePath);
+                const { data: fileData, error: fileError } =
+                  await supabase.storage
+                    .from("assignments")
+                    .getPublicUrl(assignmentData.filePath);
 
                 if (fileError) {
-                  console.error("Error fetching file URL from Supabase:", fileError);
+                  console.error(
+                    "Error fetching file URL from Supabase:",
+                    fileError
+                  );
                   return { id: doc.id, ...assignmentData, fileURL: null };
                 }
-                return { id: doc.id, ...assignmentData, fileURL: fileData.publicUrl };
+                return {
+                  id: doc.id,
+                  ...assignmentData,
+                  fileURL: fileData.publicUrl,
+                };
               }
               return { id: doc.id, ...assignmentData };
             })
@@ -102,13 +114,19 @@ const StudentAssignments = () => {
           setAssignments(fetchedAssignments);
           localStorage.setItem(
             CACHE_KEY,
-            JSON.stringify({ data: fetchedAssignments, timestamp: new Date().getTime() })
+            JSON.stringify({
+              data: fetchedAssignments,
+              timestamp: new Date().getTime(),
+            })
           );
         }
 
         // Fetch submitted assignments with timestamps
         const submissionsRef = collection(db, "submissions");
-        const submissionQuery = query(submissionsRef, where("studentId", "==", user.uid));
+        const submissionQuery = query(
+          submissionsRef,
+          where("studentId", "==", user.uid)
+        );
         const submissionSnapshot = await getDocs(submissionQuery);
         const submissionData = {};
         submissionSnapshot.docs.forEach((doc) => {
@@ -119,10 +137,11 @@ const StudentAssignments = () => {
           };
         });
         setSubmissions(submissionData);
-
       } catch (error) {
         console.error("Error fetching data:", error);
-        setError("Failed to fetch assignments or submissions: " + error.message);
+        setError(
+          "Failed to fetch assignments or submissions: " + error.message
+        );
       } finally {
         setIsLoading(false);
       }
@@ -153,7 +172,8 @@ const StudentAssignments = () => {
         setSelectedFile(null);
         return;
       }
-      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      if (file.size > 5 * 1024 * 1024) {
+        // 5MB limit
         setUploadError("File size must be less than 5MB.");
         setSelectedFile(null);
         return;
@@ -217,7 +237,9 @@ const StudentAssignments = () => {
       setTimeout(() => setShowSuccessPopup(false), 3000); // Auto-close after 3 seconds
     } catch (error) {
       console.error("Error uploading file:", error);
-      setUploadError(error.message || "Failed to upload file. Please try again.");
+      setUploadError(
+        error.message || "Failed to upload file. Please try again."
+      );
     } finally {
       setIsLoading(false);
       setUploadProgress(0); // Reset progress after completion
@@ -251,7 +273,7 @@ const StudentAssignments = () => {
       {/* Main Content */}
       <div className="flex-grow p-6">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">ASSIGNMENTS</h1>
+          <h1 className="text-3xl font-bold text-orange-500">ASSIGNMENTS</h1>
         </div>
 
         {error && (
@@ -272,11 +294,15 @@ const StudentAssignments = () => {
                 key={assignment.id}
                 className="bg-white shadow-md rounded-lg p-4 border border-gray-300 hover:shadow-lg transition-shadow"
               >
-                <h2 className="text-lg font-bold text-gray-700">{assignment.title}</h2>
+                <h2 className="text-lg font-bold text-gray-700">
+                  {assignment.title}
+                </h2>
                 <p className="text-sm text-gray-600">
                   Due Date: {new Date(assignment.dueDate).toLocaleDateString()}
                 </p>
-                <p className="text-sm text-gray-600">Marks: {assignment.marks}</p>
+                <p className="text-sm text-gray-600">
+                  Marks: {assignment.marks}
+                </p>
                 {assignment.fileURL && (
                   <a
                     href={assignment.fileURL}
@@ -299,10 +325,15 @@ const StudentAssignments = () => {
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-orange-500 hover:bg-orange-600"
                     }`}
-                    onClick={() => !isAssignmentSubmitted(assignment.id) && handleUploadClick(assignment)}
+                    onClick={() =>
+                      !isAssignmentSubmitted(assignment.id) &&
+                      handleUploadClick(assignment)
+                    }
                     disabled={isAssignmentSubmitted(assignment.id)}
                   >
-                    {isAssignmentSubmitted(assignment.id) ? "Submitted" : "Upload"}
+                    {isAssignmentSubmitted(assignment.id)
+                      ? "Submitted"
+                      : "Upload"}
                   </button>
                 </div>
               </div>
@@ -310,7 +341,9 @@ const StudentAssignments = () => {
           </div>
         ) : (
           <div className="bg-white shadow-md rounded-lg p-4 border border-gray-300">
-            <p className="text-gray-600 text-center">No assignments available.</p>
+            <p className="text-gray-600 text-center">
+              No assignments available.
+            </p>
           </div>
         )}
       </div>
@@ -321,16 +354,19 @@ const StudentAssignments = () => {
             <h2 className="text-xl font-bold mb-4">Upload Assignment</h2>
             <div className="space-y-3">
               <div>
-                <span className="font-semibold">Course:</span> {studentData.course}
+                <span className="font-semibold">Course:</span>{" "}
+                {studentData.course}
               </div>
               <div>
                 <span className="font-semibold">Year:</span> {studentData.year}
               </div>
               <div>
-                <span className="font-semibold">Division:</span> {studentData.division}
+                <span className="font-semibold">Division:</span>{" "}
+                {studentData.division}
               </div>
               <div>
-                <span className="font-semibold">Subject:</span> {selectedAssignment.title}
+                <span className="font-semibold">Subject:</span>{" "}
+                {selectedAssignment.title}
               </div>
               <div>
                 <label className="font-semibold block mb-1">Upload File:</label>
@@ -366,7 +402,9 @@ const StudentAssignments = () => {
                             <span
                               key={i}
                               className="inline-block w-1 h-2 bg-gray-300 mx-0.5"
-                              style={{ opacity: i < (uploadProgress || 0) / 10 ? 0 : 1 }}
+                              style={{
+                                opacity: i < (uploadProgress || 0) / 10 ? 0 : 1,
+                              }}
                             />
                           ))}
                         </div>
@@ -378,7 +416,9 @@ const StudentAssignments = () => {
                   Note: Only PDF files are allowed (max 5MB).
                 </p>
               </div>
-              {uploadError && <p className="text-red-500 text-sm">{uploadError}</p>}
+              {uploadError && (
+                <p className="text-red-500 text-sm">{uploadError}</p>
+              )}
             </div>
             <div className="mt-6 flex justify-end space-x-3">
               <button

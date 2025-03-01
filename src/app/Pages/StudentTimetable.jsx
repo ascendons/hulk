@@ -216,7 +216,7 @@ const StudentTimetable = () => {
                             lecturesForDay.map((lecture, idx) => (
                               <div
                                 key={idx}
-                                className="text-sm bg-green-100 p-2 rounded-lg mb-2"
+                                className="text-sm bg-orange-300 p-2 rounded-lg mb-2"
                               >
                                 <strong>{lecture.timeSlot}</strong> -{" "}
                                 {lecture.subject}

@@ -14,39 +14,92 @@ const Dashboard = () => {
   const [totalSubjects, setTotalSubjects] = useState(0);
   const [attendance, setAttendance] = useState(75);
   const [notices, setNotices] = useState([]);
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
+      setLoading(true);
       try {
         const user = auth.currentUser;
-        if (user) {
-          // Fetch teacher info with correct field names
-          const teacherQuery = query(
-            collection(db, "teachersinfo"),
-            where("email", "==", user.email)
-          );
-          const teacherSnapshot = await getDocs(teacherQuery);
-          if (!teacherSnapshot.empty) {
-            setTeacherInfo(teacherSnapshot.docs[0].data());
-          }
-
-          const studentsSnapshot = await getDocs(collection(db, "students"));
-          setTotalStudents(studentsSnapshot.size);
-
-          // Fetch total teachers
-          const teachersSnapshot = await getDocs(
-            collection(db, "teachersinfo")
-          );
-          setTotalTeachers(teachersSnapshot.size);
-
-          // Fetch total subjects
-          const subjectsSnapshot = await getDocs(collection(db, "subjects"));
-          setTotalSubjects(subjectsSnapshot.size);
+        if (!user) {
+          console.error("No authenticated user found!");
+          return;
         }
+
+        console.log("Authenticated user:", user); // Debug: Check user object
+
+        // Step 1: Fetch user data from the 'users' collection using user.uid
+        const userQuery = query(
+          collection(db, "users"),
+          where("uid", "==", user.uid) // Assuming 'uid' matches Firebase auth UID
+        );
+        const userSnapshot = await getDocs(userQuery);
+
+        if (userSnapshot.empty) {
+          console.warn(
+            "No user data found in 'users' collection for UID:",
+            user.uid
+          );
+          return;
+        }
+
+        const userData = userSnapshot.docs[0].data();
+        console.log("User data from 'users':", userData); // Debug: Log user data
+
+        const userId = userData.userId; // Get userId from users collection
+        const name = userData.name || "Teacher"; // Default to "Teacher" if name is missing
+
+        // Step 2: Fetch teacher info from 'teachersinfo' using userId
+        const teacherQuery = query(
+          collection(db, "teachersinfo"),
+          where("userId", "==", userId) // Match userId with teachersinfo
+        );
+        const teacherSnapshot = await getDocs(teacherQuery);
+
+        if (teacherSnapshot.empty) {
+          console.warn(
+            "No teacher info found in 'teachersinfo' for userId:",
+            userId
+          );
+          // Set minimal data if no teacher info is found
+          setTeacherInfo({
+            name: name,
+            userId: userId,
+            email: user.email,
+            role: "Teacher",
+            department: "Department",
+          });
+        } else {
+          const teacherData = teacherSnapshot.docs[0].data();
+          console.log("Teacher data from 'teachersinfo':", teacherData); // Debug: Log teacher data
+
+          // Combine user data and teacher data
+          setTeacherInfo({
+            name: name || teacherData.name, // Prioritize name from users if available
+            userId: userId,
+            email: user.email,
+            department: teacherData.department || "Department",
+            role: teacherData.role || "Role",
+            // Add other fields as needed (e.g., phone, subject, etc.)
+          });
+        }
+
+        // Fetch total students
+        const studentsSnapshot = await getDocs(collection(db, "students"));
+        setTotalStudents(studentsSnapshot.size);
+
+        // Fetch total teachers
+        const teachersSnapshot = await getDocs(collection(db, "teachersinfo"));
+        setTotalTeachers(teachersSnapshot.size);
+
+        // Fetch total subjects
+        const subjectsSnapshot = await getDocs(collection(db, "subjects"));
+        setTotalSubjects(subjectsSnapshot.size);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -106,7 +159,7 @@ const Dashboard = () => {
             <p className="text-gray-600 font-semibold">
               Department: {teacherInfo.department || "Department"}
             </p>
-            <p className="text-gray-600">Role:{teacherInfo.role || "Role"}</p>
+            <p className="text-gray-600">Role: {teacherInfo.role || "Role"}</p>
           </div>
 
           {/* Edit Profile Button */}

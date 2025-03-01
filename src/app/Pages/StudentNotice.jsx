@@ -35,7 +35,7 @@ const StudentNotice = () => {
         onMouseLeave={() => setIsSidebarHovered(false)}
         className={`${
           isSidebarHovered ? "w-64" : "w-16"
-        } bg-blue-800 text-white h-screen transition-all duration-300 overflow-hidden`}
+        } bg-orange-500 text-white h-screen transition-all duration-300 overflow-hidden`}
       >
         <StudentSidebar />
       </div>
@@ -43,13 +43,13 @@ const StudentNotice = () => {
       {/* Main Content */}
       <div className="flex-1 p-6 bg-gray-100 overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-bold mb-8 text-blue-600">NOTICES</h1>
+          <h1 className="text-3xl font-bold mb-8 text-orange-600">NOTICES</h1>
         </div>
 
         {notices.map((notice, index) => (
           <div
             key={index}
-            className="bg-white shadow-md rounded-md p-4 mb-4 border border-gray-300"
+            className="bg-white shadow-md rounded-md p-4 mb-4 border border-gray-300 hover:shadow-lg transition-shadow"
           >
             <div className="flex justify-between items-center mb-2">
               <div>
@@ -75,7 +75,7 @@ const StudentNotice = () => {
                   href={notice.file}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-blue-500 underline hover:text-blue-700"
+                  className="text-orange-500 underline hover:text-orange-700"
                 >
                   Download File
                 </a>
