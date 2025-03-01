@@ -45,7 +45,7 @@ const Sidebar = () => {
       {/* Mobile Menu Button */}
       <button
         onClick={toggleSidebar}
-        className="fixed top-4 left-4 z-50 p-2 bg-orange-700 text-white rounded-lg lg:hidden"
+        className="fixed top-4 left-4 z-50 p-2 bg-green-600 text-white rounded-lg lg:hidden"
       >
         {isSidebarOpen ? (
           <X className="w-6 h-6" />
@@ -63,7 +63,7 @@ const Sidebar = () => {
         {/* Close Button for Mobile */}
         <button
           onClick={toggleSidebar}
-          className="lg:hidden self-end mb-4 p-2 bg-orange-700 rounded-lg"
+          className="lg:hidden self-end mb-4 p-2 bg-green-700 rounded-lg"
         >
           <X className="w-6 h-6" />
         </button>
@@ -71,7 +71,7 @@ const Sidebar = () => {
         {/* Dashboard Header */}
         <div className="mb-8">
           <h1 className="text-xl font-bold flex items-center">
-            <LayoutDashboard className="mr-2 text-orange-400" />
+            <LayoutDashboard className="mr-2 text-green-600" />
             ClassMate
           </h1>
         </div>
@@ -84,7 +84,7 @@ const Sidebar = () => {
               className="flex items-center p-3 rounded-lg hover:bg-orange-700 transition-colors"
               onClick={() => setIsSidebarOpen(false)}
             >
-              <LayoutDashboard className="mr-3 text-orange-400" />
+              <LayoutDashboard className="mr-3 text-green-600" />
               Dashboard
             </Link>
           </li>
@@ -95,7 +95,7 @@ const Sidebar = () => {
               className="flex items-center p-3 rounded-lg hover:bg-orange-700 transition-colors"
               onClick={() => setIsSidebarOpen(false)}
             >
-              <Bell className="mr-3 text-orange-400" />
+              <Bell className="mr-3 text-green-600" />
               Notices
             </Link>
           </li>
@@ -106,7 +106,7 @@ const Sidebar = () => {
               className="flex items-center p-3 rounded-lg hover:bg-orange-700 transition-colors"
               onClick={() => setIsSidebarOpen(false)}
             >
-              <Calendar className="mr-3 text-orange-400" />
+              <Calendar className="mr-3 text-green-600" />
               Timetable
             </Link>
           </li>
@@ -117,7 +117,7 @@ const Sidebar = () => {
               className="flex items-center p-3 rounded-lg hover:bg-orange-700 transition-colors"
               onClick={() => setIsSidebarOpen(false)}
             >
-              <Users className="mr-3 text-orange-400" />
+              <Users className="mr-3 text-green-600" />
               Students
             </Link>
           </li>
@@ -128,7 +128,7 @@ const Sidebar = () => {
               className="flex items-center p-3 rounded-lg hover:bg-orange-700 transition-colors"
               onClick={() => setIsSidebarOpen(false)}
             >
-              <BookOpen className="mr-3 text-orange-400" />
+              <BookOpen className="mr-3 text-green-600" />
               Teachers
             </Link>
           </li>
@@ -139,7 +139,7 @@ const Sidebar = () => {
               className="flex items-center p-3 rounded-lg hover:bg-orange-700 transition-colors"
               onClick={() => setIsSidebarOpen(false)}
             >
-              <ClipboardList className="mr-3 text-orange-400" />
+              <ClipboardList className="mr-3 text-green-600" />
               Attendance
             </Link>
           </li>
@@ -150,7 +150,7 @@ const Sidebar = () => {
               className="flex items-center p-3 rounded-lg hover:bg-orange-700 transition-colors"
               onClick={() => setIsSidebarOpen(false)}
             >
-              <FileText className="mr-3 text-orange-400" />
+              <FileText className="mr-3 text-green-600" />
               Notes
             </Link>
           </li>
@@ -161,43 +161,12 @@ const Sidebar = () => {
               className="flex items-center p-3 rounded-lg hover:bg-orange-700 transition-colors"
               onClick={() => setIsSidebarOpen(false)}
             >
-              <School className="mr-3 text-orange-400" />
+              <School className="mr-3 text-green-600" />
               Assignments
             </Link>
           </li>
 
-          <li>
-            <Link
-              to="/addstudent"
-              className="flex items-center p-3 rounded-lg hover:bg-orange-700 transition-colors"
-              onClick={() => setIsSidebarOpen(false)}
-            >
-              <UserPlus className="mr-3 text-orange-400" />
-              Add Students
-            </Link>
-          </li>
-
-          <li>
-            <Link
-              to="/addteacher"
-              className="flex items-center p-3 rounded-lg hover:bg-orange-700 transition-colors"
-              onClick={() => setIsSidebarOpen(false)}
-            >
-              <BookmarkPlus className="mr-3 text-orange-400" />
-              Add Teacher
-            </Link>
-          </li>
-
-          <li>
-            <Link
-              to="/Addsubjects"
-              className="flex items-center p-3 rounded-lg hover:bg-orange-700 transition-colors"
-              onClick={() => setIsSidebarOpen(false)}
-            >
-              <BookPlus className="mr-3 text-orange-400" />
-              Add Subjects
-            </Link>
-          </li>
+          
 
           {/* Logout Button */}
           <li className="mt-auto">
@@ -213,7 +182,7 @@ const Sidebar = () => {
                 viewBox="0 0 24 24"
                 strokeWidth={1.5}
                 stroke="currentColor"
-                className="mr-3 text-orange-400 w-6 h-6"
+                className="mr-3 text-green-600 w-6 h-6"
               >
                 <path
                   strokeLinecap="round"

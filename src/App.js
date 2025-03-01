@@ -16,7 +16,13 @@ const Signuppage = React.lazy(() => import("./app/Pages/Signuppage"));
 const StudentDashboard = React.lazy(() =>
   import("./app/Pages/StudentDashboard")
 );
-const CreatesAccount = React.lazy(() => import("./app/Pages/CreatesAccount")); // Import CreatesAccount
+const CreatesAccount = React.lazy(() => import("./app/Pages/CreatesAccount"));
+const Admin = React.lazy(() => import("./app/Pages/Admin"));
+
+// Placeholder components for new routes
+const AddTeacher = React.lazy(() => import("./app/Pages/AddTeacher"));
+const AddStudents = React.lazy(() => import("./app/Pages/AddStudent")); // Ensure this file exists
+const AddSubjects = React.lazy(() => import("./app/Pages/AddSubjects"));
 
 const teacherRoutes = [
   { path: "/dashboard", component: Dashboard },
@@ -37,14 +43,6 @@ const teacherRoutes = [
     component: React.lazy(() => import("./app/Pages/EditTimetable")),
   },
   {
-    path: "/addstudent",
-    component: React.lazy(() => import("./app/Pages/AddStudent")),
-  },
-  {
-    path: "/addteacher",
-    component: React.lazy(() => import("./app/Pages/AddTeacher")),
-  },
-  {
     path: "/Notices",
     component: React.lazy(() => import("./app/Pages/Notices")),
   },
@@ -55,10 +53,6 @@ const teacherRoutes = [
   {
     path: "/Teachers",
     component: React.lazy(() => import("./app/Pages/Teachers")),
-  },
-  {
-    path: "/Addsubjects",
-    component: React.lazy(() => import("./app/Pages/AddSubjects")),
   },
   { path: "/Notes", component: React.lazy(() => import("./app/Pages/Notes")) },
   {
@@ -87,7 +81,9 @@ const teacherRoutes = [
   },
   {
     path: "/view-profile",
-    component: React.lazy(() => import("./app/Components/TeacherViewProfile")),
+    component: React.lazy(() =>
+      import("./app/Components/TeacherViewProfile")
+    ),
   },
   {
     path: "/add-notes",
@@ -120,6 +116,15 @@ const studentRoutes = [
   },
 ];
 
+// Admin Routes Configuration
+const adminRoutes = [
+  { path: "/admin", component: React.lazy(() => import("./app/Pages/Admin")) },
+  { path: "/add-teacher", component: AddTeacher },
+  { path: "/add-students", component: AddStudents }, // Ensure this file exists
+  { path: "/add-subjects", component: AddSubjects },
+  { path: "/create-account", component: CreatesAccount },
+];
+
 const ProtectedRoute = ({ children, roleRequired }) => {
   const [authState, setAuthState] = useState({
     user: null,
@@ -141,13 +146,23 @@ const ProtectedRoute = ({ children, roleRequired }) => {
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
-          throw new Error("User document not found");
+          console.warn("User document not found for UID:", currentUser.uid);
+          setAuthState({
+            user: currentUser,
+            role: null,
+            loading: false,
+            error: "User document not found. Please ensure your account is registered with a role.",
+          });
+          return;
         }
 
         const role = userDoc.data().role;
+        console.log("User role retrieved (case-sensitive):", role);
+        const normalizedRole = role ? role.toLowerCase() : null;
+        console.log("Normalized role:", normalizedRole);
         setAuthState({
           user: currentUser,
-          role,
+          role: normalizedRole,
           loading: false,
           error: null,
         });
@@ -177,9 +192,16 @@ const ProtectedRoute = ({ children, roleRequired }) => {
     return <Navigate to="/signup" state={{ from: location }} replace />;
   }
 
-  if (authState.role && roleRequired && authState.role !== roleRequired) {
+  if (authState.role && roleRequired && authState.role !== roleRequired.toLowerCase()) {
     const redirectPath =
-      authState.role === "teacher" ? "/dashboard" : "/student-dashboard";
+      authState.role === "teacher"
+        ? "/dashboard"
+        : authState.role === "student"
+        ? "/student-dashboard"
+        : authState.role === "admin"
+        ? "/admin"
+        : "/signup"; // Fallback to signup if role is unrecognized
+    console.log("Redirecting to:", redirectPath, "due to role mismatch. Required:", roleRequired, "Current:", authState.role);
     return <Navigate to={redirectPath} replace />;
   }
 
@@ -208,7 +230,7 @@ function App() {
           <Routes>
             <Route path="/signup" element={<Signuppage onLogin={() => {}} />} />
             <Route
-              path="/Create-account"
+              path="/create-account"
               element={<CreatesAccount />} // Public route, no ProtectedRoute
             />
 
@@ -230,6 +252,18 @@ function App() {
                 path={path}
                 element={
                   <ProtectedRoute roleRequired="student">
+                    <Component />
+                  </ProtectedRoute>
+                }
+              />
+            ))}
+
+            {adminRoutes.map(({ path, component: Component }) => (
+              <Route
+                key={path}
+                path={path}
+                element={
+                  <ProtectedRoute roleRequired="admin">
                     <Component />
                   </ProtectedRoute>
                 }

@@ -7,7 +7,7 @@ import {
 import { auth } from "../../config";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../config";
-import bglogin from "../../bglogin.png"; // Use the background image from the public folder
+import bglogin from "../../bglogin.png";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -24,7 +24,7 @@ const Signuppage = ({ onLogin }) => {
     setIsLoading(true);
 
     try {
-      console.log("Attempting to sign in with email:", email);
+      console.log("Attempting to sign in with email:", email, "and password length:", password.length);
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
@@ -41,7 +41,11 @@ const Signuppage = ({ onLogin }) => {
         const userData = userDoc.data();
         const role = userData.role;
 
-        if (role === "teacher") {
+        if (role === "Admin") {
+          console.log("Redirecting admin to /admin");
+          toast.success("Welcome, Admin!");
+          navigate("/admin");
+        } else if (role === "teacher") {
           console.log("Redirecting teacher to /dashboard");
           toast.success("Welcome, Teacher!");
           navigate("/dashboard");
@@ -55,13 +59,13 @@ const Signuppage = ({ onLogin }) => {
         }
       } else {
         console.error("User document not found for UID:", user.uid);
-        toast.error("User data not found in Firestore.");
+        toast.error("User data not found in Firestore. Please ensure your account is registered with a role.");
       }
 
       onLogin();
     } catch (err) {
-      console.error("Sign-in error:", err.message);
-      toast.error(err.message);
+      console.error("Sign-in error details:", err.code, err.message);
+      toast.error(err.message || "An unexpected error occurred during sign-in.");
     } finally {
       setIsLoading(false);
     }
@@ -78,10 +82,12 @@ const Signuppage = ({ onLogin }) => {
     }
 
     try {
+      console.log("Sending password reset email to:", email);
       await sendPasswordResetEmail(auth, email);
       toast.success("Password reset email sent successfully");
     } catch (err) {
-      toast.error(err.message);
+      console.error("Password reset error:", err.message);
+      toast.error(err.message || "Failed to send password reset email.");
     } finally {
       setIsLoading(false);
     }
@@ -103,6 +109,7 @@ const Signuppage = ({ onLogin }) => {
             src={`${process.env.PUBLIC_URL}/StudentIcon.png`}
             alt="Student Icon"
             className="w-full h-auto rounded-l-2xl object-cover"
+            onError={(e) => console.error("Image load failed:", e)}
           />
         </div>
 
@@ -131,6 +138,7 @@ const Signuppage = ({ onLogin }) => {
                   onChange={(e) => setEmail(e.target.value)}
                   className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm shadow-sm placeholder-gray-400
                            focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+                  required
                 />
               </div>
               <div>
@@ -149,6 +157,7 @@ const Signuppage = ({ onLogin }) => {
                     onChange={(e) => setPassword(e.target.value)}
                     className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm shadow-sm placeholder-gray-400
                            focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500"
+                    required
                   />
                   <button
                     type="button"
@@ -223,14 +232,7 @@ const Signuppage = ({ onLogin }) => {
                 Forgot your password?
               </a>
             </div>
-            <div className="mt-6 text-center">
-              <button
-                onClick={() => navigate("/Create-account")}
-                className="text-sm text-orange-600 hover:text-orange-800 transition-colors duration-200"
-              >
-                Create account
-              </button>
-            </div>
+            
           </div>
         </div>
       </div>
