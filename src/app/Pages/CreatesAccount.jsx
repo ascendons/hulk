@@ -1,14 +1,22 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   createUserWithEmailAndPassword,
   sendEmailVerification,
 } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
-import { auth, db } from "../../config"; // Ensure you have your Firebase config file
+import {
+  doc,
+  setDoc,
+  getDocs,
+  collection,
+  query,
+  orderBy,
+  limit,
+} from "firebase/firestore";
+import { auth, db } from "../../config";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { DEPARTMENTS, DIVISIONS, SUBJECTS, ROLE } from "../constants"; // Updated to use ROLE instead of ROLES
+import { DEPARTMENTS, SUBJECTS, ROLE } from "../constants";
 
 const CreatesAccount = () => {
   const navigate = useNavigate();
@@ -20,7 +28,6 @@ const CreatesAccount = () => {
     password: "",
     phone: "",
     department: "Select Department",
-    division: "Select Divisions",
     subject: "Select Subjects",
     role: "Select Role",
   });
@@ -28,9 +35,52 @@ const CreatesAccount = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Function to generate next teacher ID
+  const generateTeacherId = async () => {
+    try {
+      // Query the last teacher info document ordered by teacherId descending
+      const q = query(
+        collection(db, "teachersinfo"),
+        orderBy("teacherId", "desc"),
+        limit(1)
+      );
+      const querySnapshot = await getDocs(q);
+
+      let newId = "1000"; // Starting ID if no records exist
+
+      if (!querySnapshot.empty) {
+        const lastTeacher = querySnapshot.docs[0].data();
+        const lastId = parseInt(lastTeacher.teacherId);
+        newId = (lastId + 1).toString().padStart(4, "0");
+      }
+
+      setFormData((prev) => ({ ...prev, teacherId: newId }));
+    } catch (err) {
+      console.error("Error generating teacher ID:", err);
+      setError("Failed to generate teacher ID");
+    }
+  };
+
+  // Generate teacher ID when component mounts
+  useEffect(() => {
+    generateTeacherId();
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+
+    if (name === "name") {
+      const capitalizedName = value
+        .split(" ")
+        .map(
+          (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        )
+        .join(" ");
+      setFormData({ ...formData, [name]: capitalizedName });
+    } else if (name !== "teacherId") {
+      // Prevent manual changes to teacherId
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const validateForm = () => {
@@ -38,8 +88,8 @@ const CreatesAccount = () => {
       setError("Teacher's name is required.");
       return false;
     }
-    if (!/^\d+$/.test(formData.teacherId)) {
-      setError("Teacher ID must contain numbers only.");
+    if (!/^\d{4}$/.test(formData.teacherId)) {
+      setError("Teacher ID must be a 4-digit number.");
       return false;
     }
     if (
@@ -59,10 +109,6 @@ const CreatesAccount = () => {
     }
     if (formData.department === "Select Department") {
       setError("Department is required.");
-      return false;
-    }
-    if (formData.division === "Select Divisions") {
-      setError("Division is required.");
       return false;
     }
     if (formData.subject === "Select Subjects") {
@@ -87,7 +133,6 @@ const CreatesAccount = () => {
     }
 
     try {
-      // Create user with email and password
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         formData.email,
@@ -95,29 +140,31 @@ const CreatesAccount = () => {
       );
       const user = userCredential.user;
 
-      // Send email verification
       await sendEmailVerification(user);
       toast.info(
         "Verification email sent. Please verify your email before logging in."
       );
 
-      // Store user data in Firestore
       await setDoc(doc(db, "users", user.uid), {
         name: formData.name,
-        teacherId: formData.teacherId,
         email: formData.email,
-        phone: formData.phone,
         role: formData.role,
+        createdAt: new Date().toISOString(),
+      });
+
+      await setDoc(doc(db, "teachersinfo", user.uid), {
+        teacherId: formData.teacherId,
+        phone: formData.phone,
         department: formData.department,
-        division: formData.division,
         subject: formData.subject,
+        userId: user.uid,
         createdAt: new Date().toISOString(),
       });
 
       toast.success(
         "Account created successfully! Please check your email for verification."
       );
-      navigate("/signup"); // Redirect to login page after successful registration
+      navigate("/signup");
     } catch (err) {
       console.error("Error creating account:", err);
       setError(err.message || "Failed to create account. Please try again.");
@@ -144,22 +191,23 @@ const CreatesAccount = () => {
               value={formData.name}
               onChange={handleChange}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              placeholder="Enter teacher's name"
+              placeholder="Enter teacher's name (e.g., John Doe)"
             />
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700">
-              Teacher ID (Numbers Only)
+              Teacher ID (Auto-generated)
             </label>
             <input
               type="text"
               name="teacherId"
               value={formData.teacherId}
-              onChange={handleChange}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              placeholder="Enter teacher ID"
+              readOnly // Make it read-only since it's auto-generated
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm bg-gray-100"
+              placeholder="Auto-generated ID"
             />
           </div>
+          {/* Rest of the form fields remain the same */}
           <div>
             <label className="block text-sm font-medium text-gray-700">
               Enter teacher’s email
@@ -212,23 +260,6 @@ const CreatesAccount = () => {
               {DEPARTMENTS.map((dept) => (
                 <option key={dept} value={dept}>
                   {dept}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Select Divisions
-            </label>
-            <select
-              name="division"
-              value={formData.division}
-              onChange={handleChange}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-            >
-              {DIVISIONS.map((div) => (
-                <option key={div} value={div}>
-                  {div}
                 </option>
               ))}
             </select>

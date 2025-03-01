@@ -1,4 +1,11 @@
-export const DEPARTMENTS = ["Bsc.IT", "BCOM", "BMS", "BBA", "BCA"];
+export const DEPARTMENTS = [
+  "Select Subjects",
+  "Bsc.IT",
+  "BCOM",
+  "BMS",
+  "BBA",
+  "BCA",
+];
 
 export const DIVISIONS = ["A", "B", "C", "D"];
 
@@ -8,6 +15,6 @@ export const YEARS = {
   THIRD_YEAR: "Third Year",
 };
 
-export const ROLE = ["Admin", "Teacher", "Coordinator"];
+export const ROLE = ["Select Role", "admin", "teacher", "Coordinator"];
 
-export const SUBJECTS = ["SQA", "SIC", "ITSM", "GIS"];
+export const SUBJECTS = ["Select Subjects", "SQA", "SIC", "ITSM", "GIS"];

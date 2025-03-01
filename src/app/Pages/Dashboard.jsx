@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from "react";
 import Sidebar from "../Components/Sidebar";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  doc,
+  getDoc,
+} from "firebase/firestore";
 import { db, auth } from "../../config";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
@@ -15,89 +22,87 @@ const Dashboard = () => {
   const [attendance, setAttendance] = useState(75);
   const [notices, setNotices] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
+      setError(null);
       try {
         const user = auth.currentUser;
         if (!user) {
           console.error("No authenticated user found!");
+          setError("No authenticated user found.");
           return;
         }
 
         console.log("Authenticated user:", user); // Debug: Check user object
 
-        // Step 1: Fetch user data from the 'users' collection using user.uid
-        const userQuery = query(
-          collection(db, "users"),
-          where("uid", "==", user.uid) // Assuming 'uid' matches Firebase auth UID
-        );
-        const userSnapshot = await getDocs(userQuery);
+        // Step 1: Fetch user data from the 'users' collection using the document ID (UID)
+        const userDocRef = doc(db, "users", user.uid); // Use the UID as the document ID
+        const userDoc = await getDoc(userDocRef);
 
-        if (userSnapshot.empty) {
+        if (!userDoc.exists()) {
           console.warn(
             "No user data found in 'users' collection for UID:",
             user.uid
           );
+          setError("User data not found in Firestore.");
           return;
         }
 
-        const userData = userSnapshot.docs[0].data();
+        const userData = userDoc.data();
         console.log("User data from 'users':", userData); // Debug: Log user data
 
-        const userId = userData.userId; // Get userId from users collection
-        const name = userData.name || "Teacher"; // Default to "Teacher" if name is missing
+        const name = userData.name || "Teacher Name";
+        const role = userData.role || "Teacher";
 
-        // Step 2: Fetch teacher info from 'teachersinfo' using userId
         const teacherQuery = query(
           collection(db, "teachersinfo"),
-          where("userId", "==", userId) // Match userId with teachersinfo
+          where("userId", "==", user.uid) // Match userId with teachersinfo (using Firebase UID)
         );
         const teacherSnapshot = await getDocs(teacherQuery);
 
-        if (teacherSnapshot.empty) {
-          console.warn(
-            "No teacher info found in 'teachersinfo' for userId:",
-            userId
-          );
-          // Set minimal data if no teacher info is found
-          setTeacherInfo({
-            name: name,
-            userId: userId,
-            email: user.email,
-            role: "Teacher",
-            department: "Department",
-          });
-        } else {
+        let department = "Department"; // Default department if not found
+        if (!teacherSnapshot.empty) {
           const teacherData = teacherSnapshot.docs[0].data();
           console.log("Teacher data from 'teachersinfo':", teacherData); // Debug: Log teacher data
-
-          // Combine user data and teacher data
-          setTeacherInfo({
-            name: name || teacherData.name, // Prioritize name from users if available
-            userId: userId,
-            email: user.email,
-            department: teacherData.department || "Department",
-            role: teacherData.role || "Role",
-            // Add other fields as needed (e.g., phone, subject, etc.)
-          });
+          department = teacherData.department || "Department"; // Use department from teachersinfo
+        } else {
+          console.warn("No teacher info found for UID:", user.uid);
         }
 
-        // Fetch total students
-        const studentsSnapshot = await getDocs(collection(db, "students"));
+        // Combine user data and teacher data
+        setTeacherInfo({
+          name: name,
+          email: user.email,
+          department: department,
+          role: role,
+        });
+
+        // Fetch total students (using role: "student" from 'users' collection)
+        const studentsQuery = query(
+          collection(db, "users"),
+          where("role", "==", "student")
+        );
+        const studentsSnapshot = await getDocs(studentsQuery);
         setTotalStudents(studentsSnapshot.size);
 
-        // Fetch total teachers
-        const teachersSnapshot = await getDocs(collection(db, "teachersinfo"));
+        // Fetch total teachers (using role: "teacher" from 'users' collection)
+        const teachersQuery = query(
+          collection(db, "users"),
+          where("role", "==", "teacher") // Filter for teachers only
+        );
+        const teachersSnapshot = await getDocs(teachersQuery);
         setTotalTeachers(teachersSnapshot.size);
 
-        // Fetch total subjects
+        // Fetch total subjects (from 'subjects' collection)
         const subjectsSnapshot = await getDocs(collection(db, "subjects"));
         setTotalSubjects(subjectsSnapshot.size);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
+        setError("Failed to fetch dashboard data: " + error.message);
       } finally {
         setLoading(false);
       }
@@ -113,6 +118,7 @@ const Dashboard = () => {
         setNotices(fetchedNotices);
       } catch (error) {
         console.error("Error fetching notices:", error);
+        setError("Failed to fetch notices: " + error.message);
       }
     };
 
@@ -122,6 +128,14 @@ const Dashboard = () => {
 
   if (loading) {
     return renderSkeleton();
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 items-center justify-center">
+        <p className="text-red-500 text-lg font-bold">{error}</p>
+      </div>
+    );
   }
 
   return (
@@ -147,26 +161,30 @@ const Dashboard = () => {
         </div>
 
         {/* Profile Section */}
-        <div className="bg-white shadow-lg rounded-lg p-6 mb-8 flex items-center">
+        <div className="bg-white shadow-md rounded-lg p-4 mb-8 flex items-center justify-between border border-gray-200">
           {/* Profile Picture Placeholder */}
-          <div className="w-20 h-20 bg-gray-300 rounded-full mr-6 border-4 border-blue-500"></div>
+          <div className="w-20 h-20 bg-gray-300 rounded-full mr-6 border-2 border-blue-300 flex items-center justify-center">
+            {/* Empty circle for placeholder */}
+          </div>
 
           {/* Teacher Info */}
           <div className="flex-grow">
-            <h2 className="text-2xl font-bold text-gray-800">
+            <h2 className="text-xl font-semibold text-gray-900">
               {teacherInfo.name || "Teacher Name"}
             </h2>
-            <p className="text-gray-600 font-semibold">
+            <p className="text-gray-600 text-sm">
               Department: {teacherInfo.department || "Department"}
             </p>
-            <p className="text-gray-600">Role: {teacherInfo.role || "Role"}</p>
+            <p className="text-gray-600 text-sm">
+              Role: {teacherInfo.role || "Teacher"}
+            </p>
           </div>
 
-          {/* Edit Profile Button */}
+          {/* View Profile Button */}
           <Link to="/view-profile">
             <button
               onClick={() => navigate("/edit-profile")}
-              className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors"
+              className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors text-sm font-medium"
             >
               View Profile
             </button>
@@ -243,7 +261,7 @@ const Dashboard = () => {
                     By: {notice.author}
                   </p>
                   <p className="text-gray-800">{notice.content}</p>
-                  {notice.attachment && (
+                  {notice.adjustment && (
                     <a
                       href={notice.attachment}
                       target="_blank"

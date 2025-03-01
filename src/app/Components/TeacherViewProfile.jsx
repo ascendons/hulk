@@ -5,7 +5,7 @@ import { db, auth } from "../../config";
 import ChangePasswordModal from "./ChangePasswordModal";
 
 const TeacherViewProfile = () => {
-  const [teachersinfo, setTeachersinfo] = useState(null);
+  const [teacherInfo, setTeacherInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -27,7 +27,7 @@ const TeacherViewProfile = () => {
           email: user.email, // Debug: Check if email exists
         }); // Debug: Log detailed user info
 
-        // Ensure email is available, fallback to uid if necessary
+        // Fetch user data from the 'users' collection using the user's email
         const userEmail = user.email || user.uid;
         if (!userEmail) {
           console.error("No email or UID available for the user.");
@@ -36,10 +36,9 @@ const TeacherViewProfile = () => {
           return;
         }
 
-        // Fetch user data from the 'users' collection using the user's email
         const usersQuery = query(
           collection(db, "users"),
-          where("email", "==", userEmail) // Use fallback email or uid
+          where("email", "==", userEmail) // Use email to query users
         );
         const usersSnapshot = await getDocs(usersQuery);
 
@@ -53,8 +52,7 @@ const TeacherViewProfile = () => {
         const userData = usersSnapshot.docs[0].data();
         console.log("User data from 'users':", userData); // Debug: Log user data
 
-        // Ensure userId exists, fallback to a default or uid if missing
-        const userId = userData.userId || user.uid || "default-user-id";
+        const userId = userData.userId || user.uid;
         if (!userId) {
           console.error("No userId found in user data.");
           setErrorMessage("No userId found in user data.");
@@ -74,15 +72,14 @@ const TeacherViewProfile = () => {
         // Fetch teacher data from 'teachersinfo' using userId
         const teacherQuery = query(
           collection(db, "teachersinfo"),
-          where("userId", "==", userId) // Use the ensured userId
+          where("userId", "==", userId) // Use userId to query teachersinfo
         );
-        const teachersinfoSnapshot = await getDocs(teacherQuery);
+        const teacherSnapshot = await getDocs(teacherQuery);
 
-        if (teachersinfoSnapshot.empty) {
+        if (teacherSnapshot.empty) {
           console.error("No teacher profile found for userId:", userId);
           setErrorMessage(`No teacher profile found for userId: ${userId}`);
-          // Set fallback data if no teacher info is found
-          setTeachersinfo({
+          setTeacherInfo({
             name: userData.name || "Teacher",
             userId: userId,
             email: userEmail,
@@ -91,24 +88,22 @@ const TeacherViewProfile = () => {
             phone: "",
             divisions: [],
             subjects: [],
-            teacherId: "N/A", // Fallback for teacherId
+            teacherId: "N/A",
           });
         } else {
-          const teacherData = teachersinfoSnapshot.docs[0].data();
+          const teacherData = teacherSnapshot.docs[0].data();
           console.log("Teacher data from 'teachersinfo':", teacherData); // Debug: Log teacher data
-          console.log("TeacherId value:", teacherData.teacherId); // Debug: Specifically log teacherId
 
-          // Combine user data and teacher data, with fallbacks
-          setTeachersinfo({
+          setTeacherInfo({
             name: teacherData.name || userData.name || "Teacher",
-            userId: teacherData.userId || userId || "",
-            email: teacherData.email || userEmail || "",
+            userId: teacherData.userId || userId,
+            email: teacherData.email || userEmail,
             role: teacherData.role || userData.role || "Teacher",
             department: teacherData.department || "Department",
-            phone: teacherData.phone || "", // Match 'phone' from your screenshot
+            phone: teacherData.phone || "",
             divisions: teacherData.divisions || [],
             subjects: teacherData.subjects || [],
-            teacherId: teacherData.teacherId || "N/A", // Ensure teacherId is correctly set
+            teacherId: teacherData.teacherId || "N/A",
           });
         }
       } catch (error) {
@@ -130,7 +125,7 @@ const TeacherViewProfile = () => {
     );
   }
 
-  if (!teachersinfo) {
+  if (!teacherInfo) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100">
         <p className="text-red-600 text-xl font-semibold">
@@ -142,83 +137,136 @@ const TeacherViewProfile = () => {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <div className="relative bg-white p-6 md:p-10 rounded-lg shadow-2xl max-w-4xl mx-auto my-8 w-full">
-        {/* Navigation Buttons */}
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl p-8 border border-gray-200">
+        {/* Header with Navigation Buttons */}
         <div className="flex justify-between mb-8">
           <button
             onClick={() => navigate("/dashboard")}
-            className="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-600 transition-colors"
+            className="bg-gray-200 text-gray-800 font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-gray-300 transition-colors"
           >
-            Back to Dashboard
+            Back To Home
           </button>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="bg-red-500 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-red-600 transition-colors"
+            className="bg-red-500 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-red-600 transition-colors"
           >
             Change Password
           </button>
         </div>
 
+        {/* Profile Content */}
         <div className="flex flex-col md:flex-row gap-8">
           {/* Left Section (Profile Picture and Name) */}
           <div className="flex-shrink-0 flex flex-col items-center md:items-start">
-            <div className="w-36 h-36 rounded-full bg-gray-200 flex items-center justify-center mb-4 shadow-md">
-              <span className="text-gray-500 font-bold text-xl">IMG</span>
+            <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center mb-4 shadow-md border-2 border-blue-300">
+              <span className="text-gray-500 font-bold text-lg">IMG</span>
             </div>
-            <h2 className="text-2xl md:text-3xl font-bold text-gray-800">
-              {teachersinfo.name}
+            <h2 className="text-2xl font-bold text-gray-900">
+              {teacherInfo.name}
             </h2>
           </div>
 
           {/* Right Section (Profile Details) */}
           <div className="w-full md:w-2/3">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-6">
               <div className="mb-4">
-                <p className="text-gray-600 font-medium">Teacher ID:</p>
-                <p className="text-gray-900 font-semibold">
-                  {teachersinfo.teacherId || "N/A"}
-                </p>
-              </div>
-              <div className="mb-4">
-                <p className="text-gray-600 font-medium">Email:</p>
-                <p className="text-gray-900 font-semibold">
-                  {teachersinfo.email}
-                </p>
-              </div>
-              <div className="mb-4">
-                <p className="text-gray-600 font-medium">Phone:</p>
-                <p className="text-gray-900 font-semibold">
-                  {teachersinfo.phone || "N/A"}
-                </p>
+                <label className="block text-gray-600 font-medium mb-2">
+                  Full Name
+                </label>
+                <input
+                  type="text"
+                  value={teacherInfo.name}
+                  readOnly
+                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
               <div className="mb-4">
-                <p className="text-gray-600 font-medium">Role:</p>
-                <p className="text-gray-900 font-semibold">
-                  {teachersinfo.role}
-                </p>
+                <label className="block text-gray-600 font-medium mb-2">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  value={teacherInfo.email}
+                  readOnly
+                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <span className="text-green-500 text-sm ml-2">✔</span>
               </div>
               <div className="mb-4">
-                <p className="text-gray-600 font-medium">Department:</p>
-                <p className="text-gray-900 font-semibold">
-                  {teachersinfo.department}
-                </p>
+                <label className="block text-gray-600 font-medium mb-2">
+                  Number
+                </label>
+                <input
+                  type="tel"
+                  value={teacherInfo.phone || "N/A"}
+                  readOnly
+                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <span className="text-green-500 text-sm ml-2">✔</span>
               </div>
-              <div className="mb-4 col-span-1 md:col-span-2">
-                <p className="text-gray-600 font-medium">Divisions:</p>
-                <p className="text-gray-900 font-semibold">
-                  {Array.isArray(teachersinfo.divisions)
-                    ? teachersinfo.divisions.join(", ") || "N/A"
-                    : "N/A"}
-                </p>
+              <div className="mb-4">
+                <label className="block text-gray-600 font-medium mb-2">
+                  Teacher ID
+                </label>
+                <input
+                  type="text"
+                  value={teacherInfo.teacherId || "N/A"}
+                  readOnly
+                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
-              <div className="mb-4 col-span-1 md:col-span-2">
-                <p className="text-gray-600 font-medium">Subjects:</p>
-                <p className="text-gray-900 font-semibold">
-                  {Array.isArray(teachersinfo.subjects)
-                    ? teachersinfo.subjects.join(", ") || "N/A"
-                    : "N/A"}
-                </p>
+              <div className="mb-4">
+                <label className="block text-gray-600 font-medium mb-2">
+                  Role
+                </label>
+                <input
+                  type="text"
+                  value={teacherInfo.role}
+                  readOnly
+                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-600 font-medium mb-2">
+                  Department
+                </label>
+                <input
+                  type="text"
+                  value={teacherInfo.department}
+                  readOnly
+                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-600 font-medium mb-2">
+                  Divisions
+                </label>
+                <input
+                  type="text"
+                  value={
+                    Array.isArray(teacherInfo.divisions)
+                      ? teacherInfo.divisions.join(", ") || "N/A"
+                      : "N/A"
+                  }
+                  readOnly
+                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-600 font-medium mb-2">
+                  Subjects
+                </label>
+                <input
+                  type="text"
+                  value={
+                    Array.isArray(teacherInfo.subjects)
+                      ? teacherInfo.subjects.join(", ") || "N/A"
+                      : "N/A"
+                  }
+                  readOnly
+                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
             </div>
           </div>
@@ -227,7 +275,7 @@ const TeacherViewProfile = () => {
 
       {/* Change Password Modal */}
       <ChangePasswordModal
-        userId={teachersinfo.userId} // Keep userId for the modal if needed
+        userId={teacherInfo.userId}
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />

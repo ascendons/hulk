@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import Sidebar from "../Components/Sidebar"; // Import Sidebar component
+import Sidebar from "../Components/Sidebar";
 
 const Attendance = () => {
   const navigate = useNavigate();
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false); // Sidebar hover state
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">

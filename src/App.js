@@ -81,9 +81,7 @@ const teacherRoutes = [
   },
   {
     path: "/view-profile",
-    component: React.lazy(() =>
-      import("./app/Components/TeacherViewProfile")
-    ),
+    component: React.lazy(() => import("./app/Components/TeacherViewProfile")),
   },
   {
     path: "/add-notes",
@@ -119,6 +117,14 @@ const studentRoutes = [
 // Admin Routes Configuration
 const adminRoutes = [
   { path: "/admin", component: React.lazy(() => import("./app/Pages/Admin")) },
+  {
+    path: "/adminstudents",
+    component: React.lazy(() => import("./app/Pages/AdminStudents")),
+  },
+  {
+    path: "/adminteachers",
+    component: React.lazy(() => import("./app/Pages/AdminTeachers")),
+  },
   { path: "/add-teacher", component: AddTeacher },
   { path: "/add-students", component: AddStudents }, // Ensure this file exists
   { path: "/add-subjects", component: AddSubjects },
@@ -151,7 +157,8 @@ const ProtectedRoute = ({ children, roleRequired }) => {
             user: currentUser,
             role: null,
             loading: false,
-            error: "User document not found. Please ensure your account is registered with a role.",
+            error:
+              "User document not found. Please ensure your account is registered with a role.",
           });
           return;
         }
@@ -192,7 +199,11 @@ const ProtectedRoute = ({ children, roleRequired }) => {
     return <Navigate to="/signup" state={{ from: location }} replace />;
   }
 
-  if (authState.role && roleRequired && authState.role !== roleRequired.toLowerCase()) {
+  if (
+    authState.role &&
+    roleRequired &&
+    authState.role !== roleRequired.toLowerCase()
+  ) {
     const redirectPath =
       authState.role === "teacher"
         ? "/dashboard"
@@ -201,7 +212,14 @@ const ProtectedRoute = ({ children, roleRequired }) => {
         : authState.role === "admin"
         ? "/admin"
         : "/signup"; // Fallback to signup if role is unrecognized
-    console.log("Redirecting to:", redirectPath, "due to role mismatch. Required:", roleRequired, "Current:", authState.role);
+    console.log(
+      "Redirecting to:",
+      redirectPath,
+      "due to role mismatch. Required:",
+      roleRequired,
+      "Current:",
+      authState.role
+    );
     return <Navigate to={redirectPath} replace />;
   }
 

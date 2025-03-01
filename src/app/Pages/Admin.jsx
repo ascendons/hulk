@@ -39,7 +39,9 @@ const Admin = () => {
             to="/create-account"
             className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col items-center justify-center text-center cursor-pointer"
           >
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">Add Teacher</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+              Add Teacher
+            </h2>
             <p className="text-blue-600 font-medium">Click to add a teacher</p>
           </Link>
 
@@ -48,7 +50,9 @@ const Admin = () => {
             to="/add-students"
             className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col items-center justify-center text-center cursor-pointer"
           >
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">Add Students</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+              Add Students
+            </h2>
             <p className="text-blue-600 font-medium">Click to add students</p>
           </Link>
 
@@ -57,7 +61,29 @@ const Admin = () => {
             to="/add-subjects"
             className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col items-center justify-center text-center cursor-pointer"
           >
-            <h2 className="text-xl font-semibold mb-4 text-gray-800">Add Subjects</h2>
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+              Add Subjects
+            </h2>
+            <p className="text-blue-600 font-medium">Click to add subjects</p>
+          </Link>
+          {/*See Students Card */}
+          <Link
+            to="/adminstudents"
+            className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col items-center justify-center text-center cursor-pointer"
+          >
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+              Students
+            </h2>
+            <p className="text-blue-600 font-medium">Click to add subjects</p>
+          </Link>
+          {/*See Teachers Card */}
+          <Link
+            to="/adminteachers"
+            className="bg-white p-6 rounded-lg shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col items-center justify-center text-center cursor-pointer"
+          >
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">
+              Teachers
+            </h2>
             <p className="text-blue-600 font-medium">Click to add subjects</p>
           </Link>
         </div>
