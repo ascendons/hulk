@@ -97,8 +97,7 @@ const Signuppage = ({ onLogin }) => {
     <div
       className="min-h-screen flex items-center justify-center"
       style={{
-        backgroundImage: `url(${bglogin})`,
-        backgroundSize: "cover",
+        backgroundImage: `url("https://res.cloudinary.com/dwdejk1u3/image/upload/v1740940961/aehtksiwjkeuizxhej3p.avif")`,
         backgroundPosition: "center",
       }}
     >
@@ -106,7 +105,7 @@ const Signuppage = ({ onLogin }) => {
         {/* Left Side: Image */}
         <div className="hidden md:block w-1/2">
           <img
-            src={`${process.env.PUBLIC_URL}/StudentIcon.png`}
+            src="https://res.cloudinary.com/dwdejk1u3/image/upload/v1740940023/cy3dxbgyru9hbww2yqpz.png"
             alt="Student Icon"
             className="w-full h-auto rounded-l-2xl object-cover"
             onError={(e) => console.error("Image load failed:", e)}
