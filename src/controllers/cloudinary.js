@@ -1,20 +1,14 @@
-import React from "react";
-import { Cloudinary } from "@cloudinary/url-gen";
-import { auto } from "@cloudinary/url-gen/actions/resize";
-import { autoGravity } from "@cloudinary/url-gen/qualifiers/gravity";
-import { AdvancedImage } from "@cloudinary/react";
+import { v2 as cloudinary } from 'cloudinary';
 
-const Cloudinary = () => {
-  const cld = new Cloudinary({ cloud: { cloudName: "dwdejk1u3" } });
+cloudinary.config({
+  cloud_name: '',
+  api_key: 'your_api_key',
+  api_secret: 'your_api_secret',
+});
 
-  // Use this sample image or upload your own via the Media Explorer
-  const img = cld
-    .image("cld-sample-5")
-    .format("auto")
-    .quality("auto")
-    .resize(auto().gravity(autoGravity()).width(500).height(500)); // Transform the image: auto-crop to square aspect_ratio
-
-  return <AdvancedImage cldImg={img} />;
+const uploadImage = async (file) => {
+  const response = await cloudinary.uploader.upload(file, {
+    folder: 'teachers_profiles', 
+  });
+  return response.secure_url;  
 };
-
-export default Cloudinary;

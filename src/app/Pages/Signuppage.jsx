@@ -7,7 +7,6 @@ import {
 import { auth } from "../../config";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../../config";
-import bglogin from "../../bglogin.png";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
