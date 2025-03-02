@@ -35,7 +35,7 @@ const AddAssignment = () => {
           const usersSnapshot = await getDocs(usersQuery);
           if (!usersSnapshot.empty) {
             const userData = usersSnapshot.docs[0].data();
-            setAssignedBy(userData.name || user.email);  
+            setAssignedBy(userData.name || user.email);
           }
 
           const teachersQuery = query(
@@ -108,7 +108,7 @@ const AddAssignment = () => {
       if (file) {
         const filePath = `assignments/${file.name}`;
         const { error: uploadError } = await supabase.storage
-          .from("assignments")  
+          .from("assignments")
           .upload(filePath, file, {
             upsert: true,
             onUploadProgress: (progressEvent) => {
@@ -129,7 +129,6 @@ const AddAssignment = () => {
         fileURL = publicUrl;
       }
 
-      // Save assignment data to Firestore
       await addDoc(collection(db, "assignments"), {
         description,
         department,

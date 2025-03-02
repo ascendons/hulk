@@ -2,15 +2,17 @@ import React, { useState, useEffect } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db, auth } from "../../config";
 import { onAuthStateChanged } from "firebase/auth";
-import StudentSidebar from "../Components/StudentSidebar";
-import { Link } from "react-router-dom";
+import Sidebar from "../Components/Sidebar"; // Ensure this is a default export and resolves to a valid React component
+import { Link, useNavigate } from "react-router-dom";
 
-const StudentTimetable = () => {
+const Courses = () => {
   const [loading, setLoading] = useState(true);
-  const [studentData, setStudentData] = useState(null);
+  const [teacherData, setTeacherData] = useState(null);
   const [lectures, setLectures] = useState({});
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedYear, setSelectedYear] = useState(""); // For year dropdown
+  const navigate = useNavigate();
 
   const currentDate = new Date();
   const formattedDate = currentDate.toLocaleDateString("en-US", {
@@ -30,86 +32,83 @@ const StudentTimetable = () => {
     "Sunday",
   ];
 
+  // Sample years for dropdown based on the timetable structure (Third Year shown in screenshot)
+  const years = ["First Year", "Second Year", "Third Year"]; // Adjust based on actual years in your database
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log("Auth State Changed. Current User:", user);
       if (user) {
         try {
-          console.log("Fetching student data for UID:", user.uid);
-          const studentDocRef = doc(db, "students", user.uid);
-          const studentDoc = await getDoc(studentDocRef);
+          const userDocRef = doc(db, "users", user.uid);
+          const userDoc = await getDoc(userDocRef);
 
-          if (studentDoc.exists()) {
-            const data = studentDoc.data();
-            console.log("Student data found:", data);
-            const studentInfo = {
-              year: data.year || "",
-              course: data.course || "", // Use "course" as per your screenshot (e.g., "Bsc.IT")
-              division: data.division || "",
-            };
+          if (userDoc.exists() && userDoc.data().role === "teacher") {
+            const teacherInfoDocRef = doc(db, "teachersinfo", user.uid);
+            const teacherInfoDoc = await getDoc(teacherInfoDocRef);
 
-            if (!studentInfo.year || !studentInfo.course) {
-              throw new Error(
-                "Missing required student data fields: year or course"
+            if (teacherInfoDoc.exists()) {
+              const data = teacherInfoDoc.data();
+              const teacherInfo = {
+                name: userDoc.data().name || "",
+                department: data.department || "BSc.IT", // Using department instead of course
+                subject: data.subject || "GIS", // Teacher's subject
+                teacherId: data.teacherId || "1000",
+              };
+              setTeacherData(teacherInfo);
+              if (selectedYear) {
+                await fetchLecturesForWeek(
+                  teacherInfo.department,
+                  selectedYear
+                );
+              }
+            } else {
+              setError(
+                "No teacher profile found in teachersinfo. Please contact administration."
               );
+              setTeacherData(null);
             }
-
-            setStudentData(studentInfo);
-            await fetchLecturesForWeek(studentInfo.course, studentInfo.year);
           } else {
-            console.log("No student document found for UID:", user.uid);
-            setError(
-              "No student profile found. Please contact administration."
-            );
-            setStudentData(null);
+            setError("User is not a teacher or profile not found.");
+            setTeacherData(null);
           }
         } catch (error) {
-          console.error("Error in fetch process:", error);
-          setError(error.message || "Failed to fetch student data");
-          setStudentData(null);
+          setError(error.message || "Failed to fetch teacher data");
+          setTeacherData(null);
         }
       } else {
-        console.log("No authenticated user found");
         setError("Please log in to view your timetable");
-        setStudentData(null);
+        setTeacherData(null);
         setLectures({});
       }
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [selectedYear]);
 
-  const getCachedLectures = (course, year) => {
-    const cacheKey = `lectures-${course}-${year}`;
+  const getCachedLectures = (department, year) => {
+    const cacheKey = `teacher-lectures-${department}-${year}`;
     const cachedData = localStorage.getItem(cacheKey);
     if (cachedData) {
       const { data, expiry } = JSON.parse(cachedData);
       if (expiry > Date.now()) {
-        console.log("Using cached lectures:", data);
         return data;
       } else {
-        console.log("Cache expired, removing:", cacheKey);
         localStorage.removeItem(cacheKey);
       }
     }
-    console.log("No valid cache found for:", cacheKey);
     return null;
   };
 
-  const cacheLectures = (course, year, data, expiryInMinutes = 60) => {
-    const cacheKey = `lectures-${course}-${year}`;
+  const cacheLectures = (department, year, data, expiryInMinutes = 60) => {
+    const cacheKey = `teacher-lectures-${department}-${year}`;
     const expiry = Date.now() + expiryInMinutes * 60 * 1000;
     localStorage.setItem(cacheKey, JSON.stringify({ data, expiry }));
-    console.log("Cached lectures:", data);
   };
 
-  const fetchLecturesForWeek = async (course, year) => {
+  const fetchLecturesForWeek = async (department, year) => {
     setLoading(true);
-    console.log("Fetching lectures for course:", course, "year:", year);
-
-    // Check cache first
-    const cachedData = getCachedLectures(course, year);
+    const cachedData = getCachedLectures(department, year);
     if (cachedData) {
       setLectures(cachedData);
       setLoading(false);
@@ -119,23 +118,19 @@ const StudentTimetable = () => {
     let weekLectures = {};
     try {
       for (let day of daysOfWeek) {
-        const docRef = doc(db, `timetable/${course}/${year}/${day}`);
+        const docRef = doc(db, `timetable/${department}/${year}/${day}`);
         const docSnap = await getDoc(docRef);
 
-        console.log(`Fetching data for ${day} in ${course}/${year}:`, {
-          exists: docSnap.exists(),
-          data: docSnap.data(),
-        });
-
-        weekLectures[day] = docSnap.exists()
-          ? docSnap.data().lectures || []
-          : [];
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          weekLectures[day] = Array.isArray(data.lectures) ? data.lectures : [];
+        } else {
+          weekLectures[day] = [];
+        }
       }
-      console.log("Final week lectures:", weekLectures);
       setLectures(weekLectures);
-      cacheLectures(course, year, weekLectures);
+      cacheLectures(department, year, weekLectures);
     } catch (error) {
-      console.error("Error fetching lectures:", error);
       setError(error.message || "Failed to fetch timetable data");
       setLectures({});
     }
@@ -165,13 +160,15 @@ const StudentTimetable = () => {
           isSidebarHovered ? "w-64" : "w-16"
         } bg-gray-900 text-white h-screen transition-all duration-300 overflow-hidden`}
       >
-        <StudentSidebar />
+        <Sidebar />
       </div>
 
       <div className="flex-1 p-6">
         <div className="flex justify-between items-center mb-6">
-          <Link to="/student-dashboard">
-            <h1 className="text-3xl font-bold mb-8 text-blue-600">TIMETABLE</h1>
+          <Link to="/teacher-dashboard">
+            <h1 className="text-5xl font-bold mb-8 text-green-500">
+              TIMETABLE
+            </h1>
           </Link>
           <p className="text-xl text-gray-600">Today's Date: {formattedDate}</p>
         </div>
@@ -186,13 +183,33 @@ const StudentTimetable = () => {
               </div>
             )}
 
-            {studentData ? (
+            {teacherData ? (
               <>
-                <div className="mb-6">
-                  <p className="text-lg font-semibold text-gray-800">
-                    Course: {studentData.course}, Year: {studentData.year},
-                    Division: {studentData.division}
-                  </p>
+                <div className="mb-6 flex justify-between items-center">
+                  <div>
+                    <p className="text-lg font-semibold text-gray-800">
+                      Name: {teacherData.name}, Department:{" "}
+                      {teacherData.department}, Subject: {teacherData.subject}
+                    </p>
+                    <select
+                      value={selectedYear}
+                      onChange={(e) => setSelectedYear(e.target.value)}
+                      className="mt-2 p-2 border rounded"
+                    >
+                      <option value="">Select Year</option>
+                      {years.map((year) => (
+                        <option key={year} value={year}>
+                          {year}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <Link
+                    to={"/edittimetable"}
+                    className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                  >
+                    Edit Timetable
+                  </Link>
                 </div>
 
                 {Object.keys(lectures).length > 0 &&
@@ -212,7 +229,7 @@ const StudentTimetable = () => {
                             lecturesForDay.map((lecture, idx) => (
                               <div
                                 key={idx}
-                                className="text-sm bg-green-100 p-2 rounded-lg mb-2"
+                                className="text-sm bg-green-300 p-2 rounded-lg mb-2"
                               >
                                 <strong>{lecture.timeSlot}</strong> -{" "}
                                 {lecture.subject}
@@ -232,13 +249,15 @@ const StudentTimetable = () => {
                   </div>
                 ) : (
                   <div className="text-center text-gray-500">
-                    No timetable data available for your year
+                    {selectedYear
+                      ? "No timetable data available for this year"
+                      : "Please select a year to view the timetable"}
                   </div>
                 )}
               </>
             ) : (
               <div className="text-center text-gray-500">
-                Unable to load student data
+                Unable to load teacher data
               </div>
             )}
           </>
@@ -248,4 +267,4 @@ const StudentTimetable = () => {
   );
 };
 
-export default StudentTimetable;
+export default Courses;

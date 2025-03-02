@@ -11,10 +11,13 @@ import { useNavigate } from "react-router-dom";
 import { db, auth } from "../../config";
 import ChangePasswordModal from "./ChangePasswordModal";
 import { Cloudinary } from "@cloudinary/url-gen";
-import { AdvancedImage, CloudinaryImage } from "@cloudinary/react";
-import { upload } from "cloudinary";
+import { AdvancedImage } from "@cloudinary/react";
 
-import { cloudinary } from "../../controllers/cloudinary";
+const cld = new Cloudinary({
+  cloud: {
+    cloudName: process.env.REACT_APP_CLOUDINARY_CLOUD_NAME || "dwdejk1u3",
+  },
+});
 
 const TeacherViewProfile = () => {
   const [teacherInfo, setTeacherInfo] = useState(null);
@@ -22,7 +25,7 @@ const TeacherViewProfile = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [uploading, setUploading] = useState(false);
-  const [profilePhotoUrl, setProfilePhotoUrl] = useState("");
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState(""); // State for the profile photo URL
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -39,9 +42,8 @@ const TeacherViewProfile = () => {
         console.log("Authenticated user:", {
           uid: user.uid,
           email: user.email, // Debug: Check if email exists
-        });
+        }); // Debug: Log detailed user info
 
-        // Fetch user data from the 'sers' collection using the user's email
         const userEmail = user.email || user.uid;
         if (!userEmail) {
           console.error("No email or UID available for the user.");
@@ -52,7 +54,7 @@ const TeacherViewProfile = () => {
 
         const usersQuery = query(
           collection(db, "users"),
-          where("email", "==", userEmail) // Use email to query users
+          where("email", "==", userEmail)
         );
         const usersSnapshot = await getDocs(usersQuery);
 
@@ -74,6 +76,7 @@ const TeacherViewProfile = () => {
           return;
         }
 
+        // Check if the user is a teacher (case-insensitive)
         const userRole = userData.role ? userData.role.toLowerCase() : "";
         if (userRole !== "teacher") {
           console.error("User is not a teacher. Role is:", userRole);
@@ -82,6 +85,7 @@ const TeacherViewProfile = () => {
           return;
         }
 
+        // Fetch teacher data from 'teachersinfo' using userId
         const teacherQuery = query(
           collection(db, "teachersinfo"),
           where("userId", "==", userId) // Use userId to query teachersinfo
@@ -132,42 +136,114 @@ const TeacherViewProfile = () => {
     fetchTeacherInfo();
   }, [navigate]);
 
+  // Handle image upload to Cloudinary
+  // const handleImageUpload = async (event) => {
+  //   const file = event.target.files[0];
+  //   if (!file) return;
+
+  //   setUploading(true);
+  //   try {
+  //     console.log("Starting image upload for file:", file.name); // Debug: Log file being uploaded
+
+  //     // Upload to Cloudinary using fetch (frontend, less secure; consider backend for production)
+  //     const formData = new FormData();
+  //     formData.append("file", file);
+  //     formData.append("upload_preset", "teachers_profile"); // Matches your Cloudinary preset
+
+  //     const response = await fetch(
+  //       `https://api.cloudinary.com/v1_1/dwdejk1u3/image/upload`, // Use hardcoded cloudName
+  //       {
+  //         method: "POST",
+  //         body: formData,
+  //       }
+  //     );
+
+  //     if (!response.ok) {
+  //       throw new Error(`Upload failed with status: ${response.status}`);
+  //     }
+
+  //     const data = await response.json();
+  //     console.log("Cloudinary response:", data); // Debug: Log Cloudinary response
+  //     const imageUrl = data.secure_url;
+
+  //     if (!imageUrl) {
+  //       throw new Error("No secure_url returned from Cloudinary");
+  //     }
+
+  //     // Update Firestore with the new profile photo URL
+  //     const teacherRef = doc(db, "teachersinfo", teacherInfo.userId);
+  //     console.log("Updating Firestore for userId:", teacherInfo.userId); // Debug: Log Firestore update
+  //     await updateDoc(teacherRef, {
+  //       profilePhotoUrl: imageUrl,
+  //     });
+  //     console.log("Firestore updated successfully with URL:", imageUrl); // Debug: Confirm Firestore update
+
+  //     // Update local state
+  //     setTeacherInfo((prev) => ({
+  //       ...prev,
+  //       profilePhotoUrl: imageUrl,
+  //     }));
+  //     setProfilePhotoUrl(imageUrl);
+
+  //     console.log("State updated with new URL:", imageUrl); // Debug: Confirm state update
+  //   } catch (error) {
+  //     console.error("Error uploading image:", error);
+  //     setErrorMessage(`Failed to upload image: ${error.message}`);
+  //   } finally {
+  //     setUploading(false);
+  //   }
+  // };
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
-    if (!file) return;
+    if (!file) {
+      console.error("No file selected.");
+      return;
+    }
 
     setUploading(true);
     try {
+      console.log("Starting image upload for file:", file.name);
+
       // Upload to Cloudinary
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("upload_preset", "teachers_profile"); // Replace with your Cloudinary upload preset
+      formData.append("upload_preset", "teachers_profile"); // Ensure this matches your Cloudinary preset
 
       const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${
-          cloudinary.config().cloud.cloudName
-        }/image/upload`,
+        `https://api.cloudinary.com/v1_1/${cld.cloud.cloudName}/image/upload`,
         {
           method: "POST",
           body: formData,
         }
       );
 
+      if (!response.ok) {
+        throw new Error(`Upload failed with status: ${response.status}`);
+      }
+
       const data = await response.json();
+      console.log("Cloudinary response data:", data);
+
       const imageUrl = data.secure_url;
 
+      if (!imageUrl) {
+        throw new Error("No secure_url returned from Cloudinary");
+      }
+
+      // Update Firestore with the new profile photo URL
       const teacherRef = doc(db, "teachersinfo", teacherInfo.userId);
       await updateDoc(teacherRef, {
         profilePhotoUrl: imageUrl,
       });
 
+      // Update local state
       setTeacherInfo((prev) => ({
         ...prev,
         profilePhotoUrl: imageUrl,
       }));
       setProfilePhotoUrl(imageUrl);
 
-      console.log("Image uploaded successfully. URL:", imageUrl);
+      console.log("Image uploaded and state updated successfully.");
     } catch (error) {
       console.error("Error uploading image:", error);
       setErrorMessage(`Failed to upload image: ${error.message}`);
@@ -221,11 +297,7 @@ const TeacherViewProfile = () => {
             <div className="relative w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center mb-4 shadow-md border-2 border-blue-300">
               {profilePhotoUrl ? (
                 <AdvancedImage
-                  cldImg={
-                    new CloudinaryImage(profilePhotoUrl, {
-                      cloudName: cloudinary.config().cloud.cloudName,
-                    })
-                  }
+                  cldImg={cld.image(profilePhotoUrl)}
                   className="w-full h-full object-cover rounded-full"
                 />
               ) : (
@@ -251,7 +323,6 @@ const TeacherViewProfile = () => {
             </h2>
           </div>
 
-          {/* Right Section (Profile Details) */}
           <div className="w-full md:w-2/3">
             <div className="space-y-6">
               <div className="mb-4">

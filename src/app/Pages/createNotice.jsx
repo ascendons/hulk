@@ -111,7 +111,7 @@ const CreateNotice = () => {
       {/* Main Content */}
       <div className="flex-1 flex  overflow-y-auto">
         <div className="bg-white shadow-lg rounded-2xl p-10 w-full ">
-          <h2 className="text-3xl font-bold mb-8 text-blue-600">
+          <h2 className="text-5xl font-bold mb-8 text-green-500">
             CREATE NOTICE
           </h2>
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -153,7 +153,7 @@ const CreateNotice = () => {
               <button
                 type="button"
                 onClick={() => setIsFileUploadModalOpen(true)}
-                className="px-6 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600"
+                className="px-6 py-2 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600"
               >
                 Upload File
               </button>
@@ -231,7 +231,7 @@ const CreateNotice = () => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 transition duration-300 disabled:opacity-50"
+              className="w-full bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600 transition duration-300 disabled:opacity-50"
             >
               {loading ? "Submitting..." : "Submit"}
             </button>

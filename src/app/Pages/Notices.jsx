@@ -43,7 +43,7 @@ const Notices = () => {
       {/* Main Content */}
       <div className="flex-1 p-6 bg-gray-100 overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-3xl font-bold mb-8 text-blue-600">NOTICES</h1>
+          <h1 className="text-5xl font-bold mb-8 text-green-500">NOTICES</h1>
           {/* Create Notice Button */}
           <button
             onClick={() => navigate("/create-notice")} // Navigate to CreateNotice.jsx

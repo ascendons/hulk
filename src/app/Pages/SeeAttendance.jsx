@@ -186,7 +186,7 @@ const SeeAttendance = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col p-6">
         {/* Header */}
-        <h1 className="text-4xl font-bold mb-8 text-blue-600">
+        <h1 className="text-5xl font-bold mb-8 text-green-500">
           SEE ATTENDANCE
         </h1>
 

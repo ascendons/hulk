@@ -31,6 +31,10 @@ const teacherRoutes = [
     component: React.lazy(() => import("./app/Pages/Courses")),
   },
   {
+    path: "/create-notice",
+    component: React.lazy(() => import("./app/Pages/createNotice")),
+  },
+  {
     path: "/students",
     component: React.lazy(() => import("./app/Pages/Students")),
   },

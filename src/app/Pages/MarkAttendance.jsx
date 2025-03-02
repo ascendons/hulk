@@ -152,7 +152,7 @@ const MarkAttendance = () => {
       <div className="flex-grow p-4 md:p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
-            <h1 className="text-3xl font-bold mb-8 text-blue-600">
+            <h1 className="text-5xl font-bold mb-8 text-green-500">
               MARK ATTENDANCE
             </h1>
           </div>

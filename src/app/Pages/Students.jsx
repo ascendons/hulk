@@ -130,7 +130,7 @@ const Students = () => {
       {/* Main Content */}
       <div className="flex-1 p-6">
         <div className="bg-white p-4 rounded-lg +shadow-md mb-6">
-          <h1 className="text-3xl font-bold mb-8 text-blue-600">STUDENTS</h1>
+          <h1 className="text-5xl font-bold mb-8 text-green-500">STUDENTS</h1>
           <div className="flex flex-wrap gap-4">
             <select
               value={selectedClass}

@@ -11,12 +11,11 @@ const Teachers = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
 
-  
   const fetchTeachers = useCallback(async () => {
     setLoading(true);
     try {
       console.log("Fetching teachers for department:", selectedDepartment);
-  
+
       // Step 1: Fetch teacher details from the `teachersinfo` collection
       const teachersInfoQuery = query(
         collection(db, "teachersinfo"),
@@ -24,37 +23,46 @@ const Teachers = () => {
       );
       const teachersInfoSnapshot = await getDocs(teachersInfoQuery);
       console.log("Teachers Info Snapshot:", teachersInfoSnapshot.docs);
-  
+
       // Step 2: Fetch teacher names from the `users` collection
-      const usersQuery = query(collection(db, "users"), where("role", "==", "teacher"));
+      const usersQuery = query(
+        collection(db, "users"),
+        where("role", "==", "teacher")
+      );
       const usersSnapshot = await getDocs(usersQuery);
       console.log("Users Snapshot:", usersSnapshot.docs);
-  
+
       // Step 3: Combine data from both collections
-      const fetchedTeachers = teachersInfoSnapshot.docs.map((teacherInfoDoc) => {
-        const teacherInfoData = teacherInfoDoc.data();
-  
-        // Find the corresponding user document using `userId`
-        const userDoc = usersSnapshot.docs.find(
-          (userDoc) => userDoc.id === teacherInfoData.userId
-        );
-  
-        return {
-          id: teacherInfoDoc.id,
-          teachername: userDoc ? userDoc.data().name : "Unknown",
-          teacheremail: userDoc ? userDoc.data().email : "Unknown",
-          ...teacherInfoData,
-        };
-      });
-  
+      const fetchedTeachers = teachersInfoSnapshot.docs.map(
+        (teacherInfoDoc) => {
+          const teacherInfoData = teacherInfoDoc.data();
+
+          // Find the corresponding user document using `userId`
+          const userDoc = usersSnapshot.docs.find(
+            (userDoc) => userDoc.id === teacherInfoData.userId
+          );
+
+          return {
+            id: teacherInfoDoc.id,
+            teachername: userDoc ? userDoc.data().name : "Unknown",
+            teacheremail: userDoc ? userDoc.data().email : "Unknown",
+            ...teacherInfoData,
+          };
+        }
+      );
+
       console.log("Fetched Teachers Before Filtering:", fetchedTeachers);
-  
+
       // Step 4: Filter teachers based on search term
       if (searchTerm) {
         const filteredTeachers = fetchedTeachers.filter(
           (teacher) =>
-            teacher.teachername?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            teacher.teacheremail?.toLowerCase().includes(searchTerm.toLowerCase())
+            teacher.teachername
+              ?.toLowerCase()
+              .includes(searchTerm.toLowerCase()) ||
+            teacher.teacheremail
+              ?.toLowerCase()
+              .includes(searchTerm.toLowerCase())
         );
         console.log("Fetched Teachers After Filtering:", filteredTeachers);
         setTeachers(filteredTeachers);
@@ -68,7 +76,6 @@ const Teachers = () => {
       setLoading(false);
     }
   }, [selectedDepartment, searchTerm]);
-
 
   const handleSeeListClick = () => {
     fetchTeachers();
@@ -100,7 +107,7 @@ const Teachers = () => {
       <div className="flex-1 flex flex-col overflow-hidden">
         <div className="flex-1 overflow-auto p-6">
           <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold mb-8 text-blue-600">TEACHERS</h1>
+            <h1 className="text-5xl font-bold mb-8 text-green-500">TEACHERS</h1>
             <select
               value={selectedDepartment}
               onChange={(e) => setSelectedDepartment(e.target.value)}

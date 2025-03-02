@@ -117,7 +117,7 @@ const EditAttendance = () => {
       {/* Main Content */}
       <div className="flex-1 p-6">
         {/* Header */}
-        <h1 className="text-4xl font-extrabold mb-8 text-blue-600">
+        <h1 className="text-5xl font-bold mb-8 text-green-500">
           EDIT ATTENDANCE
         </h1>
 

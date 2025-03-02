@@ -1,10 +1,20 @@
-// config.js
+import React from "react";
 import { Cloudinary } from "@cloudinary/url-gen";
+import { auto } from "@cloudinary/url-gen/actions/resize";
+import { autoGravity } from "@cloudinary/url-gen/qualifiers/gravity";
+import { AdvancedImage } from "@cloudinary/react";
 
-export const cloudinary = new Cloudinary({
-  cloud: {
-    cloudName: process.env.CLOUDINARY_CLOUD_NAME,
-  },
-  apiKey: process.env.CLOUDINARY_API_KEY,
-  apiSecret: process.env.CLOUDINARY_SECRET,
-});
+const Cloudinary = () => {
+  const cld = new Cloudinary({ cloud: { cloudName: "dwdejk1u3" } });
+
+  // Use this sample image or upload your own via the Media Explorer
+  const img = cld
+    .image("cld-sample-5")
+    .format("auto")
+    .quality("auto")
+    .resize(auto().gravity(autoGravity()).width(500).height(500)); // Transform the image: auto-crop to square aspect_ratio
+
+  return <AdvancedImage cldImg={img} />;
+};
+
+export default Cloudinary;

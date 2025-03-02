@@ -20,7 +20,7 @@ const Attendance = () => {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-6">
-        <h1 className="text-5xl font-extrabold mb-12 text-blue-700">
+        <h1 className="text-5xl font-extrabold mb-12 text-green-500">
           ATTENDANCE
         </h1>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-6xl">
