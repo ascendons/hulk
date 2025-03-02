@@ -24,3 +24,7 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider value={{ user }}>{children}</AuthContext.Provider>
   );
 };
+
+// CLOUDINARY_CLOUD_NAME = dwdejk1u3
+// CLOUDINARY_API_KEY =865623334216492
+// CLOUDINARY_SECRET = fMXHWl_U3sFsY6iw1hlb7EM_dzA
