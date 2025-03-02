@@ -1,14 +1,28 @@
 import React, { useState, useEffect } from "react";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  updateDoc,
+  doc,
+} from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { db, auth } from "../../config";
 import ChangePasswordModal from "./ChangePasswordModal";
+import { Cloudinary } from "@cloudinary/url-gen";
+import { AdvancedImage, CloudinaryImage } from "@cloudinary/react";
+import { upload } from "cloudinary";
+
+import { cloudinary } from "../../controllers/cloudinary";
 
 const TeacherViewProfile = () => {
   const [teacherInfo, setTeacherInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -25,9 +39,9 @@ const TeacherViewProfile = () => {
         console.log("Authenticated user:", {
           uid: user.uid,
           email: user.email, // Debug: Check if email exists
-        }); // Debug: Log detailed user info
+        });
 
-        // Fetch user data from the 'users' collection using the user's email
+        // Fetch user data from the 'sers' collection using the user's email
         const userEmail = user.email || user.uid;
         if (!userEmail) {
           console.error("No email or UID available for the user.");
@@ -60,7 +74,6 @@ const TeacherViewProfile = () => {
           return;
         }
 
-        // Check if the user is a teacher (case-insensitive)
         const userRole = userData.role ? userData.role.toLowerCase() : "";
         if (userRole !== "teacher") {
           console.error("User is not a teacher. Role is:", userRole);
@@ -69,7 +82,6 @@ const TeacherViewProfile = () => {
           return;
         }
 
-        // Fetch teacher data from 'teachersinfo' using userId
         const teacherQuery = query(
           collection(db, "teachersinfo"),
           where("userId", "==", userId) // Use userId to query teachersinfo
@@ -89,6 +101,7 @@ const TeacherViewProfile = () => {
             divisions: [],
             subjects: [],
             teacherId: "N/A",
+            profilePhotoUrl: "", // Default empty photo URL
           });
         } else {
           const teacherData = teacherSnapshot.docs[0].data();
@@ -104,7 +117,9 @@ const TeacherViewProfile = () => {
             divisions: teacherData.divisions || [],
             subjects: teacherData.subjects || [],
             teacherId: teacherData.teacherId || "N/A",
+            profilePhotoUrl: teacherData.profilePhotoUrl || "", // Fetch existing photo URL
           });
+          setProfilePhotoUrl(teacherData.profilePhotoUrl || ""); // Set initial photo URL
         }
       } catch (error) {
         console.error("Error fetching teacher info:", error);
@@ -116,6 +131,50 @@ const TeacherViewProfile = () => {
 
     fetchTeacherInfo();
   }, [navigate]);
+
+  const handleImageUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      // Upload to Cloudinary
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("upload_preset", "teachers_profile"); // Replace with your Cloudinary upload preset
+
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${
+          cloudinary.config().cloud.cloudName
+        }/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const data = await response.json();
+      const imageUrl = data.secure_url;
+
+      const teacherRef = doc(db, "teachersinfo", teacherInfo.userId);
+      await updateDoc(teacherRef, {
+        profilePhotoUrl: imageUrl,
+      });
+
+      setTeacherInfo((prev) => ({
+        ...prev,
+        profilePhotoUrl: imageUrl,
+      }));
+      setProfilePhotoUrl(imageUrl);
+
+      console.log("Image uploaded successfully. URL:", imageUrl);
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      setErrorMessage(`Failed to upload image: ${error.message}`);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -159,8 +218,33 @@ const TeacherViewProfile = () => {
         <div className="flex flex-col md:flex-row gap-8">
           {/* Left Section (Profile Picture and Name) */}
           <div className="flex-shrink-0 flex flex-col items-center md:items-start">
-            <div className="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center mb-4 shadow-md border-2 border-blue-300">
-              <span className="text-gray-500 font-bold text-lg">IMG</span>
+            <div className="relative w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center mb-4 shadow-md border-2 border-blue-300">
+              {profilePhotoUrl ? (
+                <AdvancedImage
+                  cldImg={
+                    new CloudinaryImage(profilePhotoUrl, {
+                      cloudName: cloudinary.config().cloud.cloudName,
+                    })
+                  }
+                  className="w-full h-full object-cover rounded-full"
+                />
+              ) : (
+                <span className="text-gray-500 font-bold text-lg">IMG</span>
+              )}
+              <label
+                htmlFor="profilePhoto"
+                className="absolute bottom-0 right-0 bg-blue-500 text-white p-2 rounded-full cursor-pointer hover:bg-blue-600 transition-colors"
+              >
+                {uploading ? "Uploading..." : "Upload"}
+              </label>
+              <input
+                type="file"
+                id="profilePhoto"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+                disabled={uploading}
+              />
             </div>
             <h2 className="text-2xl font-bold text-gray-900">
               {teacherInfo.name}

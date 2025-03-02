@@ -53,14 +53,14 @@ const Dashboard = () => {
         }
 
         const userData = userDoc.data();
-        console.log("User data from 'users':", userData); // Debug: Log user data
+        console.log("User data from 'users':", userData);
 
         const name = userData.name || "Teacher Name";
         const role = userData.role || "Teacher";
 
         const teacherQuery = query(
           collection(db, "teachersinfo"),
-          where("userId", "==", user.uid) // Match userId with teachersinfo (using Firebase UID)
+          where("userId", "==", user.uid)
         );
         const teacherSnapshot = await getDocs(teacherQuery);
 
