@@ -12,10 +12,14 @@ import { db, auth } from "../../config";
 import ChangePasswordModal from "./ChangePasswordModal";
 import { Cloudinary } from "@cloudinary/url-gen";
 import { AdvancedImage } from "@cloudinary/react";
+import { fill } from "@cloudinary/url-gen/actions/resize";
+import { autoGravity } from "@cloudinary/url-gen/qualifiers/gravity";
+
+const CLOUD_NAME = "dwdejk1u3"; 
 
 const cld = new Cloudinary({
   cloud: {
-    cloudName: process.env.REACT_APP_CLOUDINARY_CLOUD_NAME || "dwdejk1u3",
+    cloudName: CLOUD_NAME,
   },
 });
 
@@ -25,8 +29,16 @@ const TeacherViewProfile = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [uploading, setUploading] = useState(false);
-  const [profilePhotoUrl, setProfilePhotoUrl] = useState(""); // State for the profile photo URL
+  const [profilePhotoUrl, setProfilePhotoUrl] = useState("");
   const navigate = useNavigate();
+
+  // Function to extract public ID from a full Cloudinary URL
+  const getPublicIdFromUrl = (url) => {
+    if (!url) return "";
+    const regex = /\/v\d+\/(.+?)(?:\.\w+)?$/;
+    const match = url.match(regex);
+    return match ? match[1] : url; // Returns public ID (e.g., "teacher_profiles/ii4okko57kgijjydthjq") or original string if no match
+  };
 
   useEffect(() => {
     const fetchTeacherInfo = async () => {
@@ -38,11 +50,6 @@ const TeacherViewProfile = () => {
           setErrorMessage("User not authenticated. Please log in.");
           return;
         }
-
-        console.log("Authenticated user:", {
-          uid: user.uid,
-          email: user.email, // Debug: Check if email exists
-        }); // Debug: Log detailed user info
 
         const userEmail = user.email || user.uid;
         if (!userEmail) {
@@ -66,8 +73,6 @@ const TeacherViewProfile = () => {
         }
 
         const userData = usersSnapshot.docs[0].data();
-        console.log("User data from 'users':", userData); // Debug: Log user data
-
         const userId = userData.userId || user.uid;
         if (!userId) {
           console.error("No userId found in user data.");
@@ -76,7 +81,6 @@ const TeacherViewProfile = () => {
           return;
         }
 
-        // Check if the user is a teacher (case-insensitive)
         const userRole = userData.role ? userData.role.toLowerCase() : "";
         if (userRole !== "teacher") {
           console.error("User is not a teacher. Role is:", userRole);
@@ -85,16 +89,13 @@ const TeacherViewProfile = () => {
           return;
         }
 
-        // Fetch teacher data from 'teachersinfo' using userId
         const teacherQuery = query(
           collection(db, "teachersinfo"),
-          where("userId", "==", userId) // Use userId to query teachersinfo
+          where("userId", "==", userId)
         );
         const teacherSnapshot = await getDocs(teacherQuery);
 
         if (teacherSnapshot.empty) {
-          console.error("No teacher profile found for userId:", userId);
-          setErrorMessage(`No teacher profile found for userId: ${userId}`);
           setTeacherInfo({
             name: userData.name || "Teacher",
             userId: userId,
@@ -105,12 +106,10 @@ const TeacherViewProfile = () => {
             divisions: [],
             subjects: [],
             teacherId: "N/A",
-            profilePhotoUrl: "", // Default empty photo URL
+            profilePhotoUrl: "",
           });
         } else {
           const teacherData = teacherSnapshot.docs[0].data();
-          console.log("Teacher data from 'teachersinfo':", teacherData); // Debug: Log teacher data
-
           setTeacherInfo({
             name: teacherData.name || userData.name || "Teacher",
             userId: teacherData.userId || userId,
@@ -121,9 +120,9 @@ const TeacherViewProfile = () => {
             divisions: teacherData.divisions || [],
             subjects: teacherData.subjects || [],
             teacherId: teacherData.teacherId || "N/A",
-            profilePhotoUrl: teacherData.profilePhotoUrl || "", // Fetch existing photo URL
+            profilePhotoUrl: teacherData.profilePhotoUrl || "",
           });
-          setProfilePhotoUrl(teacherData.profilePhotoUrl || ""); // Set initial photo URL
+          setProfilePhotoUrl(teacherData.profilePhotoUrl || "");
         }
       } catch (error) {
         console.error("Error fetching teacher info:", error);
@@ -136,81 +135,32 @@ const TeacherViewProfile = () => {
     fetchTeacherInfo();
   }, [navigate]);
 
-  // Handle image upload to Cloudinary
-  // const handleImageUpload = async (event) => {
-  //   const file = event.target.files[0];
-  //   if (!file) return;
-
-  //   setUploading(true);
-  //   try {
-  //     console.log("Starting image upload for file:", file.name); // Debug: Log file being uploaded
-
-  //     // Upload to Cloudinary using fetch (frontend, less secure; consider backend for production)
-  //     const formData = new FormData();
-  //     formData.append("file", file);
-  //     formData.append("upload_preset", "teachers_profile"); // Matches your Cloudinary preset
-
-  //     const response = await fetch(
-  //       `https://api.cloudinary.com/v1_1/dwdejk1u3/image/upload`, // Use hardcoded cloudName
-  //       {
-  //         method: "POST",
-  //         body: formData,
-  //       }
-  //     );
-
-  //     if (!response.ok) {
-  //       throw new Error(`Upload failed with status: ${response.status}`);
-  //     }
-
-  //     const data = await response.json();
-  //     console.log("Cloudinary response:", data); // Debug: Log Cloudinary response
-  //     const imageUrl = data.secure_url;
-
-  //     if (!imageUrl) {
-  //       throw new Error("No secure_url returned from Cloudinary");
-  //     }
-
-  //     // Update Firestore with the new profile photo URL
-  //     const teacherRef = doc(db, "teachersinfo", teacherInfo.userId);
-  //     console.log("Updating Firestore for userId:", teacherInfo.userId); // Debug: Log Firestore update
-  //     await updateDoc(teacherRef, {
-  //       profilePhotoUrl: imageUrl,
-  //     });
-  //     console.log("Firestore updated successfully with URL:", imageUrl); // Debug: Confirm Firestore update
-
-  //     // Update local state
-  //     setTeacherInfo((prev) => ({
-  //       ...prev,
-  //       profilePhotoUrl: imageUrl,
-  //     }));
-  //     setProfilePhotoUrl(imageUrl);
-
-  //     console.log("State updated with new URL:", imageUrl); // Debug: Confirm state update
-  //   } catch (error) {
-  //     console.error("Error uploading image:", error);
-  //     setErrorMessage(`Failed to upload image: ${error.message}`);
-  //   } finally {
-  //     setUploading(false);
-  //   }
-  // };
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) {
-      console.error("No file selected.");
+      setErrorMessage("Please select an image file.");
+      return;
+    }
+
+    const validTypes = ["image/jpeg", "image/png", "image/gif"];
+    if (!validTypes.includes(file.type)) {
+      setErrorMessage("Please upload a valid image (JPEG, PNG, or GIF)");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setErrorMessage("Image size must be less than 5MB");
       return;
     }
 
     setUploading(true);
     try {
-      console.log("Starting image upload for file:", file.name);
-
-      // Upload to Cloudinary
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("upload_preset", "teachers_profile"); // Ensure this matches your Cloudinary preset
+      formData.append("upload_preset", "teachers_profile");
+      formData.append("folder", "teacher_profiles");
 
       const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${cld.cloud.cloudName}/image/upload`,
+        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
         {
           method: "POST",
           body: formData,
@@ -218,34 +168,21 @@ const TeacherViewProfile = () => {
       );
 
       if (!response.ok) {
-        throw new Error(`Upload failed with status: ${response.status}`);
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || "Upload failed");
       }
 
       const data = await response.json();
-      console.log("Cloudinary response data:", data);
-
       const imageUrl = data.secure_url;
 
-      if (!imageUrl) {
-        throw new Error("No secure_url returned from Cloudinary");
-      }
-
-      // Update Firestore with the new profile photo URL
       const teacherRef = doc(db, "teachersinfo", teacherInfo.userId);
-      await updateDoc(teacherRef, {
-        profilePhotoUrl: imageUrl,
-      });
+      await updateDoc(teacherRef, { profilePhotoUrl: imageUrl });
 
-      // Update local state
-      setTeacherInfo((prev) => ({
-        ...prev,
-        profilePhotoUrl: imageUrl,
-      }));
+      setTeacherInfo((prev) => ({ ...prev, profilePhotoUrl: imageUrl }));
       setProfilePhotoUrl(imageUrl);
-
-      console.log("Image uploaded and state updated successfully.");
+      setErrorMessage("");
     } catch (error) {
-      console.error("Error uploading image:", error);
+      console.error("Image upload error:", error);
       setErrorMessage(`Failed to upload image: ${error.message}`);
     } finally {
       setUploading(false);
@@ -264,8 +201,7 @@ const TeacherViewProfile = () => {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-100">
         <p className="text-red-600 text-xl font-semibold">
-          {errorMessage ||
-            "Unable to fetch teacher info. Please try again later."}
+          {errorMessage || "Unable to fetch teacher info. Please try again later."}
         </p>
       </div>
     );
@@ -273,8 +209,12 @@ const TeacherViewProfile = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      {errorMessage && (
+        <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-lg w-full max-w-4xl">
+          {errorMessage}
+        </div>
+      )}
       <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl p-8 border border-gray-200">
-        {/* Header with Navigation Buttons */}
         <div className="flex justify-between mb-8">
           <button
             onClick={() => navigate("/dashboard")}
@@ -290,14 +230,15 @@ const TeacherViewProfile = () => {
           </button>
         </div>
 
-        {/* Profile Content */}
         <div className="flex flex-col md:flex-row gap-8">
-          {/* Left Section (Profile Picture and Name) */}
           <div className="flex-shrink-0 flex flex-col items-center md:items-start">
             <div className="relative w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center mb-4 shadow-md border-2 border-blue-300">
               {profilePhotoUrl ? (
                 <AdvancedImage
-                  cldImg={cld.image(profilePhotoUrl)}
+                  cldImg={cld.image(getPublicIdFromUrl(profilePhotoUrl))
+                    .resize(fill().width(150).height(150).gravity(autoGravity()))
+                    .format("auto")
+                    .quality("auto")}
                   className="w-full h-full object-cover rounded-full"
                 />
               ) : (
@@ -305,9 +246,18 @@ const TeacherViewProfile = () => {
               )}
               <label
                 htmlFor="profilePhoto"
-                className="absolute bottom-0 right-0 bg-blue-500 text-white p-2 rounded-full cursor-pointer hover:bg-blue-600 transition-colors"
+                className={`absolute bottom-0 right-0 bg-blue-500 text-white p-2 rounded-full cursor-pointer hover:bg-blue-600 transition-colors ${uploading ? "opacity-50 cursor-not-allowed" : ""}`}
               >
-                {uploading ? "Uploading..." : "Upload"}
+                {uploading ? (
+                  <span className="flex items-center">
+                    <svg className="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    </svg>
+                    Uploading
+                  </span>
+                ) : (
+                  "Upload"
+                )}
               </label>
               <input
                 type="file"
@@ -318,17 +268,13 @@ const TeacherViewProfile = () => {
                 disabled={uploading}
               />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">
-              {teacherInfo.name}
-            </h2>
+            <h2 className="text-2xl font-bold text-gray-900">{teacherInfo.name}</h2>
           </div>
 
           <div className="w-full md:w-2/3">
             <div className="space-y-6">
               <div className="mb-4">
-                <label className="block text-gray-600 font-medium mb-2">
-                  Full Name
-                </label>
+                <label className="block text-gray-600 font-medium mb-2">Full Name</label>
                 <input
                   type="text"
                   value={teacherInfo.name}
@@ -337,9 +283,7 @@ const TeacherViewProfile = () => {
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-gray-600 font-medium mb-2">
-                  Email
-                </label>
+                <label className="block text-gray-600 font-medium mb-2">Email</label>
                 <input
                   type="email"
                   value={teacherInfo.email}
@@ -349,9 +293,7 @@ const TeacherViewProfile = () => {
                 <span className="text-green-500 text-sm ml-2">✔</span>
               </div>
               <div className="mb-4">
-                <label className="block text-gray-600 font-medium mb-2">
-                  Number
-                </label>
+                <label className="block text-gray-600 font-medium mb-2">Number</label>
                 <input
                   type="tel"
                   value={teacherInfo.phone || "N/A"}
@@ -361,9 +303,7 @@ const TeacherViewProfile = () => {
                 <span className="text-green-500 text-sm ml-2">✔</span>
               </div>
               <div className="mb-4">
-                <label className="block text-gray-600 font-medium mb-2">
-                  Teacher ID
-                </label>
+                <label className="block text-gray-600 font-medium mb-2">Teacher ID</label>
                 <input
                   type="text"
                   value={teacherInfo.teacherId || "N/A"}
@@ -372,9 +312,7 @@ const TeacherViewProfile = () => {
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-gray-600 font-medium mb-2">
-                  Role
-                </label>
+                <label className="block text-gray-600 font-medium mb-2">Role</label>
                 <input
                   type="text"
                   value={teacherInfo.role}
@@ -383,9 +321,7 @@ const TeacherViewProfile = () => {
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-gray-600 font-medium mb-2">
-                  Department
-                </label>
+                <label className="block text-gray-600 font-medium mb-2">Department</label>
                 <input
                   type="text"
                   value={teacherInfo.department}
@@ -394,31 +330,19 @@ const TeacherViewProfile = () => {
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-gray-600 font-medium mb-2">
-                  Divisions
-                </label>
+                <label className="block text-gray-600 font-medium mb-2">Divisions</label>
                 <input
                   type="text"
-                  value={
-                    Array.isArray(teacherInfo.divisions)
-                      ? teacherInfo.divisions.join(", ") || "N/A"
-                      : "N/A"
-                  }
+                  value={Array.isArray(teacherInfo.divisions) ? teacherInfo.divisions.join(", ") || "N/A" : "N/A"}
                   readOnly
                   className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div className="mb-4">
-                <label className="block text-gray-600 font-medium mb-2">
-                  Subjects
-                </label>
+                <label className="block text-gray-600 font-medium mb-2">Subjects</label>
                 <input
                   type="text"
-                  value={
-                    Array.isArray(teacherInfo.subjects)
-                      ? teacherInfo.subjects.join(", ") || "N/A"
-                      : "N/A"
-                  }
+                  value={Array.isArray(teacherInfo.subjects) ? teacherInfo.subjects.join(", ") || "N/A" : "N/A"}
                   readOnly
                   className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -428,7 +352,6 @@ const TeacherViewProfile = () => {
         </div>
       </div>
 
-      {/* Change Password Modal */}
       <ChangePasswordModal
         userId={teacherInfo.userId}
         isOpen={isModalOpen}

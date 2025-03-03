@@ -9,9 +9,20 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { db, auth } from "../../config";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { renderSkeleton } from "../Components/reactSkelton";
+import { Cloudinary } from "@cloudinary/url-gen";
+import { AdvancedImage } from "@cloudinary/react";
+import { fill } from "@cloudinary/url-gen/actions/resize";
+import { autoGravity } from "@cloudinary/url-gen/qualifiers/gravity";
+
+// Initialize Cloudinary
+const CLOUD_NAME = "dwdejk1u3"; // Use process.env.REACT_APP_CLOUDINARY_CLOUD_NAME in production
+const cld = new Cloudinary({
+  cloud: {
+    cloudName: CLOUD_NAME,
+  },
+});
 
 const Dashboard = () => {
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
@@ -25,6 +36,14 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  // Function to extract public ID from a full Cloudinary URL
+  const getPublicIdFromUrl = (url) => {
+    if (!url) return "";
+    const regex = /\/v\d+\/(.+?)(?:\.\w+)?$/;
+    const match = url.match(regex);
+    return match ? match[1] : url; // Returns public ID (e.g., "teacher_profiles/ii4okko57kgijjydthjq")
+  };
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
@@ -37,17 +56,14 @@ const Dashboard = () => {
           return;
         }
 
-        console.log("Authenticated user:", user); // Debug: Check user object
+        console.log("Authenticated user:", user);
 
-        // Step 1: Fetch user data from the 'users' collection using the document ID (UID)
-        const userDocRef = doc(db, "users", user.uid); // Use the UID as the document ID
+        // Fetch user data from 'users' collection
+        const userDocRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
-          console.warn(
-            "No user data found in 'users' collection for UID:",
-            user.uid
-          );
+          console.warn("No user data found in 'users' collection for UID:", user.uid);
           setError("User data not found in Firestore.");
           return;
         }
@@ -58,30 +74,34 @@ const Dashboard = () => {
         const name = userData.name || "Teacher Name";
         const role = userData.role || "Teacher";
 
+        // Fetch teacher data from 'teachersinfo' collection
         const teacherQuery = query(
           collection(db, "teachersinfo"),
           where("userId", "==", user.uid)
         );
         const teacherSnapshot = await getDocs(teacherQuery);
 
-        let department = "Department"; // Default department if not found
+        let department = "Department";
+        let profilePhotoUrl = ""; // Initialize profile photo URL
         if (!teacherSnapshot.empty) {
           const teacherData = teacherSnapshot.docs[0].data();
-          console.log("Teacher data from 'teachersinfo':", teacherData); // Debug: Log teacher data
-          department = teacherData.department || "Department"; // Use department from teachersinfo
+          console.log("Teacher data from 'teachersinfo':", teacherData);
+          department = teacherData.department || "Department";
+          profilePhotoUrl = teacherData.profilePhotoUrl || ""; // Fetch profile photo URL
         } else {
           console.warn("No teacher info found for UID:", user.uid);
         }
 
-        // Combine user data and teacher data
+        // Set teacher info including profile photo
         setTeacherInfo({
           name: name,
           email: user.email,
           department: department,
           role: role,
+          profilePhotoUrl: profilePhotoUrl, // Add profile photo to state
         });
 
-        // Fetch total students (using role: "student" from 'users' collection)
+        // Fetch total students
         const studentsQuery = query(
           collection(db, "users"),
           where("role", "==", "student")
@@ -89,15 +109,15 @@ const Dashboard = () => {
         const studentsSnapshot = await getDocs(studentsQuery);
         setTotalStudents(studentsSnapshot.size);
 
-        // Fetch total teachers (using role: "teacher" from 'users' collection)
+        // Fetch total teachers
         const teachersQuery = query(
           collection(db, "users"),
-          where("role", "==", "teacher") // Filter for teachers only
+          where("role", "==", "teacher")
         );
         const teachersSnapshot = await getDocs(teachersQuery);
         setTotalTeachers(teachersSnapshot.size);
 
-        // Fetch total subjects (from 'subjects' collection)
+        // Fetch total subjects
         const subjectsSnapshot = await getDocs(collection(db, "subjects"));
         setTotalSubjects(subjectsSnapshot.size);
       } catch (error) {
@@ -162,9 +182,19 @@ const Dashboard = () => {
 
         {/* Profile Section */}
         <div className="bg-white shadow-md rounded-lg p-4 mb-8 flex items-center justify-between border border-gray-200">
-          {/* Profile Picture Placeholder */}
-          <div className="w-20 h-20 bg-gray-300 rounded-full mr-6 border-2 border-blue-300 flex items-center justify-center">
-            {/* Empty circle for placeholder */}
+          {/* Profile Picture */}
+          <div className="w-20 h-20 rounded-full mr-6 border-2 border-blue-300 flex items-center justify-center overflow-hidden">
+            {teacherInfo.profilePhotoUrl ? (
+              <AdvancedImage
+                cldImg={cld.image(getPublicIdFromUrl(teacherInfo.profilePhotoUrl))
+                  .resize(fill().width(80).height(80).gravity(autoGravity()))
+                  .format("auto")
+                  .quality("auto")}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <span className="text-gray-500 font-bold text-lg">IMG</span>
+            )}
           </div>
 
           {/* Teacher Info */}
@@ -183,7 +213,7 @@ const Dashboard = () => {
           {/* View Profile Button */}
           <Link to="/view-profile">
             <button
-              onClick={() => navigate("/edit-profile")}
+              onClick={() => navigate("/view-profile")} // Fixed navigation path
               className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors text-sm font-medium"
             >
               View Profile
@@ -194,15 +224,11 @@ const Dashboard = () => {
         {/* Statistics Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
-            <h2 className="text-3xl font-bold text-blue-600">
-              {totalStudents}
-            </h2>
+            <h2 className="text-3xl font-bold text-blue-600">{totalStudents}</h2>
             <p className="text-gray-600 mt-2">Total Students</p>
           </div>
           <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
-            <h2 className="text-3xl font-bold text-green-600">
-              {totalTeachers}
-            </h2>
+            <h2 className="text-3xl font-bold text-green-600">{totalTeachers}</h2>
             <p className="text-gray-600 mt-2">Total Teachers</p>
           </div>
           <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
@@ -210,9 +236,7 @@ const Dashboard = () => {
             <p className="text-gray-600 mt-2">Total Subjects</p>
           </div>
           <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
-            <h2 className="text-3xl font-bold text-yellow-600">
-              {attendance}%
-            </h2>
+            <h2 className="text-3xl font-bold text-yellow-600">{attendance}%</h2>
             <p className="text-gray-600 mt-2">Attendance</p>
           </div>
         </div>
@@ -247,21 +271,15 @@ const Dashboard = () => {
 
         {/* Notice Board Section */}
         <div className="bg-white shadow-lg rounded-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">
-            Notice Board
-          </h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Notice Board</h2>
           {notices.length > 0 ? (
             <ul className="space-y-4">
               {notices.map((notice) => (
                 <li key={notice.id} className="border-b pb-4 last:border-b-0">
-                  <h3 className="text-lg font-semibold text-blue-600">
-                    {notice.title}
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-2">
-                    By: {notice.author}
-                  </p>
+                  <h3 className="text-lg font-semibold text-blue-600">{notice.title}</h3>
+                  <p className="text-sm text-gray-600 mb-2">By: {notice.author}</p>
                   <p className="text-gray-800">{notice.content}</p>
-                  {notice.adjustment && (
+                  {notice.attachment && ( // Fixed typo: adjustment -> attachment
                     <a
                       href={notice.attachment}
                       target="_blank"

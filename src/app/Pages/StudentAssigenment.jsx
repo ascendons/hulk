@@ -10,7 +10,6 @@ import "react-loading-skeleton/dist/skeleton.css";
 import { Progress } from "reactstrap";
 
 const CACHE_KEY = "student_assignments_cache";
-const CACHE_EXPIRY = 5 * 60 * 1000;
 
 const StudentAssignments = () => {
   const navigate = useNavigate();
