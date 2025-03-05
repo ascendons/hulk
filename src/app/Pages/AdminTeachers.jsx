@@ -3,11 +3,14 @@ import { db } from "../../config";
 import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "../../config";
+import { useNavigate } from "react-router-dom";
+import { ArrowLeftIcon } from "@heroicons/react/solid"; // Import Heroicons for back arrow
 
 const AdminTeachers = () => {
   const [teachers, setTeachers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate(); // Add useNavigate for navigation
 
   useEffect(() => {
     const fetchTeachers = async () => {
@@ -27,12 +30,12 @@ const AdminTeachers = () => {
           const teacherData = doc.data();
           const userId = teacherData.userId;
           return {
-            id: doc.id,
+            id: doc.id, // Firestore document ID
             name: usersData[userId]?.name || "N/A",
             email: usersData[userId]?.email || "N/A",
             phone: teacherData.phone || "N/A",
             department: teacherData.department || "N/A",
-            teacherId: teacherData.teacherId || "N/A",
+            teacherId: teacherData.teacherId || "N/A", // Custom teacher ID if available
             userId,
           };
         });
@@ -96,6 +99,12 @@ const AdminTeachers = () => {
     }
   };
 
+  const handleViewDetail = (teacherId) => {
+    console.log("Navigating to teacher detail with ID:", teacherId); // Debug log
+    // Navigate to the TeacherViewProfile with the teacher's ID
+    navigate(`/view-profile/teacher/${teacherId}`);
+  };
+
   const filteredTeachers = teachers.filter((teacher) =>
     Object.values(teacher).some((value) =>
       value.toString().toLowerCase().includes(searchTerm.toLowerCase())
@@ -104,95 +113,47 @@ const AdminTeachers = () => {
 
   return (
     <div
-      style={{
-        padding: "20px",
-        border: "2px solid #000",
-        borderRadius: "5px",
-        margin: "20px",
-        fontFamily: "Arial, sans-serif",
-      }}
+      className="p-5 border-2 border-black rounded-lg mx-5 my-5 font-sans" // Tailwind CSS for styling
     >
-      <h1 style={{ textAlign: "center", marginBottom: "20px" }}>
-        SEE TEACHERS
-      </h1>
-      <div style={{ marginBottom: "20px" }}>
+      {/* Back Arrow Button */}
+      <button
+        onClick={() => navigate("/admin")} // Redirect to /admin (Admin.jsx)
+        className="mb-4 p-2 bg-white border border-gray-300 rounded-full shadow-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <ArrowLeftIcon className="h-5 w-5 text-gray-600" />
+      </button>
+
+      <h1 className="text-center text-2xl font-bold mb-5">SEE TEACHERS</h1>
+      <div className="mb-5">
         <input
           type="text"
           placeholder="Search..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          style={{
-            width: "100%",
-            padding: "10px",
-            fontSize: "16px",
-            border: "2px solid #000",
-            borderRadius: "5px",
-          }}
+          className="w-full p-2.5 text-base border-2 border-black rounded-lg"
           disabled={loading}
         />
       </div>
-      {loading && <p style={{ textAlign: "center" }}>Loading...</p>}
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
+      {loading && <p className="text-center">Loading...</p>}
+      <table className="w-full border-collapse">
         <thead>
           <tr>
-            <th
-              style={{
-                border: "1px solid black",
-                padding: "8px",
-                backgroundColor: "#f0f0f0",
-                textAlign: "left",
-              }}
-            >
+            <th className="border border-black p-2 bg-gray-200 text-left">
               NAME
             </th>
-            <th
-              style={{
-                border: "1px solid black",
-                padding: "8px",
-                backgroundColor: "#f0f0f0",
-                textAlign: "left",
-              }}
-            >
+            <th className="border border-black p-2 bg-gray-200 text-left">
               EMAIL
             </th>
-            <th
-              style={{
-                border: "1px solid black",
-                padding: "8px",
-                backgroundColor: "#f0f0f0",
-                textAlign: "left",
-              }}
-            >
+            <th className="border border-black p-2 bg-gray-200 text-left">
               PHONE
             </th>
-            <th
-              style={{
-                border: "1px solid black",
-                padding: "8px",
-                backgroundColor: "#f0f0f0",
-                textAlign: "left",
-              }}
-            >
+            <th className="border border-black p-2 bg-gray-200 text-left">
               DEPARTMENT
             </th>
-            <th
-              style={{
-                border: "1px solid black",
-                padding: "8px",
-                backgroundColor: "#f0f0f0",
-                textAlign: "left",
-              }}
-            >
+            <th className="border border-black p-2 bg-gray-200 text-left">
               TEACHER ID
             </th>
-            <th
-              style={{
-                border: "1px solid black",
-                padding: "8px",
-                backgroundColor: "#f0f0f0",
-                textAlign: "left",
-              }}
-            >
+            <th className="border border-black p-2 bg-gray-200 text-left">
               ACTION
             </th>
           </tr>
@@ -200,34 +161,23 @@ const AdminTeachers = () => {
         <tbody>
           {filteredTeachers.map((teacher) => (
             <tr key={teacher.id}>
-              <td style={{ border: "1px solid black", padding: "8px" }}>
-                {teacher.name}
-              </td>
-              <td style={{ border: "1px solid black", padding: "8px" }}>
-                {teacher.email}
-              </td>
-              <td style={{ border: "1px solid black", padding: "8px" }}>
-                {teacher.phone}
-              </td>
-              <td style={{ border: "1px solid black", padding: "8px" }}>
-                {teacher.department}
-              </td>
-              <td style={{ border: "1px solid black", padding: "8px" }}>
-                {teacher.teacherId}
-              </td>
-              <td style={{ border: "1px solid black", padding: "8px" }}>
+              <td className="border border-black p-2">{teacher.name}</td>
+              <td className="border border-black p-2">{teacher.email}</td>
+              <td className="border border-black p-2">{teacher.phone}</td>
+              <td className="border border-black p-2">{teacher.department}</td>
+              <td className="border border-black p-2">{teacher.teacherId}</td>
+              <td className="border border-black p-2 flex space-x-2">
+                <button
+                  onClick={() => handleViewDetail(teacher.id)}
+                  disabled={loading}
+                  className="bg-blue-500 text-white px-2.5 py-1 rounded cursor-pointer text-sm hover:bg-blue-600"
+                >
+                  View Detail
+                </button>
                 <button
                   onClick={() => handleDelete(teacher.id)}
                   disabled={loading}
-                  style={{
-                    backgroundColor: "#ff4444",
-                    color: "white",
-                    border: "none",
-                    padding: "5px 10px",
-                    cursor: loading ? "not-allowed" : "pointer",
-                    fontSize: "14px",
-                    opacity: loading ? 0.6 : 1,
-                  }}
+                  className="bg-red-500 text-white px-2.5 py-1 rounded cursor-pointer text-sm hover:bg-red-600"
                 >
                   DELETE
                 </button>

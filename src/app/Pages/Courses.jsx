@@ -9,7 +9,6 @@ const Courses = () => {
   const [loading, setLoading] = useState(true);
   const [teacherData, setTeacherData] = useState(null);
   const [lectures, setLectures] = useState({});
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [error, setError] = useState(null);
   const [selectedYear, setSelectedYear] = useState(""); // For year dropdown
   const navigate = useNavigate();
@@ -153,17 +152,17 @@ const Courses = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      <div
-        onMouseEnter={() => setIsSidebarHovered(true)}
-        onMouseLeave={() => setIsSidebarHovered(false)}
-        className={`${
-          isSidebarHovered ? "w-64" : "w-16"
-        } bg-gray-900 text-white h-screen transition-all duration-300 overflow-hidden`}
-      >
+      {/* Fixed Sidebar */}
+      <div className="fixed w-64 bg-gray-900 text-white h-screen overflow-y-auto border-0 outline-0">
+        {" "}
+        {/* Fixed width, no borders or outlines */}
         <Sidebar />
       </div>
 
-      <div className="flex-1 p-6">
+      {/* Main Content with Margin for Fixed Sidebar */}
+      <div className="flex-1 p-6 ml-64 bg-gray-100 overflow-y-auto">
+        {" "}
+        {/* Added margin-left to avoid overlap with fixed sidebar */}
         <div className="flex justify-between items-center mb-6">
           <Link to="/teacher-dashboard">
             <h1 className="text-5xl font-bold mb-8 text-green-500">
@@ -172,7 +171,6 @@ const Courses = () => {
           </Link>
           <p className="text-xl text-gray-600">Today's Date: {formattedDate}</p>
         </div>
-
         {loading ? (
           renderSkeleton()
         ) : (

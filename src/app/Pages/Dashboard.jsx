@@ -25,7 +25,6 @@ const cld = new Cloudinary({
 });
 
 const Dashboard = () => {
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [teacherInfo, setTeacherInfo] = useState({});
   const [totalStudents, setTotalStudents] = useState(0);
   const [totalTeachers, setTotalTeachers] = useState(0);
@@ -63,7 +62,10 @@ const Dashboard = () => {
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
-          console.warn("No user data found in 'users' collection for UID:", user.uid);
+          console.warn(
+            "No user data found in 'users' collection for UID:",
+            user.uid
+          );
           setError("User data not found in Firestore.");
           return;
         }
@@ -99,6 +101,7 @@ const Dashboard = () => {
           department: department,
           role: role,
           profilePhotoUrl: profilePhotoUrl, // Add profile photo to state
+          userId: user.uid, // Add userId to teacherInfo for navigation
         });
 
         // Fetch total students
@@ -160,33 +163,32 @@ const Dashboard = () => {
 
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div
-        onMouseEnter={() => setIsSidebarHovered(true)}
-        onMouseLeave={() => setIsSidebarHovered(false)}
-        className={`${
-          isSidebarHovered ? "w-64" : "w-16"
-        } bg-blue-800 text-white h-screen transition-all duration-300 overflow-hidden`}
-      >
+      {/* Fixed Sidebar (No Border) */}
+      <div className="fixed w-56 bg-blue-800 text-white h-screen overflow-y-auto border-0 outline-0">
+        {" "}
+        {/* Explicitly remove border and outline */}
         <Sidebar />
       </div>
 
-      {/* Main Content */}
-      <div className="flex-grow p-8">
+      {/* Main Content with Margin for Fixed Sidebar */}
+      <div className="flex-grow p-8 ml-56 bg-gradient-to-br from-gray-50 to-gray-100">
+        {" "}
+        {/* Explicitly set main content background */}
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-8 text-blue-600">Dashboard</h1>
+          <h1 className="text-5xl font-bold mb-8 text-green-500">Dashboard</h1>
           <p className="text-gray-600 mt-2">
             Welcome back, {teacherInfo.name || "Teacher"}!
           </p>
         </div>
-
         {/* Profile Section */}
         <div className="bg-white shadow-md rounded-lg p-4 mb-8 flex items-center justify-between border border-gray-200">
           {/* Profile Picture */}
           <div className="w-20 h-20 rounded-full mr-6 border-2 border-blue-300 flex items-center justify-center overflow-hidden">
             {teacherInfo.profilePhotoUrl ? (
               <AdvancedImage
-                cldImg={cld.image(getPublicIdFromUrl(teacherInfo.profilePhotoUrl))
+                cldImg={cld
+                  .image(getPublicIdFromUrl(teacherInfo.profilePhotoUrl))
                   .resize(fill().width(80).height(80).gravity(autoGravity()))
                   .format("auto")
                   .quality("auto")}
@@ -211,24 +213,24 @@ const Dashboard = () => {
           </div>
 
           {/* View Profile Button */}
-          <Link to="/view-profile">
-            <button
-              onClick={() => navigate("/view-profile")} // Fixed navigation path
-              className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors text-sm font-medium"
-            >
+          <Link to={`/view-profile/teacher/${teacherInfo.userId}`}>
+            <button className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors text-sm font-medium">
               View Profile
             </button>
           </Link>
         </div>
-
         {/* Statistics Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
-            <h2 className="text-3xl font-bold text-blue-600">{totalStudents}</h2>
+            <h2 className="text-3xl font-bold text-blue-600">
+              {totalStudents}
+            </h2>
             <p className="text-gray-600 mt-2">Total Students</p>
           </div>
           <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
-            <h2 className="text-3xl font-bold text-green-600">{totalTeachers}</h2>
+            <h2 className="text-3xl font-bold text-green-600">
+              {totalTeachers}
+            </h2>
             <p className="text-gray-600 mt-2">Total Teachers</p>
           </div>
           <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
@@ -236,11 +238,12 @@ const Dashboard = () => {
             <p className="text-gray-600 mt-2">Total Subjects</p>
           </div>
           <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
-            <h2 className="text-3xl font-bold text-yellow-600">{attendance}%</h2>
+            <h2 className="text-3xl font-bold text-yellow-600">
+              {attendance}%
+            </h2>
             <p className="text-gray-600 mt-2">Attendance</p>
           </div>
         </div>
-
         {/* Quick Actions Section */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <button
@@ -268,16 +271,23 @@ const Dashboard = () => {
             Assignments
           </button>
         </div>
-
-        {/* Notice Board Section */}
-        <div className="bg-white shadow-lg rounded-lg p-6">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Notice Board</h2>
+        {/* Notice Board Section (Scrollable) */}
+        <div className="bg-white shadow-lg rounded-lg p-6 max-h-96 overflow-y-auto">
+          {" "}
+          {/* Fixed height with scrolling */}
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">
+            Notice Board
+          </h2>
           {notices.length > 0 ? (
             <ul className="space-y-4">
               {notices.map((notice) => (
                 <li key={notice.id} className="border-b pb-4 last:border-b-0">
-                  <h3 className="text-lg font-semibold text-blue-600">{notice.title}</h3>
-                  <p className="text-sm text-gray-600 mb-2">By: {notice.author}</p>
+                  <h3 className="text-lg font-semibold text-blue-600">
+                    {notice.title}
+                  </h3>
+                  <p className="text-sm text-gray-600 mb-2">
+                    By: {notice.author}
+                  </p>
                   <p className="text-gray-800">{notice.content}</p>
                   {notice.attachment && ( // Fixed typo: adjustment -> attachment
                     <a

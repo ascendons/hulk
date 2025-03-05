@@ -56,7 +56,7 @@ const Sidebar = () => {
 
       {/* Sidebar */}
       <div
-        className={`fixed lg:relative h-screen bg-gray-900 text-white w-64 p-6 flex flex-col transform transition-transform duration-300 ease-in-out ${
+        className={`fixed lg:relative h-screen bg-gray-900 text-white w- p-6 flex flex-col transform transition-transform duration-300 ease-in-out ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
@@ -165,8 +165,6 @@ const Sidebar = () => {
               Assignments
             </Link>
           </li>
-
-          
 
           {/* Logout Button */}
           <li className="mt-auto">

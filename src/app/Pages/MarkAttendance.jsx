@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // Import useNavigate for linking
 import Sidebar from "../Components/Sidebar";
 import {
   collection,
@@ -13,6 +14,7 @@ import { db } from "../../config";
 import { Users } from "lucide-react";
 
 const MarkAttendance = () => {
+  const navigate = useNavigate(); // Initialize navigate for routing
   const [students, setStudents] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [attendance, setAttendance] = useState({});
@@ -26,6 +28,7 @@ const MarkAttendance = () => {
   const [loading, setLoading] = useState(false);
   const [isDataFetched, setIsDataFetched] = useState(false);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+  const [viewType, setViewType] = useState("table"); // State to toggle between table and tiles
 
   const fetchStudents = async () => {
     try {
@@ -69,7 +72,7 @@ const MarkAttendance = () => {
       setStudents(fetchedStudents);
       const initialAttendance = {};
       fetchedStudents.forEach((student) => {
-        initialAttendance[student.id] = "P";
+        initialAttendance[student.id] = "A"; // Default to Absent (red)
       });
       setAttendance(initialAttendance);
       setIsDataFetched(true);
@@ -101,7 +104,7 @@ const MarkAttendance = () => {
   }, [selectedClass]);
 
   const handleAttendanceChange = (studentId, status) => {
-    setAttendance({ ...attendance, [studentId]: status });
+    setAttendance({ ...attendance, [studentId]: status === "A" ? "P" : "A" });
   };
 
   const handleSaveAttendance = async () => {
@@ -117,11 +120,13 @@ const MarkAttendance = () => {
 
     try {
       const attendanceData = students.map((student) => ({
-        date,
-        name: student.studentname,
-        rollNo: student.rollno,
-        subject: lectureName,
-        status: attendance[student.id],
+        course: selectedClass, // Add course from selectedClass
+        date: date, // Use the date state
+        name: student.studentname, // Student name
+        rollNo: student.rollno, // Student roll number
+        status: attendance[student.id], // Present or Absent
+        subject: lectureName, // Selected lecture/subject
+        year: selectedYear, // Add year from selectedYear
       }));
 
       await addDoc(collection(db, "studentAttendance"), {
@@ -135,21 +140,24 @@ const MarkAttendance = () => {
     }
   };
 
+  // Function to handle Link button click (navigate to a new route or URL)
+  const handleLinkClick = () => {
+    navigate("/attendance-report"); // Example route; adjust as needed
+    // Alternatively, for an external link:
+    // window.open("https://example.com/attendance-report", "_blank");
+  };
+
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
-      <div
-        onMouseEnter={() => setIsSidebarHovered(true)}
-        onMouseLeave={() => setIsSidebarHovered(false)}
-        className={`${
-          isSidebarHovered ? "w-64" : "w-16"
-        } bg-gray-800 text-white h-screen transition-all duration-300 overflow-hidden`}
-      >
+    <div className="w-screen h-screen bg-gray-100 flex">
+      {/* Fixed Sidebar */}
+      <div className="fixed w-56 bg-blue-800 text-white h-screen overflow-y-auto border-0 outline-0">
         <Sidebar />
       </div>
 
-      {/* Main Content */}
-      <div className="flex-grow p-4 md:p-6">
+      {/* Main Content with Margin for Fixed Sidebar */}
+      <div className="flex-grow p-4 md:p-6 ml-56">
+        {" "}
+        {/* Updated margin-left to match sidebar width (w-56 = 14rem) */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
             <h1 className="text-5xl font-bold mb-8 text-green-500">
@@ -193,14 +201,28 @@ const MarkAttendance = () => {
             >
               {loading ? "Searching..." : "Search"}
             </button>
+            {/* Link Button (always visible) */}
+            <button
+              onClick={handleLinkClick}
+              className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
+            >
+              Link
+            </button>
           </div>
         </div>
-
-        {/* Attendance Table */}
+        {/* Attendance Table or Tiles */}
         {isDataFetched && (
           <>
-            {/* Date, Lecture, Time */}
+            {/* Date, Tiles, Lecture, Time */}
             <div className="flex flex-wrap gap-2 md:gap-4 mb-2 md:mb-4 justify-center">
+              <button
+                onClick={() =>
+                  setViewType(viewType === "table" ? "tiles" : "table")
+                }
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              >
+                {viewType === "table" ? "Tiles" : "Table"}
+              </button>
               <input
                 type="date"
                 value={date}
@@ -235,68 +257,88 @@ const MarkAttendance = () => {
               />
             </div>
 
-            {/* Table */}
-            <div className="overflow-x-auto">
-              <table className="min-w-full bg-white shadow-md rounded-lg">
-                <thead>
-                  <tr className="bg-gray-200 text-left">
-                    <th className="px-2 md:px-6 py-2 md:py-3 text-xs md:text-sm font-bold text-gray-700">
-                      ID NO
-                    </th>
-                    <th className="px-2 md:px-6 py-2 md:py-3 text-xs md:text-sm font-bold text-gray-700">
-                      NAME
-                    </th>
-                    <th className="px-2 md:px-6 py-2 md:py-3 text-xs md:text-sm font-bold text-gray-700">
-                      ROLL NO
-                    </th>
-                    <th className="px-4 md:px-6 py-2 md:py-3 text-xs md:text-sm font-bold text-gray-700 text-center">
-                      ACTIONS
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {students.map((student) => (
-                    <tr key={student.id} className="border-b">
-                      <td className="px-2 md:px-6 py-2 md:py-4 text-xs md:text-sm text-gray-700">
-                        {student.studentid}
-                      </td>
-                      <td className="px-2 md:px-6 py-2 md:py-4 text-xs md:text-sm text-gray-700">
-                        {student.studentname}
-                      </td>
-                      <td className="px-2 md:px-6 py-2 md:py-4 text-xs md:text-sm text-gray-700">
-                        {student.rollno}
-                      </td>
-                      <td className="px-4 md:px-6 py-2 md:py-4 text-xs md:text-sm text-gray-700 flex justify-center gap-1 md:gap-3">
-                        <button
-                          className={`px-2 md:px-4 py-1 md:py-2 rounded-lg text-xs md:text-sm ${
-                            attendance[student.id] === "P"
-                              ? "bg-green-500 text-white"
-                              : "bg-gray-200"
-                          }`}
-                          onClick={() =>
-                            handleAttendanceChange(student.id, "P")
-                          }
-                        >
-                          Present
-                        </button>
-                        <button
-                          className={`px-2 md:px-4 py-1 md:py-2 rounded-lg text-xs md:text-sm ${
-                            attendance[student.id] === "A"
-                              ? "bg-red-500 text-white"
-                              : "bg-gray-200"
-                          }`}
-                          onClick={() =>
-                            handleAttendanceChange(student.id, "A")
-                          }
-                        >
-                          Absent
-                        </button>
-                      </td>
+            {/* Render Table or Tiles based on viewType */}
+            {viewType === "table" ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white shadow-md rounded-lg">
+                  <thead>
+                    <tr className="bg-gray-200 text-left">
+                      <th className="px-2 md:px-6 py-2 md:py-3 text-xs md:text-sm font-bold text-gray-700">
+                        ID NO
+                      </th>
+                      <th className="px-2 md:px-6 py-2 md:py-3 text-xs md:text-sm font-bold text-gray-700">
+                        NAME
+                      </th>
+                      <th className="px-2 md:px-6 py-2 md:py-3 text-xs md:text-sm font-bold text-gray-700">
+                        ROLL NO
+                      </th>
+                      <th className="px-4 md:px-6 py-2 md:py-3 text-xs md:text-sm font-bold text-gray-700 text-center">
+                        ACTIONS
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {students.map((student) => (
+                      <tr key={student.id} className="border-b">
+                        <td className="px-2 md:px-6 py-2 md:py-4 text-xs md:text-sm text-gray-700">
+                          {student.studentid}
+                        </td>
+                        <td className="px-2 md:px-6 py-2 md:py-4 text-xs md:text-sm text-gray-700">
+                          {student.studentname}
+                        </td>
+                        <td className="px-2 md:px-6 py-2 md:py-4 text-xs md:text-sm text-gray-700">
+                          {student.rollno}
+                        </td>
+                        <td className="px-4 md:px-6 py-2 md:py-4 text-xs md:text-sm text-gray-700 flex justify-center gap-1 md:gap-3">
+                          <button
+                            className={`px-2 md:px-4 py-1 md:py-2 rounded-lg text-xs md:text-sm ${
+                              attendance[student.id] === "P"
+                                ? "bg-green-500 text-white"
+                                : "bg-gray-200"
+                            }`}
+                            onClick={() =>
+                              handleAttendanceChange(student.id, "P")
+                            }
+                          >
+                            Present
+                          </button>
+                          <button
+                            className={`px-2 md:px-4 py-1 md:py-2 rounded-lg text-xs md:text-sm ${
+                              attendance[student.id] === "A"
+                                ? "bg-red-500 text-white"
+                                : "bg-gray-200"
+                            }`}
+                            onClick={() =>
+                              handleAttendanceChange(student.id, "A")
+                            }
+                          >
+                            Absent
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {students.map((student) => (
+                  <div
+                    key={student.id}
+                    className={`w-24 h-24 rounded-lg flex items-center justify-center text-white font-bold text-lg cursor-pointer ${
+                      attendance[student.id] === "A"
+                        ? "bg-red-500 hover:bg-red-600"
+                        : "bg-green-500 hover:bg-green-600"
+                    }`}
+                    onClick={() =>
+                      handleAttendanceChange(student.id, attendance[student.id])
+                    }
+                  >
+                    {student.rollno}
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="flex justify-center mt-4 md:mt-6">
               <button

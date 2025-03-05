@@ -6,7 +6,6 @@ import Sidebar from "../Components/Sidebar";
 
 const Notices = () => {
   const [notices, setNotices] = useState([]);
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const navigate = useNavigate();
 
   // Fetch data from Firestore
@@ -28,20 +27,18 @@ const Notices = () => {
   }, []);
 
   return (
-    <div className="flex h-screen">
-      {/* Sidebar */}
-      <div
-        onMouseEnter={() => setIsSidebarHovered(true)}
-        onMouseLeave={() => setIsSidebarHovered(false)}
-        className={`${
-          isSidebarHovered ? "w-64" : "w-16"
-        } bg-blue-800 text-white h-screen transition-all duration-300 overflow-hidden`}
-      >
+    <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Fixed Sidebar */}
+      <div className="fixed w-56 bg-blue-800 text-white h-screen overflow-y-auto border-0 outline-0">
+        {" "}
+        {/* Fixed width, no borders or outlines */}
         <Sidebar />
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 p-6 bg-gray-100 overflow-y-auto">
+      {/* Main Content with Margin for Fixed Sidebar */}
+      <div className="flex-1 p-6 ml-56 bg-gray-100 overflow-y-auto">
+        {" "}
+        {/* Added margin-left to avoid overlap with fixed sidebar */}
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-5xl font-bold mb-8 text-green-500">NOTICES</h1>
           {/* Create Notice Button */}
@@ -52,7 +49,6 @@ const Notices = () => {
             Create Notice
           </button>
         </div>
-
         {notices.map((notice, index) => (
           <div
             key={index}

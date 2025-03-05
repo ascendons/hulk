@@ -3,13 +3,14 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import Sidebar from "../Components/Sidebar";
 import { db } from "../../config";
 import { DEPARTMENTS } from "../constants";
+import { useNavigate } from "react-router-dom";
 
 const Teachers = () => {
   const [selectedDepartment, setSelectedDepartment] = useState(DEPARTMENTS[0]);
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+  const navigate = useNavigate();
 
   const fetchTeachers = useCallback(async () => {
     setLoading(true);
@@ -83,7 +84,7 @@ const Teachers = () => {
 
   const handleViewProfile = (teacherId) => {
     console.log("View profile for teacher ID:", teacherId);
-    alert(`View Profile for Teacher ID: ${teacherId}`);
+    navigate(`/view-profile/teacher/${teacherId}`); // Navigate to teacher profile
   };
 
   useEffect(() => {
@@ -91,20 +92,18 @@ const Teachers = () => {
   }, [fetchTeachers]);
 
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Sidebar */}
-      <div
-        onMouseEnter={() => setIsSidebarHovered(true)}
-        onMouseLeave={() => setIsSidebarHovered(false)}
-        className={`${
-          isSidebarHovered ? "w-64" : "w-16"
-        } bg-indigo-800 text-white h-screen transition-all duration-300 overflow-x-hidden`}
-      >
+    <div className="flex min-h-screen bg-gray-100">
+      {/* Fixed Sidebar */}
+      <div className="fixed w-56 bg-indigo-800 text-white h-screen overflow-y-auto border-0 outline-0">
+        {" "}
+        {/* Fixed width, no borders or outlines */}
         <Sidebar />
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Main Content with Margin for Fixed Sidebar */}
+      <div className="flex-1 flex flex-col overflow-hidden ml-56">
+        {" "}
+        {/* Added margin-left to avoid overlap with fixed sidebar */}
         <div className="flex-1 overflow-auto p-6">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-5xl font-bold mb-8 text-green-500">TEACHERS</h1>
@@ -121,7 +120,7 @@ const Teachers = () => {
             </select>
           </div>
 
-          {/* Search & Filter Secxtion */}
+          {/* Search & Filter Section */}
           <div className="bg-white border rounded-lg shadow-md p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4">Search & Filter</h2>
             <div className="flex items-center">

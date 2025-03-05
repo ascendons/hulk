@@ -23,6 +23,12 @@ const Admin = React.lazy(() => import("./app/Pages/Admin"));
 const AddTeacher = React.lazy(() => import("./app/Pages/AddTeacher"));
 const AddStudents = React.lazy(() => import("./app/Pages/AddStudent")); // Ensure this file exists
 const AddSubjects = React.lazy(() => import("./app/Pages/AddSubjects"));
+const TeacherViewProfile = React.lazy(() =>
+  import("./app/Components/TeacherViewProfile")
+); // Import TeacherViewProfile
+const StudentViewProfile = React.lazy(() =>
+  import("./app/Components/StudentViewProfile")
+); // Import StudentViewProfile
 
 const teacherRoutes = [
   { path: "/dashboard", component: Dashboard },
@@ -84,10 +90,6 @@ const teacherRoutes = [
     component: React.lazy(() => import("./app/Pages/EditAttendance")),
   },
   {
-    path: "/view-profile",
-    component: React.lazy(() => import("./app/Components/TeacherViewProfile")),
-  },
-  {
     path: "/add-notes",
     component: React.lazy(() => import("./app/Pages/AddNotes")),
   },
@@ -120,7 +122,7 @@ const studentRoutes = [
 
 // Admin Routes Configuration
 const adminRoutes = [
-  { path: "/admin", component: React.lazy(() => import("./app/Pages/Admin")) },
+  { path: "/admin", component: Admin },
   {
     path: "/adminstudents",
     component: React.lazy(() => import("./app/Pages/AdminStudents")),
@@ -133,6 +135,18 @@ const adminRoutes = [
   { path: "/add-students", component: AddStudents }, // Ensure this file exists
   { path: "/add-subjects", component: AddSubjects },
   { path: "/create-account", component: CreatesAccount },
+];
+
+// Universal Route for StudentViewProfile (accessible by any authenticated user)
+const universalRoutes = [
+  {
+    path: "/view-profile/:studentId?", // Optional studentId parameter for specific student profiles
+    component: StudentViewProfile, // StudentViewProfile as a universal route
+  },
+  {
+    path: "/view-profile/teacher/:teacherId", // Moved to adminRoutes to allow admin access
+    component: TeacherViewProfile, // TeacherViewProfile route for admins
+  },
 ];
 
 const ProtectedRoute = ({ children, roleRequired }) => {
@@ -253,7 +267,7 @@ function App() {
             <Route path="/signup" element={<Signuppage onLogin={() => {}} />} />
             <Route
               path="/create-account"
-              element={<CreatesAccount />} // Public route, no ProtectedRoute
+              element={<CreatesAccount />} // Public route, no ProtectedRole
             />
 
             {teacherRoutes.map(({ path, component: Component }) => (
@@ -286,6 +300,20 @@ function App() {
                 path={path}
                 element={
                   <ProtectedRoute roleRequired="admin">
+                    <Component />
+                  </ProtectedRoute>
+                }
+              />
+            ))}
+
+            {universalRoutes.map(({ path, component: Component }) => (
+              <Route
+                key={path}
+                path={path}
+                element={
+                  <ProtectedRoute>
+                    {" "}
+                    {/* No roleRequired for universal access */}
                     <Component />
                   </ProtectedRoute>
                 }

@@ -1,19 +1,17 @@
-// src/components/ShowNotes.jsx
 import React, { useEffect, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
-import { db } from "../../config"; 
-import { Link } from "react-router-dom";  
-import Sidebar from "../Components/Sidebar";  
-import supabase from "../../supabaseclient";  
+import { db } from "../../config";
+import { Link } from "react-router-dom";
+import Sidebar from "../Components/Sidebar";
+import supabase from "../../supabaseclient";
 
-const CACHE_KEY = "notes_cache";  
-const CACHE_EXPIRY = 5 * 60 * 1000;  
+const CACHE_KEY = "notes_cache";
+const CACHE_EXPIRY = 5 * 60 * 1000;
 
 const ShowNotes = () => {
   const [notes, setNotes] = useState([]);
   const [expandedSubject, setExpandedSubject] = useState(null);
   const [isLoading, setIsLoading] = useState(true); // Loading state
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
 
   useEffect(() => {
     const fetchNotes = async () => {
@@ -96,19 +94,17 @@ const ShowNotes = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
-      {/* Sidebar */}
-      <div
-        onMouseEnter={() => setIsSidebarHovered(true)}
-        onMouseLeave={() => setIsSidebarHovered(false)}
-        className={`${
-          isSidebarHovered ? "w-64" : "w-16"
-        } bg-blue-800 text-white h-screen transition-all duration-300 overflow-hidden`}
-      >
+      {/* Fixed Sidebar */}
+      <div className="fixed w-56 bg-blue-800 text-white h-screen overflow-y-auto border-0 outline-0">
+        {" "}
+        {/* Fixed width, no borders or outlines */}
         <Sidebar />
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 p-6">
+      {/* Main Content with Margin for Fixed Sidebar */}
+      <div className="flex-1 p-6 ml-56">
+        {" "}
+        {/* Added margin-left to avoid overlap with fixed sidebar */}
         {/* Header Section */}
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-blue-800">NOTES</h1>
@@ -119,7 +115,6 @@ const ShowNotes = () => {
             Add Notes
           </Link>
         </div>
-
         {/* Loading State */}
         {isLoading ? (
           <div className="flex justify-center items-center h-64">

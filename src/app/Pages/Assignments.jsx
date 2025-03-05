@@ -1,7 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "../../config";
-import { collection, query, where, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  deleteDoc,
+  doc,
+  updateDoc,
+} from "firebase/firestore";
 import Sidebar from "../Components/Sidebar";
 import supabase from "../../supabaseclient";
 
@@ -11,7 +19,6 @@ const Assignments = () => {
   const [userName, setUserName] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [filter, setFilter] = useState("mine"); // "mine" or "all"
@@ -20,15 +27,26 @@ const Assignments = () => {
     const fetchUserData = async () => {
       const user = auth.currentUser;
       if (user) {
-        const userQuery = query(
-          collection(db, "users"),
-          where("email", "==", user.email)
-        );
-        const userSnapshot = await getDocs(userQuery);
-        if (!userSnapshot.empty) {
-          const userData = userSnapshot.docs[0].data();
-          setUserName(userData.name);
+        try {
+          const userQuery = query(
+            collection(db, "users"),
+            where("email", "==", user.email)
+          );
+          const userSnapshot = await getDocs(userQuery);
+          if (!userSnapshot.empty) {
+            const userData = userSnapshot.docs[0].data();
+            setUserName(userData.name || user.email); // Fallback to email if name is not available
+            console.log("Fetched user name:", userData.name || user.email); // Debug log
+          } else {
+            setError("User data not found. Please log in again.");
+            console.error("User data not found for email:", user.email);
+          }
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          setError("Failed to fetch user data. Please try again.");
         }
+      } else {
+        setError("No user logged in. Please log in.");
       }
     };
     fetchUserData();
@@ -36,49 +54,53 @@ const Assignments = () => {
 
   useEffect(() => {
     const fetchAssignments = async () => {
-      if (userName) {
-        try {
-          setIsLoading(true);
-          setError("");
-          
-          let q;
-          if (filter === "mine") {
-            q = query(
-              collection(db, "assignments"),
-              where("assignedBy", "==", userName)
-            );
-          } else {
-            q = query(collection(db, "assignments"));
-          }
+      if (!userName) {
+        setIsLoading(false);
+        return; // Wait until userName is set before fetching assignments
+      }
 
-          const querySnapshot = await getDocs(q);
-          const fetchedAssignments = await Promise.all(
-            querySnapshot.docs.map(async (doc) => {
-              const assignmentData = doc.data();
-              if (assignmentData.filePath) {
-                const { data: fileData } = await supabase
-                  .storage
-                  .from('assignments')
-                  .getPublicUrl(assignmentData.filePath);
-                return {
-                  id: doc.id,
-                  ...assignmentData,
-                  fileURL: fileData.publicUrl,
-                };
-              }
+      try {
+        setIsLoading(true);
+        setError("");
+
+        let q;
+        if (filter === "mine") {
+          q = query(
+            collection(db, "assignments"),
+            where("assignedBy", "==", userName)
+          );
+          console.log("Fetching assignments for user:", userName); // Debug log
+        } else {
+          q = query(collection(db, "assignments"));
+          console.log("Fetching all assignments"); // Debug log
+        }
+
+        const querySnapshot = await getDocs(q);
+        const fetchedAssignments = await Promise.all(
+          querySnapshot.docs.map(async (doc) => {
+            const assignmentData = doc.data();
+            if (assignmentData.fileURLs && assignmentData.fileURLs.length > 0) {
+              // Assuming fileURLs is an array of objects with { url, visibility }
+              const fileURL = assignmentData.fileURLs[0].url; // Use the first file URL if available
               return {
                 id: doc.id,
                 ...assignmentData,
+                fileURL, // Store the public URL for display
               };
-            })
-          );
-          setAssignments(fetchedAssignments);
-        } catch (error) {
-          console.error("Error fetching assignments:", error);
-          setError("Failed to fetch assignments. Please try again.");
-        } finally {
-          setIsLoading(false);
-        }
+            }
+            return {
+              id: doc.id,
+              ...assignmentData,
+            };
+          })
+        );
+        setAssignments(fetchedAssignments);
+        console.log("Fetched assignments:", fetchedAssignments); // Debug log
+      } catch (error) {
+        console.error("Error fetching assignments:", error);
+        setError("Failed to fetch assignments. Please try again.");
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchAssignments();
@@ -97,14 +119,18 @@ const Assignments = () => {
     setIsEditModalOpen(true);
   };
 
-  const handleDeleteAssignment = async (id, filePath) => {
+  const handleDeleteAssignment = async (id, fileURLs) => {
     if (window.confirm("Are you sure you want to delete this assignment?")) {
       try {
         await deleteDoc(doc(db, "assignments", id));
-        if (filePath) {
-          await supabase.storage.from('assignments').remove([filePath]);
+        if (fileURLs && fileURLs.length > 0) {
+          // Assuming fileURLs is an array of objects with { url, visibility }
+          const filePaths = fileURLs.map((file) => file.url.split("/").pop()); // Extract file path from URL
+          await supabase.storage.from("assignments").remove(filePaths);
         }
-        setAssignments(assignments.filter(assignment => assignment.id !== id));
+        setAssignments(
+          assignments.filter((assignment) => assignment.id !== id)
+        );
       } catch (error) {
         console.error("Error deleting assignment:", error);
         setError("Failed to delete assignment. Please try again.");
@@ -120,12 +146,16 @@ const Assignments = () => {
         subject: selectedAssignment.subject,
         description: selectedAssignment.description,
         dueDate: selectedAssignment.dueDate,
-        marks: selectedAssignment.marks
+        marks: selectedAssignment.marks,
       });
-      
-      setAssignments(assignments.map(assignment => 
-        assignment.id === selectedAssignment.id ? selectedAssignment : assignment
-      ));
+
+      setAssignments(
+        assignments.map((assignment) =>
+          assignment.id === selectedAssignment.id
+            ? selectedAssignment
+            : assignment
+        )
+      );
       setIsEditModalOpen(false);
       setSelectedAssignment(null);
     } catch (error) {
@@ -136,17 +166,17 @@ const Assignments = () => {
 
   return (
     <div className="w-screen h-screen bg-gray-100 flex">
-      <div
-        onMouseEnter={() => setIsSidebarHovered(true)}
-        onMouseLeave={() => setIsSidebarHovered(false)}
-        className={`${
-          isSidebarHovered ? "w-64" : "w-16"
-        } bg-blue-800 text-white h-screen transition-all duration-300 overflow-hidden`}
-      >
+      {/* Fixed Sidebar */}
+      <div className="fixed w-64 bg-blue-800 text-white h-screen overflow-y-auto border-0 outline-0">
+        {" "}
+        {/* Fixed width, no borders or outlines */}
         <Sidebar />
       </div>
 
-      <div className="flex-grow p-6">
+      {/* Main Content with Margin for Fixed Sidebar */}
+      <div className="flex-grow p-6 ml-64">
+        {" "}
+        {/* Added margin-left to avoid overlap with fixed sidebar */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-800">ASSIGNMENTS</h1>
           <div className="flex items-center space-x-4">
@@ -166,13 +196,11 @@ const Assignments = () => {
             </button>
           </div>
         </div>
-
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-md mb-4">
             {error}
           </div>
         )}
-
         {isLoading ? (
           <div className="bg-white shadow-md rounded-lg p-4 border border-gray-300">
             <p className="text-gray-600 text-center">Loading assignments...</p>
@@ -185,15 +213,25 @@ const Assignments = () => {
                 className="bg-white shadow-md rounded-lg p-4 border border-gray-300 hover:shadow-lg transition-shadow"
               >
                 <div className="flex justify-between items-start">
-                  <div 
+                  <div
                     className="flex-1 cursor-pointer"
                     onClick={() => handleViewAssignment(assignment.id)}
                   >
-                    <h1 className="text-lg font-bold text-gray-700">{assignment.subject}</h1>
-                    <p className="text-sm text-gray-600">{assignment.description}</p>
-                    <p className="text-sm text-gray-600">Due Date: {assignment.dueDate}</p>
-                    <p className="text-sm text-gray-600">Marks: {assignment.marks}</p>
-                    <p className="text-sm text-gray-600">Created by: {assignment.assignedBy}</p>
+                    <h1 className="text-lg font-bold text-gray-700">
+                      {assignment.subject}
+                    </h1>
+                    <p className="text-sm text-gray-600">
+                      {assignment.description}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Due Date: {assignment.dueDate}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Marks: {assignment.marks}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Created by: {assignment.assignedBy}
+                    </p>
                     {assignment.fileURL && (
                       <a
                         href={assignment.fileURL}
@@ -220,7 +258,10 @@ const Assignments = () => {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteAssignment(assignment.id, assignment.filePath);
+                            handleDeleteAssignment(
+                              assignment.id,
+                              assignment.fileURLs
+                            );
                           }}
                           className="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition-colors"
                         >
@@ -235,7 +276,9 @@ const Assignments = () => {
           </div>
         ) : (
           <div className="bg-white shadow-md rounded-lg p-4 border border-gray-300">
-            <p className="text-gray-600 text-center">No assignments available.</p>
+            <p className="text-gray-600 text-center">
+              No assignments available.
+            </p>
           </div>
         )}
       </div>
@@ -251,10 +294,12 @@ const Assignments = () => {
                 <input
                   type="text"
                   value={selectedAssignment.subject}
-                  onChange={(e) => setSelectedAssignment({
-                    ...selectedAssignment,
-                    subject: e.target.value
-                  })}
+                  onChange={(e) =>
+                    setSelectedAssignment({
+                      ...selectedAssignment,
+                      subject: e.target.value,
+                    })
+                  }
                   className="w-full p-2 border rounded-md"
                   required
                 />
@@ -263,10 +308,12 @@ const Assignments = () => {
                 <label className="block text-gray-700 mb-2">Description</label>
                 <textarea
                   value={selectedAssignment.description}
-                  onChange={(e) => setSelectedAssignment({
-                    ...selectedAssignment,
-                    description: e.target.value
-                  })}
+                  onChange={(e) =>
+                    setSelectedAssignment({
+                      ...selectedAssignment,
+                      description: e.target.value,
+                    })
+                  }
                   className="w-full p-2 border rounded-md"
                   rows="3"
                   required
@@ -277,10 +324,12 @@ const Assignments = () => {
                 <input
                   type="date"
                   value={selectedAssignment.dueDate}
-                  onChange={(e) => setSelectedAssignment({
-                    ...selectedAssignment,
-                    dueDate: e.target.value
-                  })}
+                  onChange={(e) =>
+                    setSelectedAssignment({
+                      ...selectedAssignment,
+                      dueDate: e.target.value,
+                    })
+                  }
                   className="w-full p-2 border rounded-md"
                   required
                 />
@@ -290,10 +339,12 @@ const Assignments = () => {
                 <input
                   type="number"
                   value={selectedAssignment.marks}
-                  onChange={(e) => setSelectedAssignment({
-                    ...selectedAssignment,
-                    marks: e.target.value
-                  })}
+                  onChange={(e) =>
+                    setSelectedAssignment({
+                      ...selectedAssignment,
+                      marks: e.target.value,
+                    })
+                  }
                   className="w-full p-2 border rounded-md"
                   required
                 />

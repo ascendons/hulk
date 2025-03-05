@@ -13,7 +13,6 @@ import Sidebar from "../Components/Sidebar"; // Import Sidebar component
 import { useNavigate } from "react-router-dom";
 
 const Students = () => {
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false); // State for Sidebar hover
   const [showList, setShowList] = useState(false); // State to toggle student list
   const [selectedClass, setSelectedClass] = useState(""); // State for selected class
   const [selectedDivision, setSelectedDivision] = useState(""); // State for selected division
@@ -116,20 +115,18 @@ const Students = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      {/* Sidebar */}
-      <div
-        onMouseEnter={() => setIsSidebarHovered(true)}
-        onMouseLeave={() => setIsSidebarHovered(false)}
-        className={`${
-          isSidebarHovered ? "w-64" : "w-16"
-        } bg-blue-800 text-white h-screen transition-all duration-300 overflow-hidden`}
-      >
+      {/* Fixed Sidebar */}
+      <div className="fixed w-56 bg-blue-800 text-white h-screen overflow-y-auto border-0 outline-0">
+        {" "}
+        {/* Fixed width, no borders or outlines */}
         <Sidebar />
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 p-6">
-        <div className="bg-white p-4 rounded-lg +shadow-md mb-6">
+      {/* Main Content with Margin for Fixed Sidebar */}
+      <div className="flex-1 p-6 ml-56 bg-gray-100 overflow-y-auto">
+        {" "}
+        {/* Added margin-left to avoid overlap with fixed sidebar */}
+        <div className="bg-white p-4 rounded-lg shadow-md mb-6">
           <h1 className="text-5xl font-bold mb-8 text-green-500">STUDENTS</h1>
           <div className="flex flex-wrap gap-4">
             <select
@@ -176,7 +173,6 @@ const Students = () => {
             </button>
           </div>
         </div>
-
         {showList && (
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h2 className="text-xl font-bold mb-4">
