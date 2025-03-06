@@ -30,52 +30,125 @@ const TeacherViewProfile = React.lazy(() =>
 const StudentViewProfile = React.lazy(() =>
   import("./app/Components/StudentViewProfile")
 );
+const AssignmentMarks = React.lazy(() =>
+  import("./app/Components/AssignmentMarks")
+);
 
 const teacherRoutes = [
   { path: "/dashboard", component: Dashboard },
-  { path: "/courses", component: React.lazy(() => import("./app/Pages/Courses")) },
-  { path: "/create-notice", component: React.lazy(() => import("./app/Pages/createNotice")) },
-  { path: "/students", component: React.lazy(() => import("./app/Pages/Students")) },
-  { path: "/liststudents", component: React.lazy(() => import("./app/Pages/ListStudents")) },
-  { path: "/edittimetable", component: React.lazy(() => import("./app/Pages/EditTimetable")) },
-  { path: "/Notices", component: React.lazy(() => import("./app/Pages/Notices")) },
-  { path: "/Attendance", component: React.lazy(() => import("./app/Pages/Attendance")) },
-  { path: "/Teachers", component: React.lazy(() => import("./app/Pages/Teachers")) },
+  {
+    path: "/courses",
+    component: React.lazy(() => import("./app/Pages/Courses")),
+  },
+  {
+    path: "/create-notice",
+    component: React.lazy(() => import("./app/Pages/createNotice")),
+  },
+  {
+    path: "/students",
+    component: React.lazy(() => import("./app/Pages/Students")),
+  },
+  {
+    path: "/liststudents",
+    component: React.lazy(() => import("./app/Pages/ListStudents")),
+  },
+  {
+    path: "/edittimetable",
+    component: React.lazy(() => import("./app/Pages/EditTimetable")),
+  },
+  {
+    path: "/Notices",
+    component: React.lazy(() => import("./app/Pages/Notices")),
+  },
+  {
+    path: "/Attendance",
+    component: React.lazy(() => import("./app/Pages/Attendance")),
+  },
+  {
+    path: "/Teachers",
+    component: React.lazy(() => import("./app/Pages/Teachers")),
+  },
   { path: "/Notes", component: React.lazy(() => import("./app/Pages/Notes")) },
-  { path: "/subject/:subjectName", component: React.lazy(() => import("./app/Components/SubjectDetails")) },
-  { path: "/add-assignment", component: React.lazy(() => import("./app/Pages/AddAssignment")) },
-  { path: "/assignment", component: React.lazy(() => import("./app/Pages/Assignments")) },
-  { path: "/mark-attendance", component: React.lazy(() => import("./app/Pages/MarkAttendance")) },
-  { path: "/see-attendance", component: React.lazy(() => import("./app/Pages/SeeAttendance")) },
-  { path: "/edit-attendance", component: React.lazy(() => import("./app/Pages/EditAttendance")) },
-  { path: "/add-notes", component: React.lazy(() => import("./app/Pages/AddNotes")) },
+  {
+    path: "/subject/:subjectName",
+    component: React.lazy(() => import("./app/Components/SubjectDetails")),
+  },
+  {
+    path: "/add-assignment",
+    component: React.lazy(() => import("./app/Pages/AddAssignment")),
+  },
+  {
+    path: "/assignment",
+    component: React.lazy(() => import("./app/Pages/Assignments")),
+  },
+  {
+    path: "/mark-attendance",
+    component: React.lazy(() => import("./app/Pages/MarkAttendance")),
+  },
+  {
+    path: "/see-attendance",
+    component: React.lazy(() => import("./app/Pages/SeeAttendance")),
+  },
+  {
+    path: "/edit-attendance",
+    component: React.lazy(() => import("./app/Pages/EditAttendance")),
+  },
+  {
+    path: "/add-notes",
+    component: React.lazy(() => import("./app/Pages/AddNotes")),
+  },
+  {
+    path: "/AssignmentMarks/:assignmentId",
+    component: AssignmentMarks,
+  },
 ];
 
 // Student Routes Configuration
 const studentRoutes = [
   { path: "/student-dashboard", component: StudentDashboard },
-  { path: "/student-notice", component: React.lazy(() => import("./app/Pages/StudentNotice")) },
-  { path: "/student-timetable", component: React.lazy(() => import("./app/Pages/StudentTimetable")) },
-  { path: "/StudentAttendance", component: React.lazy(() => import("./app/Pages/StudentAttedence")) },
-  { path: "/StudentNotes", component: React.lazy(() => import("./app/Pages/StudentNotes")) },
-  { path: "/StudentAssignments", component: React.lazy(() => import("./app/Pages/StudentAssigenment")) },
+  {
+    path: "/student-notice",
+    component: React.lazy(() => import("./app/Pages/StudentNotice")),
+  },
+  {
+    path: "/student-timetable",
+    component: React.lazy(() => import("./app/Pages/StudentTimetable")),
+  },
+  {
+    path: "/StudentAttendance",
+    component: React.lazy(() => import("./app/Pages/StudentAttedence")),
+  },
+  {
+    path: "/StudentNotes",
+    component: React.lazy(() => import("./app/Pages/StudentNotes")),
+  },
+  {
+    path: "/StudentAssignments",
+    component: React.lazy(() => import("./app/Pages/StudentAssigenment")),
+  },
 ];
 
 // Admin Routes Configuration
 const adminRoutes = [
   { path: "/admin", component: Admin },
-  { path: "/adminstudents", component: React.lazy(() => import("./app/Pages/AdminStudents")) },
-  { path: "/adminteachers", component: React.lazy(() => import("./app/Pages/AdminTeachers")) },
+  {
+    path: "/adminstudents",
+    component: React.lazy(() => import("./app/Pages/AdminStudents")),
+  },
+  {
+    path: "/adminteachers",
+    component: React.lazy(() => import("./app/Pages/AdminTeachers")),
+  },
   { path: "/add-teacher", component: AddTeacher },
-  { path: "/add-students", component: AddStudents }, // Ensure this file exists
+  { path: "/add-students", component: AddStudents },
   { path: "/add-subjects", component: AddSubjects },
   { path: "/create-account", component: CreatesAccount },
-  { path: "/view-profile/teacher/:teacherId", component: TeacherViewProfile }, // Moved here for admin access
 ];
 
 // Universal Routes (accessible by all authenticated users)
 const universalRoutes = [
-  { path: "/view-profile/:studentId?", component: StudentViewProfile }, // Optional studentId for specific profiles
+  { path: "/view-profile/:studentId?", component: StudentViewProfile },
+  { path: "/view-profile/teacher/:teacherId", component: TeacherViewProfile },
   { path: "/community", component: Community },
 ];
 
@@ -105,7 +178,8 @@ const ProtectedRoute = ({ children, roleRequired }) => {
             user: currentUser,
             role: null,
             loading: false,
-            error: "User document not found. Please ensure your account is registered with a role.",
+            error:
+              "User document not found. Please ensure your account is registered with a role.",
           });
           return;
         }

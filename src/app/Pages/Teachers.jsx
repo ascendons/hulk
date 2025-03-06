@@ -1,184 +1,235 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import Sidebar from "../Components/Sidebar";
-import { db } from "../../config";
-import { DEPARTMENTS } from "../constants";
+import React, { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
+import { db, functions } from "../../config";
+import { AuthContext } from "../../authContext";
+import Sidebar from "../Components/Sidebar"; // Assuming Sidebar for teachers
+import { ArrowLeftIcon } from "@heroicons/react/solid"; // Import Heroicons for back arrow
+import Skeleton from "react-loading-skeleton"; // Import Skeleton component
+import "react-loading-skeleton/dist/skeleton.css"; // Import Skeleton CSS
 
 const Teachers = () => {
-  const [selectedDepartment, setSelectedDepartment] = useState(DEPARTMENTS[0]);
-  const [teachers, setTeachers] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext); // Assuming AuthContext provides user info
+  const [teachers, setTeachers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const fetchTeachers = useCallback(async () => {
+  // Fetch teachers data
+  useEffect(() => {
+    const fetchTeachers = async () => {
+      if (!user || !user.uid) {
+        console.log("User data unavailable:", user);
+        alert("User not authenticated or data missing.");
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const usersSnapshot = await getDocs(collection(db, "users"));
+        const usersData = {};
+        usersSnapshot.forEach((doc) => {
+          usersData[doc.id] = {
+            name: doc.data().name || "N/A",
+            email: doc.data().email || "N/A",
+          };
+        });
+
+        const teachersSnapshot = await getDocs(collection(db, "teachersinfo"));
+        const teachersData = teachersSnapshot.docs.map((doc) => {
+          const teacherData = doc.data();
+          const userId = teacherData.userId;
+          return {
+            id: doc.id, // Firestore document ID
+            name: usersData[userId]?.name || "N/A",
+            email: usersData[userId]?.email || "N/A",
+            phone: teacherData.phone || "N/A",
+            department: teacherData.department || "N/A",
+            teacherId: teacherData.teacherId || "N/A", // Custom teacher ID if available
+            userId,
+          };
+        });
+
+        setTeachers(teachersData);
+      } catch (error) {
+        console.error("Failed to fetch teachers:", error);
+        alert("Failed to fetch teachers: " + error.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTeachers();
+  }, [user]);
+
+  // Handle teacher deletion
+  const handleDelete = async (teacherId) => {
+    if (!window.confirm("Are you sure you want to delete this teacher?"))
+      return;
+
     setLoading(true);
     try {
-      console.log("Fetching teachers for department:", selectedDepartment);
-
-      // Step 1: Fetch teacher details from the `teachersinfo` collection
-      const teachersInfoQuery = query(
-        collection(db, "teachersinfo"),
-        where("department", "==", selectedDepartment)
+      const teacherToDelete = teachers.find(
+        (teacher) => teacher.id === teacherId
       );
-      const teachersInfoSnapshot = await getDocs(teachersInfoQuery);
-      console.log("Teachers Info Snapshot:", teachersInfoSnapshot.docs);
+      if (!teacherToDelete) throw new Error("Teacher not found");
 
-      // Step 2: Fetch teacher names from the `users` collection
-      const usersQuery = query(
-        collection(db, "users"),
-        where("role", "==", "teacher")
-      );
-      const usersSnapshot = await getDocs(usersQuery);
-      console.log("Users Snapshot:", usersSnapshot.docs);
+      const { userId } = teacherToDelete;
+      if (!userId) throw new Error("No user ID found for deletion");
 
-      // Step 3: Combine data from both collections
-      const fetchedTeachers = teachersInfoSnapshot.docs.map(
-        (teacherInfoDoc) => {
-          const teacherInfoData = teacherInfoDoc.data();
+      console.log("Attempting to delete user with UID:", userId);
 
-          // Find the corresponding user document using `userId`
-          const userDoc = usersSnapshot.docs.find(
-            (userDoc) => userDoc.id === teacherInfoData.userId
-          );
+      // 1. Delete from teachersinfo collection
+      await deleteDoc(doc(db, "teachersinfo", teacherId));
+      console.log("Deleted from teachersinfo");
 
-          return {
-            id: teacherInfoDoc.id,
-            teachername: userDoc ? userDoc.data().name : "Unknown",
-            teacheremail: userDoc ? userDoc.data().email : "Unknown",
-            ...teacherInfoData,
-          };
-        }
-      );
+      // 2. Delete from users collection
+      await deleteDoc(doc(db, "users", userId));
+      console.log("Deleted from users");
 
-      console.log("Fetched Teachers Before Filtering:", fetchedTeachers);
+      // 3. Delete from Firebase Authentication
+      const deleteFirebaseUser = httpsCallable(functions, "deleteFirebaseUser");
+      const result = await deleteFirebaseUser({ uid: userId });
 
-      // Step 4: Filter teachers based on search term
-      if (searchTerm) {
-        const filteredTeachers = fetchedTeachers.filter(
-          (teacher) =>
-            teacher.teachername
-              ?.toLowerCase()
-              .includes(searchTerm.toLowerCase()) ||
-            teacher.teacheremail
-              ?.toLowerCase()
-              .includes(searchTerm.toLowerCase())
+      console.log("Cloud Function response:", result);
+
+      if (!result.data.success) {
+        throw new Error(
+          result.data.message || "Authentication deletion failed"
         );
-        console.log("Fetched Teachers After Filtering:", filteredTeachers);
-        setTeachers(filteredTeachers);
-      } else {
-        setTeachers(fetchedTeachers);
       }
+
+      // Update state
+      setTeachers(teachers.filter((teacher) => teacher.id !== teacherId));
+      alert("Teacher deleted successfully from all systems!");
     } catch (error) {
-      console.error("Error fetching teachers:", error);
-      alert("An error occurred while fetching teachers.");
+      console.error("Detailed deletion error:", error);
+      alert(`Failed to delete teacher: ${error.message || "Unknown error"}`);
     } finally {
       setLoading(false);
     }
-  }, [selectedDepartment, searchTerm]);
-
-  const handleSeeListClick = () => {
-    fetchTeachers();
   };
 
-  const handleViewProfile = (teacherId) => {
-    console.log("View profile for teacher ID:", teacherId);
-    navigate(`/view-profile/teacher/${teacherId}`); // Navigate to teacher profile
+  // Handle navigation to teacher profile
+  const handleViewDetail = (teacherId) => {
+    console.log("Navigating to teacher detail with ID:", teacherId);
+    navigate(`/view-profile/teacher/${teacherId}`);
   };
 
-  useEffect(() => {
-    fetchTeachers();
-  }, [fetchTeachers]);
+  // Filter teachers based on search term
+  const filteredTeachers = teachers.filter((teacher) =>
+    Object.values(teacher).some((value) =>
+      value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 flex">
       {/* Fixed Sidebar */}
-      <div className="fixed w-56 bg-indigo-800 text-white h-screen overflow-y-auto border-0 outline-0">
-        {" "}
-        {/* Fixed width, no borders or outlines */}
-        <Sidebar />
+      <div className="w-64 bg-blue-800 text-white h-screen fixed top-0 left-0 overflow-y-auto">
+        <Sidebar /> {/* Assuming Sidebar for this role */}
       </div>
 
-      {/* Main Content with Margin for Fixed Sidebar */}
-      <div className="flex-1 flex flex-col overflow-hidden ml-56">
-        {" "}
-        {/* Added margin-left to avoid overlap with fixed sidebar */}
-        <div className="flex-1 overflow-auto p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-5xl font-bold mb-8 text-green-500">TEACHERS</h1>
-            <select
-              value={selectedDepartment}
-              onChange={(e) => setSelectedDepartment(e.target.value)}
-              className="px-4 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {DEPARTMENTS.map((dept) => (
-                <option key={dept} value={dept}>
-                  {dept}
-                </option>
-              ))}
-            </select>
-          </div>
+      {/* Main Content with margin to account for fixed sidebar */}
+      <div className="flex-grow ml-64 p-6">
+        {/* Back Arrow Button */}
+        {/* <button
+          onClick={() => navigate("/dashboard")} // Adjust the route as needed (e.g., to a dashboard)
+          className="mb-4 p-2 bg-white border border-gray-300 rounded-full shadow-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <ArrowLeftIcon className="h-5 w-5 text-gray-600" />
+        </button> */}
 
-          {/* Search & Filter Section */}
-          <div className="bg-white border rounded-lg shadow-md p-6 mb-6">
-            <h2 className="text-xl font-semibold mb-4">Search & Filter</h2>
-            <div className="flex items-center">
-              <input
-                type="text"
-                placeholder="Search Teachers..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="px-4 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-              />
-              <button
-                onClick={handleSeeListClick}
-                className="bg-green-600 text-white px-5 py-2 rounded-lg ml-5 hover:bg-green-700"
-              >
-                Fetch
-              </button>
-            </div>
-          </div>
+        <h1 className="text-5xl font-bold text-green-500 mb-6">SEE TEACHERS</h1>
 
-          {/* Teachers Table */}
-          {loading ? (
-            <div className="flex justify-center items-center">
-              <p className="text-blue-600 text-lg font-semibold">Loading...</p>
-            </div>
-          ) : teachers.length > 0 ? (
-            <table className="w-full bg-white border rounded-lg shadow-md">
+        <div className="mb-5">
+          <input
+            type="text"
+            placeholder="Search..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full p-2.5 text-base border-2 border-gray-300 rounded-lg"
+            disabled={loading}
+          />
+        </div>
+
+        {loading ? (
+          <div className="bg-white shadow-md rounded-lg p-4 border border-gray-300">
+            <Skeleton height={30} width={150} className="mb-4" />
+            <Skeleton count={3} />
+          </div>
+        ) : (
+          <div className="bg-white shadow-md rounded-lg p-4 border border-gray-300">
+            <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-gray-200">
-                  <th className="py-2 px-4 text-left">Name</th>
-                  <th className="py-2 px-4 text-left">Email</th>
-                  <th className="py-2 px-4 text-left">Phone</th>
-                  <th className="py-2 px-4 text-left">Action</th>
+                <tr>
+                  <th className="border border-gray-300 p-2 bg-gray-200 text-left">
+                    NAME
+                  </th>
+                  <th className="border border-gray-300 p-2 bg-gray-200 text-left">
+                    EMAIL
+                  </th>
+                  <th className="border border-gray-300 p-2 bg-gray-200 text-left">
+                    PHONE
+                  </th>
+                  <th className="border border-gray-300 p-2 bg-gray-200 text-left">
+                    DEPARTMENT
+                  </th>
+                  <th className="border border-gray-300 p-2 bg-gray-200 text-left">
+                    TEACHER ID
+                  </th>
+                  <th className="border border-gray-300 p-2 bg-gray-200 text-left">
+                    ACTION
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {teachers.map((teacher) => (
-                  <tr key={teacher.id} className="border-b">
-                    <td className="py-2 px-4">{teacher.teachername}</td>
-                    <td className="py-2 px-4">{teacher.teacheremail}</td>
-                    <td className="py-2 px-4">{teacher.phonenumber}</td>
-                    <td className="py-2 px-4">
-                      <button
-                        onClick={() => handleViewProfile(teacher.id)}
-                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-                      >
-                        View Profile
-                      </button>
+                {filteredTeachers.length > 0 ? (
+                  filteredTeachers.map((teacher) => (
+                    <tr key={teacher.id}>
+                      <td className="border border-gray-300 p-2">
+                        {teacher.name}
+                      </td>
+                      <td className="border border-gray-300 p-2">
+                        {teacher.email}
+                      </td>
+                      <td className="border border-gray-300 p-2">
+                        {teacher.phone}
+                      </td>
+                      <td className="border border-gray-300 p-2">
+                        {teacher.department}
+                      </td>
+                      <td className="border border-gray-300 p-2">
+                        {teacher.teacherId}
+                      </td>
+                      <td className="border border-gray-300 p-2 flex space-x-2">
+                        <button
+                          onClick={() => handleViewDetail(teacher.id)}
+                          disabled={loading}
+                          className="bg-blue-500 text-white px-2.5 py-1 rounded cursor-pointer text-sm hover:bg-blue-600"
+                        >
+                          View Detail
+                        </button>
+                        {/* Removed the DELETE button */}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan="6"
+                      className="border border-gray-300 p-2 text-center text-gray-600"
+                    >
+                      No teachers found.
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
-          ) : (
-            <p className="text-gray-600 text-lg">
-              No teachers found for the selected filters.
-            </p>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

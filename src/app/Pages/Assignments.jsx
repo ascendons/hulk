@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { auth, db } from "../../config";
 import {
   collection,
@@ -21,7 +21,9 @@ const Assignments = () => {
   const [error, setError] = useState("");
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [filter, setFilter] = useState("mine"); // "mine" or "all"
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [previewFileUrl, setPreviewFileUrl] = useState("");
+  const [filter, setFilter] = useState("mine");
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -35,8 +37,8 @@ const Assignments = () => {
           const userSnapshot = await getDocs(userQuery);
           if (!userSnapshot.empty) {
             const userData = userSnapshot.docs[0].data();
-            setUserName(userData.name || user.email);  
-            console.log("Fetched user name:", userData.name || user.email); // Debug log
+            setUserName(userData.name || user.email);
+            console.log("Fetched user name:", userData.name || user.email);
           } else {
             setError("User data not found. Please log in again.");
             console.error("User data not found for email:", user.email);
@@ -56,7 +58,7 @@ const Assignments = () => {
     const fetchAssignments = async () => {
       if (!userName) {
         setIsLoading(false);
-        return; // Wait until userName is set before fetching assignments
+        return;
       }
 
       try {
@@ -69,10 +71,10 @@ const Assignments = () => {
             collection(db, "assignments"),
             where("assignedBy", "==", userName)
           );
-          console.log("Fetching assignments for user:", userName); 
+          console.log("Fetching assignments for user:", userName);
         } else {
           q = query(collection(db, "assignments"));
-          console.log("Fetching all assignments"); // Debug log
+          console.log("Fetching all assignments");
         }
 
         const querySnapshot = await getDocs(q);
@@ -80,12 +82,11 @@ const Assignments = () => {
           querySnapshot.docs.map(async (doc) => {
             const assignmentData = doc.data();
             if (assignmentData.fileURLs && assignmentData.fileURLs.length > 0) {
-              // Assuming fileURLs is an array of objects with { url, visibility }
-              const fileURL = assignmentData.fileURLs[0].url; // Use the first file URL if available
+              const fileURL = assignmentData.fileURLs[0].url;
               return {
                 id: doc.id,
                 ...assignmentData,
-                fileURL, // Store the public URL for display
+                fileURL,
               };
             }
             return {
@@ -95,7 +96,7 @@ const Assignments = () => {
           })
         );
         setAssignments(fetchedAssignments);
-        console.log("Fetched assignments:", fetchedAssignments); // Debug log
+        console.log("Fetched assignments:", fetchedAssignments);
       } catch (error) {
         console.error("Error fetching assignments:", error);
         setError("Failed to fetch assignments. Please try again.");
@@ -124,8 +125,7 @@ const Assignments = () => {
       try {
         await deleteDoc(doc(db, "assignments", id));
         if (fileURLs && fileURLs.length > 0) {
-          // Assuming fileURLs is an array of objects with { url, visibility }
-          const filePaths = fileURLs.map((file) => file.url.split("/").pop()); // Extract file path from URL
+          const filePaths = fileURLs.map((file) => file.url.split("/").pop());
           await supabase.storage.from("assignments").remove(filePaths);
         }
         setAssignments(
@@ -147,6 +147,9 @@ const Assignments = () => {
         description: selectedAssignment.description,
         dueDate: selectedAssignment.dueDate,
         marks: selectedAssignment.marks,
+        year: selectedAssignment.year, // Include year in update
+        department: selectedAssignment.department, // Include department in update
+        division: selectedAssignment.division, // Include division in update
       });
 
       setAssignments(
@@ -164,19 +167,18 @@ const Assignments = () => {
     }
   };
 
+  const handlePreviewFile = (fileUrl) => {
+    setPreviewFileUrl(fileUrl);
+    setIsPreviewModalOpen(true);
+  };
+
   return (
     <div className="w-screen h-screen bg-gray-100 flex">
-      {/* Fixed Sidebar */}
       <div className="fixed w-64 bg-blue-800 text-white h-screen overflow-y-auto border-0 outline-0">
-        {" "}
-        {/* Fixed width, no borders or outlines */}
         <Sidebar />
       </div>
 
-      {/* Main Content with Margin for Fixed Sidebar */}
       <div className="flex-grow p-6 ml-64">
-        {" "}
-        {/* Added margin-left to avoid overlap with fixed sidebar */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-gray-800">ASSIGNMENTS</h1>
           <div className="flex items-center space-x-4">
@@ -232,20 +234,45 @@ const Assignments = () => {
                     <p className="text-sm text-gray-600">
                       Created by: {assignment.assignedBy}
                     </p>
+                    <p className="text-sm text-gray-600">
+                      Year: {assignment.year || "N/A"}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Department: {assignment.department || "N/A"}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Division: {assignment.division || "N/A"}
+                    </p>
                     {assignment.fileURL && (
-                      <a
-                        href={assignment.fileURL}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-500 hover:text-blue-600 underline"
-                      >
-                        Download File
-                      </a>
+                      <div className="mt-2 space-x-4">
+                        <a
+                          href={assignment.fileURL}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-500 hover:text-blue-600 underline"
+                        >
+                          Download File
+                        </a>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePreviewFile(assignment.fileURL);
+                          }}
+                          className="text-green-500 hover:text-green-600 underline"
+                        >
+                          Preview
+                        </button>
+                      </div>
                     )}
                   </div>
                   <div className="flex space-x-2">
                     {assignment.assignedBy === userName && (
                       <>
+                        <Link to={`/AssignmentMarks/${assignment.id}`}>
+                          <button className="bg-green-500 text-white px-3 py-1 rounded-md hover:bg-green-600 transition-colors">
+                            Give Marks
+                          </button>
+                        </Link>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -349,6 +376,48 @@ const Assignments = () => {
                   required
                 />
               </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">Year</label>
+                <input
+                  type="text"
+                  value={selectedAssignment.year || ""}
+                  onChange={(e) =>
+                    setSelectedAssignment({
+                      ...selectedAssignment,
+                      year: e.target.value,
+                    })
+                  }
+                  className="w-full p-2 border rounded-md"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">Department</label>
+                <input
+                  type="text"
+                  value={selectedAssignment.department || ""}
+                  onChange={(e) =>
+                    setSelectedAssignment({
+                      ...selectedAssignment,
+                      department: e.target.value,
+                    })
+                  }
+                  className="w-full p-2 border rounded-md"
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 mb-2">Division</label>
+                <input
+                  type="text"
+                  value={selectedAssignment.division || ""}
+                  onChange={(e) =>
+                    setSelectedAssignment({
+                      ...selectedAssignment,
+                      division: e.target.value,
+                    })
+                  }
+                  className="w-full p-2 border rounded-md"
+                />
+              </div>
               <div className="flex justify-end space-x-2">
                 <button
                   type="button"
@@ -365,6 +434,38 @@ const Assignments = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Preview File Modal */}
+      {isPreviewModalOpen && previewFileUrl && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg w-full max-w-4xl">
+            <h2 className="text-2xl font-bold mb-4">Preview Assignment File</h2>
+            <div className="mb-4">
+              {previewFileUrl.toLowerCase().endsWith(".pdf") ? (
+                <iframe
+                  src={previewFileUrl}
+                  title="Assignment Preview"
+                  className="w-full h-96 border rounded-md"
+                />
+              ) : (
+                <img
+                  src={previewFileUrl}
+                  alt="Assignment Preview"
+                  className="w-full h-96 object-contain border rounded-md"
+                />
+              )}
+            </div>
+            <div className="flex justify-end space-x-2">
+              <button
+                onClick={() => setIsPreviewModalOpen(false)}
+                className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

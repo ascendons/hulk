@@ -18,8 +18,8 @@ const StudentAssignments = () => {
   const [error, setError] = useState("");
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [studentData, setStudentData] = useState({
-    name: "", // To store the student's name
-    course: "",
+    name: "",
+    department: "", // Set to match course from students collection
     division: "",
     year: "",
   });
@@ -35,13 +35,18 @@ const StudentAssignments = () => {
 
   useEffect(() => {
     const fetchStudentData = async () => {
-      if (!user) return;
+      if (!user || !user.uid || !user.email) {
+        console.log("User data unavailable:", user);
+        setError("User not authenticated or data missing.");
+        setIsLoading(false);
+        return;
+      }
 
       setIsLoading(true);
       setError("");
 
       try {
-        // Step 1: Fetch student data from the "students" collection
+        console.log("Fetching student data for userId:", user.uid); // Debug log
         const studentsRef = collection(db, "students");
         const studentQuery = query(
           studentsRef,
@@ -50,14 +55,18 @@ const StudentAssignments = () => {
         const studentSnapshot = await getDocs(studentQuery);
 
         if (studentSnapshot.empty) {
-          setError("Student data not found. Please contact support.");
+          console.log("No student document found for userId:", user.uid);
+          setError(
+            "Student data not found. Please ensure your profile is set up."
+          );
           setIsLoading(false);
           return;
         }
 
         const student = studentSnapshot.docs[0].data();
+        console.log("Fetched student data:", student); // Debug log
 
-        // Step 2: Fetch the student's name from the "users" collection using the email
+        // Fetch the student's name from the "users" collection
         const usersRef = collection(db, "users");
         const userQuery = query(usersRef, where("email", "==", user.email));
         const userSnapshot = await getDocs(userQuery);
@@ -65,7 +74,8 @@ const StudentAssignments = () => {
         let studentName = "Unknown";
         if (!userSnapshot.empty) {
           const userData = userSnapshot.docs[0].data();
-          studentName = userData.name || user.displayName || "Unknown"; // Fallback to displayName if name is not available
+          studentName = userData.name || user.displayName || "Unknown";
+          console.log("Fetched user data:", userData); // Debug log
         } else {
           console.warn(
             "User not found in users collection for email:",
@@ -73,10 +83,10 @@ const StudentAssignments = () => {
           );
         }
 
-        // Step 3: Update studentData with the fetched name and other details
+        // Set studentData, using course as department since they are the same
         setStudentData({
           name: studentName,
-          course: student.course || "",
+          department: student.course || student.department || "", // Use course as primary, fall back to department
           division: student.division || "",
           year: student.year || "",
         });
@@ -93,17 +103,27 @@ const StudentAssignments = () => {
 
   useEffect(() => {
     const fetchAssignmentsAndSubmissions = async () => {
-      if (!studentData.course || !user) return;
+      // Check for minimal required data
+      if (!user) {
+        console.log("User not available:", user);
+        setError("User not authenticated.");
+        setIsLoading(false);
+        return;
+      }
 
       setIsLoading(true);
       setError("");
 
       try {
-        // Fetch assignments
+        console.log("Fetching assignments with parameters:", {
+          department: studentData.department,
+          division: studentData.division,
+          year: studentData.year,
+        }); // Debug log
         const assignmentsRef = collection(db, "assignments");
         const q = query(
           assignmentsRef,
-          where("department", "==", studentData.course),
+          where("department", "==", studentData.department),
           where("division", "==", studentData.division),
           where("year", "==", studentData.year)
         );
@@ -144,6 +164,13 @@ const StudentAssignments = () => {
               timestamp: new Date().getTime(),
             })
           );
+        } else {
+          console.log("No assignments found for query with parameters:", {
+            department: studentData.department,
+            division: studentData.division,
+            year: studentData.year,
+          });
+          setAssignments([]);
         }
 
         // Fetch submitted assignments with timestamps
@@ -314,7 +341,7 @@ const StudentAssignments = () => {
                 className="bg-white shadow-md rounded-lg p-4 border border-gray-300 hover:shadow-lg transition-shadow"
               >
                 <h2 className="text-lg font-bold text-gray-700">
-                  {assignment.title}
+                  {assignment.title || assignment.subject}
                 </h2>
                 <p className="text-sm text-gray-600">
                   Due Date: {new Date(assignment.dueDate).toLocaleDateString()}
@@ -377,8 +404,8 @@ const StudentAssignments = () => {
                 {studentData.name}
               </div>
               <div>
-                <span className="font-semibold">Course:</span>{" "}
-                {studentData.course}
+                <span className="font-semibold">Department:</span>{" "}
+                {studentData.department}
               </div>
               <div>
                 <span className="font-semibold">Year:</span> {studentData.year}
@@ -389,7 +416,7 @@ const StudentAssignments = () => {
               </div>
               <div>
                 <span className="font-semibold">Subject:</span>{" "}
-                {selectedAssignment.title}
+                {selectedAssignment.title || selectedAssignment.subject}
               </div>
               <div>
                 <label className="font-semibold block mb-1">Upload File:</label>

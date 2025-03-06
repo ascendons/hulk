@@ -165,31 +165,27 @@ const Dashboard = () => {
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Fixed Sidebar (No Border) */}
       <div className="fixed w-56 bg-blue-800 text-white h-screen overflow-y-auto border-0 outline-0">
-        {" "}
-        {/* Explicitly remove border and outline */}
         <Sidebar />
       </div>
 
       {/* Main Content with Margin for Fixed Sidebar */}
       <div className="flex-grow p-8 ml-56 bg-gradient-to-br from-gray-50 to-gray-100">
-        {" "}
-        {/* Explicitly set main content background */}
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-5xl font-bold mb-8 text-green-500">Dashboard</h1>
-          <p className="text-gray-600 mt-2">
+          <h1 className="text-5xl font-bold mb-4 text-green-500">Dashboard</h1>
+          <p className="text-gray-600">
             Welcome back, {teacherInfo.name || "Teacher"}!
           </p>
         </div>
         {/* Profile Section */}
-        <div className="bg-white shadow-md rounded-lg p-4 mb-8 flex items-center justify-between border border-gray-200">
+        <div className="bg-white shadow-lg rounded-lg p-6 mb-8 flex items-center justify-between border border-gray-200">
           {/* Profile Picture */}
-          <div className="w-20 h-20 rounded-full mr-6 border-2 border-blue-300 flex items-center justify-center overflow-hidden">
+          <div className="w-16 h-16 rounded-full mr-6 border-2 border-blue-300 overflow-hidden">
             {teacherInfo.profilePhotoUrl ? (
               <AdvancedImage
                 cldImg={cld
                   .image(getPublicIdFromUrl(teacherInfo.profilePhotoUrl))
-                  .resize(fill().width(80).height(80).gravity(autoGravity()))
+                  .resize(fill().width(64).height(64).gravity(autoGravity()))
                   .format("auto")
                   .quality("auto")}
                 className="w-full h-full object-cover"
@@ -212,10 +208,10 @@ const Dashboard = () => {
             </p>
           </div>
 
-          {/* View Profile Button */}
+          {/* View Details Button */}
           <Link to={`/view-profile/teacher/${teacherInfo.userId}`}>
-            <button className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors text-sm font-medium">
-              View Profile
+            <button className="bg-green-500 text-white px-4 py-2 rounded-full hover:bg-green-600 transition-colors text-sm font-medium">
+              View Details
             </button>
           </Link>
         </div>
@@ -273,8 +269,6 @@ const Dashboard = () => {
         </div>
         {/* Notice Board Section (Scrollable) */}
         <div className="bg-white shadow-lg rounded-lg p-6 max-h-96 overflow-y-auto">
-          {" "}
-          {/* Fixed height with scrolling */}
           <h2 className="text-2xl font-bold text-gray-800 mb-4">
             Notice Board
           </h2>
@@ -289,7 +283,7 @@ const Dashboard = () => {
                     By: {notice.author}
                   </p>
                   <p className="text-gray-800">{notice.content}</p>
-                  {notice.attachment && ( // Fixed typo: adjustment -> attachment
+                  {notice.attachment && (
                     <a
                       href={notice.attachment}
                       target="_blank"

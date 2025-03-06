@@ -1,219 +1,181 @@
-import React, { useState, useEffect } from "react";
-import {
-  collection,
-  query,
-  where,
-  getDocs,
-  doc,
-  getDoc,
-} from "firebase/firestore";
-import { getAuth } from "firebase/auth";
-import { db } from "../../config"; // Adjust based on your Firebase config file path
-import Sidebar from "../Components/Sidebar"; // Import Sidebar component
+import React, { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
+import { collection, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { getAuth, deleteUser } from "firebase/auth";
+import { db, auth } from "../../config";
+import { AuthContext } from "../../authContext";
+import Sidebar from "../Components/Sidebar";
+import { ArrowLeftIcon } from "@heroicons/react/solid";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
 
 const Students = () => {
-  const [showList, setShowList] = useState(false); // State to toggle student list
-  const [selectedClass, setSelectedClass] = useState(""); // State for selected class
-  const [selectedDivision, setSelectedDivision] = useState(""); // State for selected division
-  const [selectedYear, setSelectedYear] = useState(""); // State for selected year
-  const [classes, setClasses] = useState([]); // State to store unique classes
-  const [divisions, setDivisions] = useState([]); // State to store unique divisions
-  const [years, setYears] = useState([]); // State to store unique years
-  const [students, setStudents] = useState([]); // State to store student data
-  const [loading, setLoading] = useState(false); // State for loading indicator
-  const navigate = useNavigate(); // Navigation hook
+  const navigate = useNavigate();
+  const { user } = useContext(AuthContext);
+  const [students, setStudents] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // Fetch user data and set default values
   useEffect(() => {
-    const fetchUserData = async () => {
-      const auth = getAuth();
-      const currentUser = auth.currentUser;
-      if (currentUser) {
-        try {
-          const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-          if (userDoc.exists()) {
-            const userData = userDoc.data();
-            if (userData.department === "Bsc.IT") {
-              setSelectedClass("Bsc.IT");
-              setSelectedDivision("A");
-            }
-          }
-        } catch (error) {
-          console.error("Error fetching user data:", error);
-        }
+    const fetchStudents = async () => {
+      if (!user || !user.uid) {
+        console.log("User data unavailable:", user);
+        alert("User not authenticated or data missing.");
+        setLoading(false);
+        return;
       }
-    };
-
-    fetchUserData();
-  }, []);
-
-  // Fetch dropdown options
-  useEffect(() => {
-    const fetchDropdownData = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, "students"));
-        const studentData = querySnapshot.docs.map((doc) => doc.data());
-
-        const uniqueClasses = [
-          ...new Set(studentData.map((item) => item.studentcourse)),
-        ];
-        const uniqueDivisions = [
-          ...new Set(studentData.map((item) => item.division)),
-        ];
-        const uniqueYears = [
-          ...new Set(studentData.map((item) => item.studentyear)),
-        ];
-
-        setClasses(uniqueClasses);
-        setDivisions(uniqueDivisions);
-        setYears(uniqueYears);
-
-        // Set default dropdown values
-        if (!selectedClass) setSelectedClass(uniqueClasses[0] || "");
-        if (!selectedDivision) setSelectedDivision(uniqueDivisions[0] || "");
-        if (!selectedYear) setSelectedYear(uniqueYears[0] || "");
+        setLoading(true);
+        const usersSnapshot = await getDocs(collection(db, "users"));
+        const usersData = {};
+        usersSnapshot.forEach((doc) => {
+          usersData[doc.id] = {
+            name: doc.data().name || "N/A",
+            email: doc.data().email || "N/A",
+          };
+        });
+        const studentsSnapshot = await getDocs(collection(db, "students"));
+        const studentsData = studentsSnapshot.docs.map((doc) => {
+          const studentData = doc.data();
+          const userId = studentData.userId;
+          return {
+            id: doc.id,
+            name: usersData[userId]?.name || "N/A",
+            email: usersData[userId]?.email || "N/A",
+            phonenumber: studentData.phonenumber || "N/A",
+            course: studentData.course || "N/A",
+            division: studentData.division || "N/A",
+            year: studentData.year || "N/A",
+            studentid: studentData.studentid || "N/A",
+            userId,
+          };
+        });
+        setStudents(studentsData);
       } catch (error) {
-        console.error("Error fetching dropdown data:", error);
+        console.error("Error fetching students:", error);
+        alert("Failed to fetch students: " + error.message);
+      } finally {
+        setLoading(false);
       }
     };
-
-    fetchDropdownData();
-  }, [selectedClass, selectedDivision, selectedYear]);
-
-  // Fetch students based on filters
-  const fetchStudents = async () => {
-    setLoading(true);
-    try {
-      const q = query(
-        collection(db, "students"),
-        where("studentcourse", "==", selectedClass),
-        where("division", "==", selectedDivision),
-        where("studentyear", "==", selectedYear)
-      );
-      const querySnapshot = await getDocs(q);
-      const fetchedStudents = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setStudents(fetchedStudents);
-    } catch (error) {
-      console.error("Error fetching students:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSeeListClick = () => {
     fetchStudents();
-    setShowList(true);
-  };
+  }, [user]);
 
-  const handleProfileClick = (studentId) => {
-    navigate(`/profile/${studentId}`); // Navigate to student profile
-  };
+  const filteredStudents = students.filter((student) =>
+    Object.values(student).some((value) =>
+      value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      {/* Fixed Sidebar */}
-      <div className="fixed w-56 bg-blue-800 text-white h-screen overflow-y-auto border-0 outline-0">
-        {" "}
-        {/* Fixed width, no borders or outlines */}
+    <div className="min-h-screen bg-gray-100 flex">
+      <div className="w-64 bg-blue-800 text-white h-screen fixed top-0 left-0 overflow-y-auto">
         <Sidebar />
       </div>
-
-      {/* Main Content with Margin for Fixed Sidebar */}
-      <div className="flex-1 p-6 ml-56 bg-gray-100 overflow-y-auto">
-        {" "}
-        {/* Added margin-left to avoid overlap with fixed sidebar */}
-        <div className="bg-white p-4 rounded-lg shadow-md mb-6">
-          <h1 className="text-5xl font-bold mb-8 text-green-500">STUDENTS</h1>
-          <div className="flex flex-wrap gap-4">
-            <select
-              value={selectedClass}
-              onChange={(e) => setSelectedClass(e.target.value)}
-              className="px-4 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {classes.map((cls) => (
-                <option key={cls} value={cls}>
-                  {cls}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={selectedDivision}
-              onChange={(e) => setSelectedDivision(e.target.value)}
-              className="px-4 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {divisions.map((div) => (
-                <option key={div} value={div}>
-                  {div}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={selectedYear}
-              onChange={(e) => setSelectedYear(e.target.value)}
-              className="px-4 py-2 border rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {years.map((yr) => (
-                <option key={yr} value={yr}>
-                  {yr}
-                </option>
-              ))}
-            </select>
-
-            <button
-              onClick={handleSeeListClick}
-              className="bg-green-600 text-white px-6 py-2 rounded-lg shadow-md hover:bg-green-700"
-            >
-              SEE LIST
-            </button>
-          </div>
+      <div className="flex-grow ml-64 p-6">
+        {/* <button
+          onClick={() => navigate("/dashboard")}
+          className="mb-4 p-2 bg-white border border-gray-300 rounded-full shadow-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <ArrowLeftIcon className="h-5 w-5 text-gray-600" />
+        </button> */}
+        <h1 className="text-5xl font-bold text-green-500 mb-6">SEE STUDENTS</h1>
+        <div className="mb-5">
+          <input
+            type="text"
+            placeholder="Search..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full p-2.5 text-base border-2 border-gray-300 rounded-lg"
+            disabled={loading}
+          />
         </div>
-        {showList && (
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-bold mb-4">
-              Students in {selectedClass}, Division {selectedDivision},{" "}
-              {selectedYear}
-            </h2>
-            {loading ? (
-              <p>Loading...</p>
-            ) : students.length > 0 ? (
-              <table className="w-full bg-white border rounded-lg shadow-md text-left">
-                <thead>
-                  <tr className="bg-gray-200">
-                    <th className="py-2 px-4">Name</th>
-                    <th className="py-2 px-4">Roll No</th>
-                    <th className="py-2 px-4">Email</th>
-                    <th className="py-2 px-4">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {students.map((student) => (
-                    <tr key={student.id} className="border-b">
-                      <td className="py-2 px-4">{student.studentname}</td>
-                      <td className="py-2 px-4">{student.studentrollno}</td>
-                      <td className="py-2 px-4">{student.studentemail}</td>
-                      <td className="py-2 px-4">
+        {loading ? (
+          <div className="bg-white shadow-md rounded-lg p-4 border border-gray-300">
+            <Skeleton height={30} width={150} className="mb-4" />
+            <Skeleton count={3} />
+          </div>
+        ) : (
+          <div className="bg-white shadow-md rounded-lg p-4 border border-gray-300">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr>
+                  <th className="border border-gray-300 p-2 bg-gray-200 text-left">
+                    NAME
+                  </th>
+                  <th className="border border-gray-300 p-2 bg-gray-200 text-left">
+                    EMAIL
+                  </th>
+                  <th className="border border-gray-300 p-2 bg-gray-200 text-left">
+                    PHONE
+                  </th>
+                  <th className="border border-gray-300 p-2 bg-gray-200 text-left">
+                    COURSE
+                  </th>
+                  <th className="border border-gray-300 p-2 bg-gray-200 text-left">
+                    DIVISION
+                  </th>
+                  <th className="border border-gray-300 p-2 bg-gray-200 text-left">
+                    YEAR
+                  </th>
+                  <th className="border border-gray-300 p-2 bg-gray-200 text-left">
+                    STUDENT ID
+                  </th>
+                  <th className="border border-gray-300 p-2 bg-gray-200 text-left">
+                    ACTION
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredStudents.length > 0 ? (
+                  filteredStudents.map((student) => (
+                    <tr key={student.id}>
+                      <td className="border border-gray-300 p-2">
+                        {student.name}
+                      </td>
+                      <td className="border border-gray-300 p-2">
+                        {student.email}
+                      </td>
+                      <td className="border border-gray-300 p-2">
+                        {student.phonenumber}
+                      </td>
+                      <td className="border border-gray-300 p-2">
+                        {student.course}
+                      </td>
+                      <td className="border border-gray-300 p-2">
+                        {student.division}
+                      </td>
+                      <td className="border border-gray-300 p-2">
+                        {student.year}
+                      </td>
+                      <td className="border border-gray-300 p-2">
+                        {student.studentid}
+                      </td>
+                      <td className="border border-gray-300 p-2 flex space-x-2">
                         <button
-                          onClick={() => handleProfileClick(student.id)}
-                          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                          onClick={() =>
+                            navigate(`/view-profile/${student.id}`)
+                          }
+                          disabled={loading}
+                          className="bg-blue-500 text-white px-2.5 py-1 rounded cursor-pointer text-sm hover:bg-blue-600"
                         >
-                          See Profile
+                          ViewDetails
                         </button>
                       </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <p>
-                No students found for the selected class, division, and year.
-              </p>
-            )}
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan="8"
+                      className="border border-gray-300 p-2 text-center text-gray-600"
+                    >
+                      No students found.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
