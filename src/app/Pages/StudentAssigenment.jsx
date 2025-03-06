@@ -18,6 +18,7 @@ const StudentAssignments = () => {
   const [error, setError] = useState("");
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [studentData, setStudentData] = useState({
+    name: "", // To store the student's name
     course: "",
     division: "",
     year: "",
@@ -40,20 +41,45 @@ const StudentAssignments = () => {
       setError("");
 
       try {
+        // Step 1: Fetch student data from the "students" collection
         const studentsRef = collection(db, "students");
-        const q = query(studentsRef, where("userId", "==", user.uid));
-        const querySnapshot = await getDocs(q);
+        const studentQuery = query(
+          studentsRef,
+          where("userId", "==", user.uid)
+        );
+        const studentSnapshot = await getDocs(studentQuery);
 
-        if (!querySnapshot.empty) {
-          const student = querySnapshot.docs[0].data();
-          setStudentData({
-            course: student.course || "",
-            division: student.division || "",
-            year: student.year || "",
-          });
-        } else {
+        if (studentSnapshot.empty) {
           setError("Student data not found. Please contact support.");
+          setIsLoading(false);
+          return;
         }
+
+        const student = studentSnapshot.docs[0].data();
+
+        // Step 2: Fetch the student's name from the "users" collection using the email
+        const usersRef = collection(db, "users");
+        const userQuery = query(usersRef, where("email", "==", user.email));
+        const userSnapshot = await getDocs(userQuery);
+
+        let studentName = "Unknown";
+        if (!userSnapshot.empty) {
+          const userData = userSnapshot.docs[0].data();
+          studentName = userData.name || user.displayName || "Unknown"; // Fallback to displayName if name is not available
+        } else {
+          console.warn(
+            "User not found in users collection for email:",
+            user.email
+          );
+        }
+
+        // Step 3: Update studentData with the fetched name and other details
+        setStudentData({
+          name: studentName,
+          course: student.course || "",
+          division: student.division || "",
+          year: student.year || "",
+        });
       } catch (error) {
         console.error("Error fetching student data:", error);
         setError("Failed to fetch student data. Check console for details.");
@@ -172,7 +198,6 @@ const StudentAssignments = () => {
         return;
       }
       if (file.size > 5 * 1024 * 1024) {
-        // 5MB limit
         setUploadError("File size must be less than 5MB.");
         setSelectedFile(null);
         return;
@@ -190,17 +215,15 @@ const StudentAssignments = () => {
 
     try {
       setIsLoading(true);
-      setUploadProgress(1); // Start progress bar immediately
+      setUploadProgress(1);
       const filePath = `${user.uid}/${selectedAssignment.id}/${selectedFile.name}`;
 
-      // Set up progress tracking
       const uploadProgressCallback = (progress) => {
         const percentage = Math.round((progress.loaded / progress.total) * 100);
         setUploadProgress(percentage);
         console.log(`Upload progress: ${percentage}%`);
       };
 
-      // Upload file to Supabase with progress tracking
       const { data, error: uploadError } = await supabase.storage
         .from("student-submissions")
         .upload(filePath, selectedFile, {
@@ -216,7 +239,6 @@ const StudentAssignments = () => {
 
       console.log("File uploaded successfully:", data);
 
-      // Save submission metadata to Firestore
       const submittedAt = new Date().toISOString();
       await addDoc(collection(db, "students-submissions"), {
         studentId: user.uid,
@@ -225,7 +247,6 @@ const StudentAssignments = () => {
         submittedAt,
       });
 
-      // Update submissions state
       setSubmissions({
         ...submissions,
         [selectedAssignment.id]: { submittedAt, filePath },
@@ -233,7 +254,7 @@ const StudentAssignments = () => {
 
       handleModalClose();
       setShowSuccessPopup(true);
-      setTimeout(() => setShowSuccessPopup(false), 3000); // Auto-close after 3 seconds
+      setTimeout(() => setShowSuccessPopup(false), 3000);
     } catch (error) {
       console.error("Error uploading file:", error);
       setUploadError(
@@ -241,7 +262,7 @@ const StudentAssignments = () => {
       );
     } finally {
       setIsLoading(false);
-      setUploadProgress(0); // Reset progress after completion
+      setUploadProgress(0);
     }
   };
 
@@ -252,7 +273,7 @@ const StudentAssignments = () => {
   const getSubmissionDateTime = (assignmentId) => {
     if (submissions[assignmentId]) {
       const date = new Date(submissions[assignmentId].submittedAt);
-      return date.toLocaleString(); // Formats as "MM/DD/YYYY, HH:MM:SS AM/PM"
+      return date.toLocaleString();
     }
     return null;
   };
@@ -269,7 +290,6 @@ const StudentAssignments = () => {
         <StudentSidebar />
       </div>
 
-      {/* Main Content */}
       <div className="flex-grow p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-orange-500">ASSIGNMENTS</h1>
@@ -352,6 +372,10 @@ const StudentAssignments = () => {
           <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
             <h2 className="text-xl font-bold mb-4">Upload Assignment</h2>
             <div className="space-y-3">
+              <div>
+                <span className="font-semibold">Student Name:</span>{" "}
+                {studentData.name}
+              </div>
               <div>
                 <span className="font-semibold">Course:</span>{" "}
                 {studentData.course}
