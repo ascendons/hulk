@@ -15,7 +15,7 @@ import {
   School,
   Menu,
   X,
-  MessageSquare, // Added MessageSquare icon for Community
+  MessageSquare, 
 } from "lucide-react";
 
 const Sidebar = () => {
