@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom"; // Added useNavigate for navigation after logout
+import { Link, useNavigate } from "react-router-dom";  
 import {
-  signOut, // Import signOut from Firebase auth
+  signOut,  
 } from "firebase/auth";
-import { auth } from "../../config"; // Import Firebase auth from your config
+import { auth } from "../../config";  
 import {
   LayoutDashboard,
   Bell,
@@ -12,12 +12,10 @@ import {
   BookOpen,
   ClipboardList,
   FileText,
-  UserPlus,
-  BookmarkPlus,
-  BookPlus,
   School,
   Menu,
   X,
+  MessageSquare, // Added MessageSquare icon for Community
 } from "lucide-react";
 
 const Sidebar = () => {
@@ -30,19 +28,18 @@ const Sidebar = () => {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth); // Sign out the user from Firebase
+      await signOut(auth);  
       console.log("User logged out successfully");
-      navigate("/signup"); // Redirect to the signup/login page after logout
-      setIsSidebarOpen(false); // Close the sidebar on mobile after logout
+      navigate("/signup");  
+      setIsSidebarOpen(false);  
     } catch (error) {
       console.error("Error logging out:", error);
-      alert("Failed to logout. Please try again."); // Optional: Display an error message
+      alert("Failed to logout. Please try again.");  
     }
   };
 
   return (
     <>
-      {/* Mobile Menu Button */}
       <button
         onClick={toggleSidebar}
         className="fixed top-4 left-4 z-50 p-2 bg-green-600 text-white rounded-lg lg:hidden"
@@ -54,13 +51,11 @@ const Sidebar = () => {
         )}
       </button>
 
-      {/* Sidebar */}
       <div
-        className={`fixed lg:relative h-screen bg-gray-900 text-white w- p-6 flex flex-col transform transition-transform duration-300 ease-in-out ${
+        className={`fixed lg:relative h-screen bg-gray-900 text-white w-64 p-6 flex flex-col transform transition-transform duration-300 ease-in-out ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
-        {/* Close Button for Mobile */}
         <button
           onClick={toggleSidebar}
           className="lg:hidden self-end mb-4 p-2 bg-green-700 rounded-lg"
@@ -76,7 +71,6 @@ const Sidebar = () => {
           </h1>
         </div>
 
-        {/* Sidebar Links */}
         <ul className="flex-grow space-y-2">
           <li>
             <Link
@@ -166,10 +160,20 @@ const Sidebar = () => {
             </Link>
           </li>
 
+          {/* New Community Link */}
+          <li>
+            <Link
+              to="/community"
+              className="flex items-center p-3 rounded-lg hover:bg-orange-700 transition-colors"
+              onClick={() => setIsSidebarOpen(false)}
+            >
+              <MessageSquare className="mr-3 text-green-600" />
+              Community
+            </Link>
+          </li>
+
           {/* Logout Button */}
           <li className="mt-auto">
-            {" "}
-            {/* Pushes the logout button to the bottom */}
             <button
               onClick={handleLogout}
               className="flex items-center w-full p-3 rounded-lg hover:bg-orange-700 transition-colors"

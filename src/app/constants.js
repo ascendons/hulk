@@ -1,5 +1,4 @@
 export const DEPARTMENTS = [
-  "Select Subjects",
   "Bsc.IT",
   "BCOM",
   "BMS",

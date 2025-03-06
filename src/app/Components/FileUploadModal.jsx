@@ -9,8 +9,8 @@ const FileUploadModal = ({ isOpen, onClose, onFileUpload }) => {
     const file = e.target.files[0];
     setSelectedFile(file);
     if (file) {
-      onFileUpload(file); // Call onFileUpload with the selected file
-      onClose(); // Close the modal after selecting a file
+      onFileUpload(file);  
+      onClose();  
     }
   };
 

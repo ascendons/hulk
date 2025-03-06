@@ -35,7 +35,7 @@ const Assignments = () => {
           const userSnapshot = await getDocs(userQuery);
           if (!userSnapshot.empty) {
             const userData = userSnapshot.docs[0].data();
-            setUserName(userData.name || user.email); // Fallback to email if name is not available
+            setUserName(userData.name || user.email);  
             console.log("Fetched user name:", userData.name || user.email); // Debug log
           } else {
             setError("User data not found. Please log in again.");
@@ -69,7 +69,7 @@ const Assignments = () => {
             collection(db, "assignments"),
             where("assignedBy", "==", userName)
           );
-          console.log("Fetching assignments for user:", userName); // Debug log
+          console.log("Fetching assignments for user:", userName); 
         } else {
           q = query(collection(db, "assignments"));
           console.log("Fetching all assignments"); // Debug log

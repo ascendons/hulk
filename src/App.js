@@ -10,6 +10,7 @@ import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "./config";
 import { AuthProvider } from "./authContext";
+import Community from "./app/Pages/Community";
 
 const Dashboard = React.lazy(() => import("./app/Pages/Dashboard"));
 const Signuppage = React.lazy(() => import("./app/Pages/Signuppage"));
@@ -25,128 +26,57 @@ const AddStudents = React.lazy(() => import("./app/Pages/AddStudent")); // Ensur
 const AddSubjects = React.lazy(() => import("./app/Pages/AddSubjects"));
 const TeacherViewProfile = React.lazy(() =>
   import("./app/Components/TeacherViewProfile")
-); // Import TeacherViewProfile
+);
 const StudentViewProfile = React.lazy(() =>
   import("./app/Components/StudentViewProfile")
-); // Import StudentViewProfile
+);
 
 const teacherRoutes = [
   { path: "/dashboard", component: Dashboard },
-  {
-    path: "/courses",
-    component: React.lazy(() => import("./app/Pages/Courses")),
-  },
-  {
-    path: "/create-notice",
-    component: React.lazy(() => import("./app/Pages/createNotice")),
-  },
-  {
-    path: "/students",
-    component: React.lazy(() => import("./app/Pages/Students")),
-  },
-  {
-    path: "/liststudents",
-    component: React.lazy(() => import("./app/Pages/ListStudents")),
-  },
-  {
-    path: "/edittimetable",
-    component: React.lazy(() => import("./app/Pages/EditTimetable")),
-  },
-  {
-    path: "/Notices",
-    component: React.lazy(() => import("./app/Pages/Notices")),
-  },
-  {
-    path: "/Attendance",
-    component: React.lazy(() => import("./app/Pages/Attendance")),
-  },
-  {
-    path: "/Teachers",
-    component: React.lazy(() => import("./app/Pages/Teachers")),
-  },
+  { path: "/courses", component: React.lazy(() => import("./app/Pages/Courses")) },
+  { path: "/create-notice", component: React.lazy(() => import("./app/Pages/createNotice")) },
+  { path: "/students", component: React.lazy(() => import("./app/Pages/Students")) },
+  { path: "/liststudents", component: React.lazy(() => import("./app/Pages/ListStudents")) },
+  { path: "/edittimetable", component: React.lazy(() => import("./app/Pages/EditTimetable")) },
+  { path: "/Notices", component: React.lazy(() => import("./app/Pages/Notices")) },
+  { path: "/Attendance", component: React.lazy(() => import("./app/Pages/Attendance")) },
+  { path: "/Teachers", component: React.lazy(() => import("./app/Pages/Teachers")) },
   { path: "/Notes", component: React.lazy(() => import("./app/Pages/Notes")) },
-  {
-    path: "/subject/:subjectName",
-    component: React.lazy(() => import("./app/Components/SubjectDetails")),
-  },
-  {
-    path: "/add-assignment",
-    component: React.lazy(() => import("./app/Pages/AddAssignment")),
-  },
-  {
-    path: "/assignment",
-    component: React.lazy(() => import("./app/Pages/Assignments")),
-  },
-  {
-    path: "/mark-attendance",
-    component: React.lazy(() => import("./app/Pages/MarkAttendance")),
-  },
-  {
-    path: "/see-attendance",
-    component: React.lazy(() => import("./app/Pages/SeeAttendance")),
-  },
-  {
-    path: "/edit-attendance",
-    component: React.lazy(() => import("./app/Pages/EditAttendance")),
-  },
-  {
-    path: "/add-notes",
-    component: React.lazy(() => import("./app/Pages/AddNotes")),
-  },
+  { path: "/subject/:subjectName", component: React.lazy(() => import("./app/Components/SubjectDetails")) },
+  { path: "/add-assignment", component: React.lazy(() => import("./app/Pages/AddAssignment")) },
+  { path: "/assignment", component: React.lazy(() => import("./app/Pages/Assignments")) },
+  { path: "/mark-attendance", component: React.lazy(() => import("./app/Pages/MarkAttendance")) },
+  { path: "/see-attendance", component: React.lazy(() => import("./app/Pages/SeeAttendance")) },
+  { path: "/edit-attendance", component: React.lazy(() => import("./app/Pages/EditAttendance")) },
+  { path: "/add-notes", component: React.lazy(() => import("./app/Pages/AddNotes")) },
 ];
 
 // Student Routes Configuration
 const studentRoutes = [
   { path: "/student-dashboard", component: StudentDashboard },
-  {
-    path: "/student-notice",
-    component: React.lazy(() => import("./app/Pages/StudentNotice")),
-  },
-  {
-    path: "/student-timetable",
-    component: React.lazy(() => import("./app/Pages/StudentTimetable")),
-  },
-  {
-    path: "/StudentAttendance",
-    component: React.lazy(() => import("./app/Pages/StudentAttedence")),
-  },
-  {
-    path: "/StudentNotes",
-    component: React.lazy(() => import("./app/Pages/StudentNotes")),
-  },
-  {
-    path: "/StudentAssignments",
-    component: React.lazy(() => import("./app/Pages/StudentAssigenment")),
-  },
+  { path: "/student-notice", component: React.lazy(() => import("./app/Pages/StudentNotice")) },
+  { path: "/student-timetable", component: React.lazy(() => import("./app/Pages/StudentTimetable")) },
+  { path: "/StudentAttendance", component: React.lazy(() => import("./app/Pages/StudentAttedence")) },
+  { path: "/StudentNotes", component: React.lazy(() => import("./app/Pages/StudentNotes")) },
+  { path: "/StudentAssignments", component: React.lazy(() => import("./app/Pages/StudentAssigenment")) },
 ];
 
 // Admin Routes Configuration
 const adminRoutes = [
   { path: "/admin", component: Admin },
-  {
-    path: "/adminstudents",
-    component: React.lazy(() => import("./app/Pages/AdminStudents")),
-  },
-  {
-    path: "/adminteachers",
-    component: React.lazy(() => import("./app/Pages/AdminTeachers")),
-  },
+  { path: "/adminstudents", component: React.lazy(() => import("./app/Pages/AdminStudents")) },
+  { path: "/adminteachers", component: React.lazy(() => import("./app/Pages/AdminTeachers")) },
   { path: "/add-teacher", component: AddTeacher },
   { path: "/add-students", component: AddStudents }, // Ensure this file exists
   { path: "/add-subjects", component: AddSubjects },
   { path: "/create-account", component: CreatesAccount },
+  { path: "/view-profile/teacher/:teacherId", component: TeacherViewProfile }, // Moved here for admin access
 ];
 
-// Universal Route for StudentViewProfile (accessible by any authenticated user)
+// Universal Routes (accessible by all authenticated users)
 const universalRoutes = [
-  {
-    path: "/view-profile/:studentId?", // Optional studentId parameter for specific student profiles
-    component: StudentViewProfile, // StudentViewProfile as a universal route
-  },
-  {
-    path: "/view-profile/teacher/:teacherId", // Moved to adminRoutes to allow admin access
-    component: TeacherViewProfile, // TeacherViewProfile route for admins
-  },
+  { path: "/view-profile/:studentId?", component: StudentViewProfile }, // Optional studentId for specific profiles
+  { path: "/community", component: Community },
 ];
 
 const ProtectedRoute = ({ children, roleRequired }) => {
@@ -175,16 +105,13 @@ const ProtectedRoute = ({ children, roleRequired }) => {
             user: currentUser,
             role: null,
             loading: false,
-            error:
-              "User document not found. Please ensure your account is registered with a role.",
+            error: "User document not found. Please ensure your account is registered with a role.",
           });
           return;
         }
 
         const role = userDoc.data().role;
-        console.log("User role retrieved (case-sensitive):", role);
         const normalizedRole = role ? role.toLowerCase() : null;
-        console.log("Normalized role:", normalizedRole);
         setAuthState({
           user: currentUser,
           role: normalizedRole,
@@ -217,11 +144,7 @@ const ProtectedRoute = ({ children, roleRequired }) => {
     return <Navigate to="/signup" state={{ from: location }} replace />;
   }
 
-  if (
-    authState.role &&
-    roleRequired &&
-    authState.role !== roleRequired.toLowerCase()
-  ) {
+  if (roleRequired && authState.role !== roleRequired.toLowerCase()) {
     const redirectPath =
       authState.role === "teacher"
         ? "/dashboard"
@@ -229,15 +152,7 @@ const ProtectedRoute = ({ children, roleRequired }) => {
         ? "/student-dashboard"
         : authState.role === "admin"
         ? "/admin"
-        : "/signup"; // Fallback to signup if role is unrecognized
-    console.log(
-      "Redirecting to:",
-      redirectPath,
-      "due to role mismatch. Required:",
-      roleRequired,
-      "Current:",
-      authState.role
-    );
+        : "/signup";
     return <Navigate to={redirectPath} replace />;
   }
 
@@ -265,10 +180,7 @@ function App() {
         >
           <Routes>
             <Route path="/signup" element={<Signuppage onLogin={() => {}} />} />
-            <Route
-              path="/create-account"
-              element={<CreatesAccount />} // Public route, no ProtectedRole
-            />
+            <Route path="/create-account" element={<CreatesAccount />} />
 
             {teacherRoutes.map(({ path, component: Component }) => (
               <Route
@@ -312,8 +224,6 @@ function App() {
                 path={path}
                 element={
                   <ProtectedRoute>
-                    {" "}
-                    {/* No roleRequired for universal access */}
                     <Component />
                   </ProtectedRoute>
                 }

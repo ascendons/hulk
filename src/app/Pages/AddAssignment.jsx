@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { db, auth } from "../../config";
 import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import Sidebar from "../Components/Sidebar";
@@ -8,8 +7,6 @@ import { DEPARTMENTS, DIVISIONS, YEARS } from "../constants";
 import supabase from "../../supabaseclient";
 
 const AddAssignment = () => {
-  const navigate = useNavigate();
-  const [title, setTitle] = useState(""); // State for assignment title
   const [description, setDescription] = useState("");
   const [department, setDepartment] = useState("");
   const [division, setDivision] = useState("");
@@ -18,17 +15,15 @@ const AddAssignment = () => {
   const [subjects, setSubjects] = useState([]);
   const [marks, setMarks] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const [files, setFiles] = useState([]); // State for multiple files as an array
+  const [files, setFiles] = useState([]);
   const [assignedBy, setAssignedBy] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [isModalOpen, setIsModalOpen] = useState(false); // State for upload modal visibility
-  const [fileVisibility, setFileVisibility] = useState(
-    "Students can view file"
-  ); // State for file visibility (shared for all files)
-  const [previewFile, setPreviewFile] = useState(null); // State for the file to preview
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false); // State for preview modal visibility
-  const [previewError, setPreviewError] = useState(null); // State for preview errors
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [fileVisibility, setFileVisibility] = useState("Students can view file");
+  const [previewFile, setPreviewFile] = useState(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewError, setPreviewError] = useState(null);
 
   useEffect(() => {
     const fetchTeacherData = async () => {
@@ -86,52 +81,46 @@ const AddAssignment = () => {
   }, [department]);
 
   const handleFileUpload = (selectedFile) => {
-    console.log("File selected in modal:", selectedFile); // Debug log
+    console.log("File selected in modal:", selectedFile);
     if (selectedFile) {
-      setFiles((prevFiles) => [...prevFiles, selectedFile]); // Add new file to the array
+      setFiles((prevFiles) => [...prevFiles, selectedFile]);
     }
-    setIsModalOpen(false); // Close the modal after selecting a file
+    setIsModalOpen(false);
   };
 
   const handleRemoveFile = (fileToRemove) => {
     setFiles((prevFiles) => prevFiles.filter((file) => file !== fileToRemove));
-    // Reset visibility if no files remain, though it's shared for all files in this implementation
   };
 
   const handlePreviewFile = async (file) => {
     try {
-      setPreviewError(null); // Reset any previous errors
-      // Create a URL for the file (for local preview before upload)
+      setPreviewError(null);
       const fileUrl = URL.createObjectURL(file);
-
-      // Log the file details for debugging
       console.log("Previewing file:", {
         name: file.name,
         type: file.type,
         url: fileUrl,
       });
 
-      // Determine file type and set preview or handle fallback
       if (
         file.type === "application/pdf" ||
         file.name.toLowerCase().endsWith(".pdf")
       ) {
-        setPreviewFile(fileUrl); // Set PDF URL for preview
+        setPreviewFile(fileUrl);
       } else if (file.type.startsWith("image/")) {
-        setPreviewFile(fileUrl); // Set image URL for preview
+        setPreviewFile(fileUrl);
       } else {
-        // For other file types (e.g., Word), open in a new tab or download
         const link = document.createElement("a");
         link.href = fileUrl;
-        link.download = file.name; // Trigger download instead of opening in a new tab
+        link.download = file.name;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        URL.revokeObjectURL(fileUrl); // Clean up immediately
-        setPreviewFile(null); // No preview modal for non-PDF/image files
+        URL.revokeObjectURL(fileUrl);
+        setPreviewFile(null);
         return;
       }
-      setIsPreviewOpen(true); // Open preview modal
+      setIsPreviewOpen(true);
     } catch (error) {
       console.error("Error previewing file:", error);
       setPreviewError(
@@ -163,31 +152,41 @@ const AddAssignment = () => {
       const fileURLs = [];
 
       for (const file of files) {
-        const filePath = `assignments/${file.name}`;
-        const { error: uploadError } = await supabase.storage
+        // Use a unique file path without prepending the bucket name
+        const timestamp = Date.now();
+        const filePath = `${timestamp}_${file.name}`; // Simple unique path
+        console.log("Uploading file to path:", filePath);
+
+        const { data, error: uploadError } = await supabase.storage
           .from("assignments")
           .upload(filePath, file, {
             upsert: true,
-            onUploadProgress: (progressEvent) => {
-              const progress =
-                (progressEvent.loaded / progressEvent.total) * 100;
-              setUploadProgress(progress);
-            },
           });
 
         if (uploadError) {
-          throw uploadError;
+          console.error("Upload error details:", uploadError);
+          throw new Error(`Failed to upload file: ${uploadError.message}`);
         }
 
-        const {
-          data: { publicUrl },
-        } = await supabase.storage.from("assignments").getPublicUrl(filePath);
+        console.log("Upload successful, data:", data);
 
-        fileURLs.push({ url: publicUrl, visibility: fileVisibility });
+        const { data: publicUrlData, error: urlError } = supabase.storage
+          .from("assignments")
+          .getPublicUrl(filePath);
+
+        if (urlError) {
+          console.error("Error getting public URL:", urlError);
+          throw new Error(`Failed to get public URL: ${urlError.message}`);
+        }
+
+        if (!publicUrlData.publicUrl) {
+          throw new Error("Public URL not found in response");
+        }
+
+        fileURLs.push({ url: publicUrlData.publicUrl, visibility: fileVisibility });
       }
 
       await addDoc(collection(db, "assignments"), {
-        title,
         description,
         department,
         division,
@@ -195,7 +194,7 @@ const AddAssignment = () => {
         subject,
         marks,
         dueDate,
-        fileURLs, // Store an array of file URLs with visibility
+        fileURLs,
         assignedBy,
         timestamp: new Date(),
       });
@@ -204,7 +203,7 @@ const AddAssignment = () => {
       resetForm();
     } catch (error) {
       console.error("Error adding assignment:", error);
-      alert("Failed to add assignment. Please try again.");
+      alert(`Failed to add assignment: ${error.message}`);
     } finally {
       setIsLoading(false);
       setUploadProgress(0);
@@ -212,7 +211,6 @@ const AddAssignment = () => {
   };
 
   const resetForm = () => {
-    setTitle("");
     setDescription("");
     setDepartment("");
     setDivision("");
@@ -220,47 +218,30 @@ const AddAssignment = () => {
     setSubject("");
     setMarks("");
     setDueDate("");
-    setFiles([]); // Reset files array
-    setFileVisibility("Students can view file"); // Reset file visibility
-    setPreviewFile(null); // Reset preview
-    setIsPreviewOpen(false); // Close preview modal
-    setPreviewError(null); // Reset preview error
+    setFiles([]);
+    setFileVisibility("Students can view file");
+    setPreviewFile(null);
+    setIsPreviewOpen(false);
+    setPreviewError(null);
   };
 
   return (
     <div className="w-screen h-screen bg-gray-100 flex">
-      {/* Fixed Sidebar */}
       <div className="fixed w-64 bg-blue-800 text-white h-screen overflow-y-auto border-0 outline-0">
-        {" "}
-        {/* Fixed width, no borders or outlines */}
         <Sidebar />
       </div>
 
       <form
-        className="bg-white shadow-lg rounded-lg p-8 w-full h-screen flex flex-col overflow-y-auto ml-64" // Margin for fixed sidebar
+        className="bg-white shadow-lg rounded-lg p-8 w-full h-screen flex flex-col overflow-y-auto ml-64"
         onSubmit={handleSubmit}
       >
-        {/* Title moved to left side */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-green-600">ADD ASSIGNMENT</h1>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            {/* Title Field */}
-            <label className="block text-gray-700 font-bold mb-2">Title</label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Enter assignment title"
-              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-6"
-              required
-            />
-
-            <label className="block text-gray-700 font-bold mb-2">
-              Description
-            </label>
+            <label className="block text-gray-700 font-bold mb-2">Description</label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -269,15 +250,12 @@ const AddAssignment = () => {
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-6"
             />
 
-            {/* File Upload Section */}
             <div className="mb-6">
-              <label className="block text-gray-700 font-bold mb-2">
-                Upload File
-              </label>
+              <label className="block text-gray-700 font-bold mb-2">Upload File</label>
               <div
                 className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 cursor-pointer hover:bg-gray-50 transition-all"
                 onClick={() => {
-                  console.log("Drop zone clicked, opening modal"); // Debug log
+                  console.log("Drop zone clicked, opening modal");
                   setIsModalOpen(true);
                 }}
                 onKeyDown={(e) => {
@@ -287,7 +265,7 @@ const AddAssignment = () => {
                   }
                 }}
                 role="button"
-                tabIndex={0} // Make it focusable for accessibility
+                tabIndex={0}
               >
                 {files.length > 0 ? (
                   <div className="w-full space-y-4">
@@ -298,7 +276,7 @@ const AddAssignment = () => {
                       >
                         <div className="flex items-center space-x-2">
                           <img
-                            src="https://ssl.gstatic.com/docs/doclist/images/drive_icon_16.png" // Google Drive icon (replace with your own if needed)
+                            src="https://ssl.gstatic.com/docs/doclist/images/drive_icon_16.png"
                             alt="File Icon"
                             className="w-6 h-6"
                           />
@@ -340,9 +318,7 @@ const AddAssignment = () => {
                         </div>
                       </div>
                     ))}
-                    <p className="text-sm text-gray-600">
-                      Click to add more files
-                    </p>
+                    <p className="text-sm text-gray-600">Click to add more files</p>
                   </div>
                 ) : (
                   <>
@@ -351,9 +327,7 @@ const AddAssignment = () => {
                       alt="Upload"
                       className="w-12 h-12 mb-2"
                     />
-                    <p className="text-sm text-gray-600">
-                      Click to upload a file
-                    </p>
+                    <p className="text-sm text-gray-600">Click to upload a file</p>
                   </>
                 )}
               </div>
@@ -372,11 +346,8 @@ const AddAssignment = () => {
             </div>
           </div>
 
-          {/* Right Section */}
           <div>
-            <label className="block text-gray-700 font-bold mb-2">
-              Assigned By
-            </label>
+            <label className="block text-gray-700 font-bold mb-2">Assigned By</label>
             <input
               type="text"
               value={assignedBy}
@@ -384,9 +355,7 @@ const AddAssignment = () => {
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none mb-6 bg-gray-100"
             />
 
-            <label className="block text-gray-700 font-bold mb-2">
-              Department
-            </label>
+            <label className="block text-gray-700 font-bold mb-2">Department</label>
             <select
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
@@ -401,9 +370,7 @@ const AddAssignment = () => {
               ))}
             </select>
 
-            <label className="block text-gray-700 font-bold mb-2">
-              Division
-            </label>
+            <label className="block text-gray-700 font-bold mb-2">Division</label>
             <select
               value={division}
               onChange={(e) => setDivision(e.target.value)}
@@ -433,9 +400,7 @@ const AddAssignment = () => {
               ))}
             </select>
 
-            <label className="block text-gray-700 font-bold mb-2">
-              Subject
-            </label>
+            <label className="block text-gray-700 font-bold mb-2">Subject</label>
             <select
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
@@ -460,9 +425,7 @@ const AddAssignment = () => {
               required
             />
 
-            <label className="block text-gray-700 font-bold mb-2">
-              Due Date
-            </label>
+            <label className="block text-gray-700 font-bold mb-2">Due Date</label>
             <input
               type="date"
               value={dueDate}
@@ -487,30 +450,26 @@ const AddAssignment = () => {
           </div>
         </div>
 
-        {/* File Upload Modal */}
         <FileUploadModal
           isOpen={isModalOpen}
           onClose={() => {
-            console.log("Modal closed"); // Debug log
+            console.log("Modal closed");
             setIsModalOpen(false);
           }}
           onFileUpload={handleFileUpload}
         />
 
-        {/* File Preview Modal with native elements */}
         {isPreviewOpen && previewFile && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white p-6 rounded-lg w-full max-w-4xl h-[80vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-gray-800">
-                  Preview File
-                </h2>
+                <h2 className="text-2xl font-bold text-gray-800">Preview File</h2>
                 <button
                   onClick={() => {
                     setIsPreviewOpen(false);
                     setPreviewFile(null);
                     if (previewFile) {
-                      URL.revokeObjectURL(previewFile); // Clean up URL object
+                      URL.revokeObjectURL(previewFile);
                     }
                   }}
                   className="text-red-500 hover:text-red-700 text-lg font-bold"
@@ -533,8 +492,8 @@ const AddAssignment = () => {
                       width="100%"
                       height="100%"
                       className="rounded-lg"
-                      title={previewFile} // Added title to avoid validation errors
-                      aria-label="PDF Preview" // Added for accessibility
+                      title="PDF Preview"
+                      aria-label="PDF Preview"
                       onError={(e) => {
                         console.error("Embed error:", e);
                         setPreviewError(
@@ -542,14 +501,13 @@ const AddAssignment = () => {
                         );
                       }}
                     />
-                  ) : previewFile.startsWith("blob:") &&
-                    previewFile.includes("image/") ? (
+                  ) : previewFile.startsWith("blob:") && previewFile.includes("image/") ? (
                     <img
                       src={previewFile}
                       alt="File Preview"
                       className="w-full h-auto rounded-lg"
-                      title={previewFile} // Added title to avoid validation errors
-                      aria-label="Image Preview" // Added for accessibility
+                      title="Image Preview"
+                      aria-label="Image Preview"
                       onError={(e) => {
                         console.error("Image error:", e);
                         setPreviewError(
@@ -559,8 +517,7 @@ const AddAssignment = () => {
                     />
                   ) : (
                     <p className="text-gray-600">
-                      Preview not available for this file type. Click "Review
-                      File" to download or open in a new tab.
+                      Preview not available for this file type. Click "Review File" to download or open in a new tab.
                     </p>
                   )}
                 </>

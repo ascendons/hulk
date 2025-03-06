@@ -1,22 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { doc, setDoc, collection, getDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { db, storage } from "../../config";
-import { ref, getDownloadURL, uploadBytes } from "firebase/storage";
+import { db } from "../../config";
 import Sidebar from "../Components/Sidebar";
 import FileUploadModal from "../Components/FileUploadModal";
+import supabase from "../../supabaseclient";
 
 const CreateNotice = () => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [files, setFiles] = useState([]); // Array to store multiple files
+  const [files, setFiles] = useState([]);  
   const [category, setCategory] = useState("");
   const [noticeBy, setNoticeBy] = useState("Guest");
   const [loading, setLoading] = useState(false);
   const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);  
 
-  // Fetch the current user's name using their UID
   useEffect(() => {
     const fetchUserName = async () => {
       try {
@@ -47,22 +47,55 @@ const CreateNotice = () => {
 
   const handleFileUpload = async (file) => {
     try {
-      const storageRef = ref(storage, `notices/${file.name}`);
-      const uploadTaskSnapshot = await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(uploadTaskSnapshot.ref);
+      // Validate file type (PDF or image)
+      const validTypes = ["application/pdf", "image/jpeg", "image/png", "image/gif"];
+      if (!validTypes.includes(file.type)) {
+        throw new Error("Only PDF, JPEG, PNG, and GIF files are supported.");
+      }
+
+      const timestamp = Date.now();
+      const filePath = `notices/${timestamp}_${file.name}`; // Unique path in notices bucket
+      console.log("Uploading file to path:", filePath);
+
+      const { error: uploadError } = await supabase.storage
+        .from("notices") // Use the 'notices' bucket
+        .upload(filePath, file, {
+          upsert: true,
+        });
+
+      if (uploadError) {
+        console.error("Upload error:", uploadError);
+        throw new Error(`Failed to upload file: ${uploadError.message}`);
+      }
+
+      const { data: publicUrlData, error: urlError } = supabase.storage
+        .from("notices")
+        .getPublicUrl(filePath);
+
+      if (urlError) {
+        console.error("Error getting public URL:", urlError);
+        throw new Error(`Failed to get public URL: ${urlError.message}`);
+      }
+
+      if (!publicUrlData.publicUrl) {
+        throw new Error("Public URL not found in response");
+      }
 
       setFiles((prevFiles) => [
         ...prevFiles,
-        { name: file.name, type: file.type, url },
+        { name: file.name, type: file.type, url: publicUrlData.publicUrl },
       ]);
-      setIsFileUploadModalOpen(false); // Close modal after upload
+      setUploadProgress(100);  
     } catch (error) {
-      console.error("Error uploading file:", error);
+      console.error("Error in handleFileUpload:", error);
+      alert(error.message);
+      setUploadProgress(0); 
     }
   };
 
   const handleRemoveFile = (index) => {
     setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
+    setUploadProgress(0); // Reset progress when removing a file
   };
 
   const handleSubmit = async (e) => {
@@ -86,6 +119,7 @@ const CreateNotice = () => {
       setContent("");
       setFiles([]);
       setCategory("");
+      setUploadProgress(0); // Reset progress
       alert("Notice created successfully!");
     } catch (error) {
       console.error("Error creating notice:", error);
@@ -108,12 +142,9 @@ const CreateNotice = () => {
         <Sidebar />
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex  overflow-y-auto">
-        <div className="bg-white shadow-lg rounded-2xl p-10 w-full ">
-          <h2 className="text-5xl font-bold mb-8 text-green-500">
-            CREATE NOTICE
-          </h2>
+      <div className="flex-1 flex overflow-y-auto">
+        <div className="bg-white shadow-lg rounded-2xl p-10 w-full">
+          <h2 className="text-5xl font-bold mb-8 text-green-500">CREATE NOTICE</h2>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Title */}
             <div>
@@ -130,7 +161,6 @@ const CreateNotice = () => {
               />
             </div>
 
-            {/* Content */}
             <div>
               <label className="block text-lg text-gray-700 font-semibold mb-2">
                 Content
@@ -145,7 +175,6 @@ const CreateNotice = () => {
               ></textarea>
             </div>
 
-            {/* File Upload */}
             <div>
               <label className="block text-lg text-gray-700 font-semibold mb-2">
                 Upload Files
@@ -191,10 +220,21 @@ const CreateNotice = () => {
                     </button>
                   </div>
                 ))}
+                {uploadProgress > 0 && uploadProgress < 100 && (
+                  <div className="mt-2">
+                    <p className="text-sm text-gray-600">
+                      Uploading: {Math.round(uploadProgress)}%
+                    </p>
+                    <progress
+                      value={uploadProgress}
+                      max="100"
+                      className="w-full h-2 rounded-lg"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* Category */}
             <div>
               <label className="block text-lg text-gray-700 font-semibold mb-2">
                 Category
@@ -227,7 +267,6 @@ const CreateNotice = () => {
               />
             </div>
 
-            {/* Submit Button */}
             <button
               type="submit"
               disabled={loading}
@@ -239,9 +278,9 @@ const CreateNotice = () => {
         </div>
       </div>
 
-      {/* File Upload Modal */}
       {isFileUploadModalOpen && (
         <FileUploadModal
+          isOpen={isFileUploadModalOpen}
           onFileUpload={handleFileUpload}
           onClose={() => setIsFileUploadModalOpen(false)}
         />
