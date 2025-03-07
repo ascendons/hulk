@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // For navigation
 import {
   doc,
   setDoc,
@@ -9,7 +10,7 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { db } from "../../config";
-import Sidebar from "../Components/Sidebar";
+import { ArrowLeftIcon } from "@heroicons/react/solid"; // Import ArrowLeftIcon
 
 const EditTimetable = () => {
   const [day, setDay] = useState("");
@@ -20,8 +21,8 @@ const EditTimetable = () => {
   const [teacher, setTeacher] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
-  const [subjects, setSubjects] = useState([]);
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
+  const [subjects, setSubjects] = useState([]); // Initialize as an array
+  const navigate = useNavigate();
 
   // Predefined options
   const departments = ["Bsc.IT", "BCOM", "BMS"];
@@ -44,7 +45,7 @@ const EditTimetable = () => {
           ...doc.data(),
         }));
 
-        setSubjects(fetchedSubjects);
+        setSubjects(fetchedSubjects); // Correctly set as an array
       } catch (error) {
         console.error("Error fetching subjects:", error);
       }
@@ -105,28 +106,36 @@ const EditTimetable = () => {
     setEndTime("");
   };
 
+  // Handle back button click to navigate to dashboard
+  const handleBack = () => {
+    navigate("/dashboard");
+  };
+
   return (
-    <div className="flex h-screen w-screen bg-gray-100">
-      {/* Sidebar */}
-      <div
-        onMouseEnter={() => setIsSidebarHovered(true)}
-        onMouseLeave={() => setIsSidebarHovered(false)}
-        className={`${
-          isSidebarHovered ? "w-64" : "w-16"
-        } bg-blue-800 text-white h-screen transition-all duration-300 overflow-hidden`}
-      >
-        <Sidebar />
+    <div className="flex h-screen w-screen">
+      {/* Left Half (Empty for now, can be used for sidebar or info) */}
+      <div className=" flex items-center justify-center">
+        {/* Add content here if needed (e.g., sidebar, instructions, etc.) */}
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex w-screen h-screen ">
-        <div className="bg-white shadow-lg rounded-xl p-8 w-full ">
-          <h1 className=" text-4xl font-bold text-blue-700 mb-6">
-            Edit Timetable
-          </h1>
+      {/* Right Half (Timetable Form) */}
+      <div className="w-full bg-white shadow-lg rounded-xl p-6 flex flex-col">
+        {/* Back Button with Circular Arrow Icon */}
+        <button
+          onClick={handleBack}
+          // className=" p-2 bg-white border border-gray-300 rounded-full shadow-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <ArrowLeftIcon className="h-5  text-gray-600" />
+        </button>
 
+        <h1 className="text-4xl font-bold text-blue-700 mb-6">
+          Edit Timetable
+        </h1>
+
+        {/* Form Container */}
+        <div className="space-y-4">
           {/* Select Day */}
-          <div className="mb-4">
+          <div>
             <label className="block text-gray-600 font-semibold mb-2">
               Day
             </label>
@@ -153,7 +162,7 @@ const EditTimetable = () => {
           </div>
 
           {/* Select Department */}
-          <div className="mb-4">
+          <div>
             <label className="block text-gray-600 font-semibold mb-2">
               Department
             </label>
@@ -172,7 +181,7 @@ const EditTimetable = () => {
           </div>
 
           {/* Select Division */}
-          <div className="mb-4">
+          <div>
             <label className="block text-gray-600 font-semibold mb-2">
               Division
             </label>
@@ -191,7 +200,7 @@ const EditTimetable = () => {
           </div>
 
           {/* Location */}
-          <div className="mb-4">
+          <div>
             <label className="block text-gray-600 font-semibold mb-2">
               Location
             </label>
@@ -205,7 +214,7 @@ const EditTimetable = () => {
           </div>
 
           {/* Subject Dropdown */}
-          <div className="mb-4">
+          <div>
             <label className="block text-gray-600 font-semibold mb-2">
               Subject
             </label>
@@ -224,7 +233,7 @@ const EditTimetable = () => {
           </div>
 
           {/* Teacher */}
-          <div className="mb-4">
+          <div>
             <label className="block text-gray-600 font-semibold mb-2">
               Teacher
             </label>
@@ -238,7 +247,7 @@ const EditTimetable = () => {
           </div>
 
           {/* Time Slot */}
-          <div className="mb-4">
+          <div>
             <label className="block text-gray-600 font-semibold mb-2">
               Time Slot
             </label>

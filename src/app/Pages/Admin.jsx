@@ -87,6 +87,15 @@ const Admin = () => {
           <UserIcon className="h-12 w-12 text-blue-500 mb-4" />
           <h2 className="text-xl font-semibold text-gray-800">Teachers</h2>
         </Link>
+
+        {/* Add Timetable Card */}
+        <Link
+          to="/edit-timetable"
+          className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col items-center justify-center text-center cursor-pointer"
+        >
+          <AcademicCapIcon className="h-12 w-12 text-blue-500 mb-4" />
+          <h2 className="text-xl font-semibold text-gray-800">Add Timetable</h2>
+        </Link>
       </div>
     </div>
   );

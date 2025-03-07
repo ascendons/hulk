@@ -41,6 +41,10 @@ const teacherRoutes = [
     component: React.lazy(() => import("./app/Pages/Courses")),
   },
   {
+    path: "/AddDayTimetable",
+    component: React.lazy(() => import("./app/Pages/AddDayTimetable")),
+  },
+  {
     path: "/create-notice",
     component: React.lazy(() => import("./app/Pages/createNotice")),
   },
@@ -143,6 +147,10 @@ const adminRoutes = [
   { path: "/add-students", component: AddStudents },
   { path: "/add-subjects", component: AddSubjects },
   { path: "/create-account", component: CreatesAccount },
+  {
+    path: "/edit-timetable",
+    component: React.lazy(() => import("./app/Pages/EditTimetable")),
+  },
 ];
 
 // Universal Routes (accessible by all authenticated users)

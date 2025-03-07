@@ -150,19 +150,20 @@ const Courses = () => {
     </div>
   );
 
+  // Handle navigation to Add Day Timetable
+  const handleAddDayTimetable = () => {
+    navigate("/AddDayTimetable");
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-100">
       {/* Fixed Sidebar */}
       <div className="fixed w-64 bg-gray-900 text-white h-screen overflow-y-auto border-0 outline-0">
-        {" "}
-        {/* Fixed width, no borders or outlines */}
         <Sidebar />
       </div>
 
       {/* Main Content with Margin for Fixed Sidebar */}
       <div className="flex-1 p-6 ml-64 bg-gray-100 overflow-y-auto">
-        {" "}
-        {/* Added margin-left to avoid overlap with fixed sidebar */}
         <div className="flex justify-between items-center mb-6">
           <Link to="/teacher-dashboard">
             <h1 className="text-5xl font-bold mb-8 text-green-500">
@@ -202,12 +203,12 @@ const Courses = () => {
                       ))}
                     </select>
                   </div>
-                  <Link
-                    to={"/edittimetable"}
+                  <button
+                    onClick={handleAddDayTimetable}
                     className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
                   >
-                    Edit Timetable
-                  </Link>
+                    Add Day Timetable
+                  </button>
                 </div>
 
                 {Object.keys(lectures).length > 0 &&
