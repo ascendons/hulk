@@ -7,7 +7,6 @@ import StudentSidebar from "../Components/StudentSidebar";
 import supabase from "../../supabaseclient";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
-import { Progress } from "reactstrap";
 
 const CACHE_KEY = "student_assignments_cache";
 
@@ -19,7 +18,7 @@ const StudentAssignments = () => {
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [studentData, setStudentData] = useState({
     name: "",
-    department: "", // Set to match course from students collection
+    department: "",
     division: "",
     year: "",
   });
@@ -46,7 +45,7 @@ const StudentAssignments = () => {
       setError("");
 
       try {
-        console.log("Fetching student data for userId:", user.uid); // Debug log
+        console.log("Fetching student data for userId:", user.uid);
         const studentsRef = collection(db, "students");
         const studentQuery = query(
           studentsRef,
@@ -64,9 +63,8 @@ const StudentAssignments = () => {
         }
 
         const student = studentSnapshot.docs[0].data();
-        console.log("Fetched student data:", student); // Debug log
+        console.log("Fetched student data:", student);
 
-        // Fetch the student's name from the "users" collection
         const usersRef = collection(db, "users");
         const userQuery = query(usersRef, where("email", "==", user.email));
         const userSnapshot = await getDocs(userQuery);
@@ -75,7 +73,7 @@ const StudentAssignments = () => {
         if (!userSnapshot.empty) {
           const userData = userSnapshot.docs[0].data();
           studentName = userData.name || user.displayName || "Unknown";
-          console.log("Fetched user data:", userData); // Debug log
+          console.log("Fetched user data:", userData);
         } else {
           console.warn(
             "User not found in users collection for email:",
@@ -83,10 +81,9 @@ const StudentAssignments = () => {
           );
         }
 
-        // Set studentData, using course as department since they are the same
         setStudentData({
           name: studentName,
-          department: student.course || student.department || "", // Use course as primary, fall back to department
+          department: student.course || student.department || "",
           division: student.division || "",
           year: student.year || "",
         });
@@ -103,7 +100,6 @@ const StudentAssignments = () => {
 
   useEffect(() => {
     const fetchAssignmentsAndSubmissions = async () => {
-      // Check for minimal required data
       if (!user) {
         console.log("User not available:", user);
         setError("User not authenticated.");
@@ -119,7 +115,7 @@ const StudentAssignments = () => {
           department: studentData.department,
           division: studentData.division,
           year: studentData.year,
-        }); // Debug log
+        });
         const assignmentsRef = collection(db, "assignments");
         const q = query(
           assignmentsRef,
@@ -173,7 +169,6 @@ const StudentAssignments = () => {
           setAssignments([]);
         }
 
-        // Fetch submitted assignments with timestamps
         const submissionsRef = collection(db, "submissions");
         const submissionQuery = query(
           submissionsRef,
@@ -203,8 +198,10 @@ const StudentAssignments = () => {
   }, [studentData, user]);
 
   const handleUploadClick = (assignment) => {
-    setSelectedAssignment(assignment);
-    setIsModalOpen(true);
+    if (!isAssignmentSubmitted(assignment.id)) {
+      setSelectedAssignment(assignment);
+      setIsModalOpen(true);
+    }
   };
 
   const handleModalClose = () => {
@@ -267,11 +264,15 @@ const StudentAssignments = () => {
       console.log("File uploaded successfully:", data);
 
       const submittedAt = new Date().toISOString();
-      await addDoc(collection(db, "students-submissions"), {
+      await addDoc(collection(db, "submissions"), {
         studentId: user.uid,
         assignmentId: selectedAssignment.id,
         filePath,
         submittedAt,
+        studentName: studentData.name,
+        department: studentData.department,
+        division: studentData.division,
+        year: studentData.year,
       });
 
       setSubmissions({
@@ -307,16 +308,7 @@ const StudentAssignments = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
-      <div
-        onMouseEnter={() => setIsSidebarHovered(true)}
-        onMouseLeave={() => setIsSidebarHovered(false)}
-        className={`${
-          isSidebarHovered ? "w-64" : "w-16"
-        } bg-blue-800 text-white h-screen transition-all duration-300 overflow-hidden`}
-      >
-        <StudentSidebar />
-      </div>
-
+      <StudentSidebar />
       <div className="flex-grow p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-orange-500">ASSIGNMENTS</h1>
@@ -366,14 +358,15 @@ const StudentAssignments = () => {
                 )}
                 <div className="flex justify-end">
                   <button
-                    className={`px-4 py-2 rounded-md text-white ${
+                    className={`px-4 py-2 rounded-md text-white font-medium ${
                       isAssignmentSubmitted(assignment.id)
                         ? "bg-gray-400 cursor-not-allowed"
                         : "bg-orange-500 hover:bg-orange-600"
                     }`}
-                    onClick={() =>
-                      !isAssignmentSubmitted(assignment.id) &&
-                      handleUploadClick(assignment)
+                    onClick={
+                      !isAssignmentSubmitted(assignment.id)
+                        ? () => handleUploadClick(assignment)
+                        : undefined
                     }
                     disabled={isAssignmentSubmitted(assignment.id)}
                   >

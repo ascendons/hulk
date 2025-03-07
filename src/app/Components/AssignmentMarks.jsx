@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../../config";
 import { AuthContext } from "../../authContext";
-import Sidebar from "../Components/Sidebar"; // Assuming Sidebar for teachers
+import Sidebar from "../Components/Sidebar"; 
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 
@@ -69,7 +69,6 @@ const AssignmentMarks = () => {
           selectedAssignmentId
         );
 
-        // Query submissions for the selected assignment
         const submissionsRef = collection(db, "students-submissions");
         const submissionQuery = query(
           submissionsRef,
@@ -91,7 +90,6 @@ const AssignmentMarks = () => {
           ];
           console.log("Extracted studentIds:", studentIds);
 
-          // Fetch student details for each studentId
           const studentsRef = collection(db, "students");
           const studentQueries = studentIds.map((studentId) =>
             query(studentsRef, where("userId", "==", studentId))
