@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, getDocs, query, where, addDoc } from "firebase/firestore";
+import { collection, getDocs, query, where, addDoc, setDoc, doc } from "firebase/firestore";
 import { db } from "../../config";
 import { AuthContext } from "../../authContext";
 import StudentSidebar from "../Components/StudentSidebar";
@@ -21,6 +21,7 @@ const StudentAssignments = () => {
     department: "",
     division: "",
     year: "",
+    subjects: [], // Added subjects field as an array
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
@@ -65,6 +66,14 @@ const StudentAssignments = () => {
         const student = studentSnapshot.docs[0].data();
         console.log("Fetched student data:", student);
 
+        // Validate required fields
+        if (!student.department && !student.course) {
+          console.warn("Student document missing department/course field:", student);
+          setError("Student profile incomplete: Department/Course is missing.");
+          setIsLoading(false);
+          return;
+        }
+
         const usersRef = collection(db, "users");
         const userQuery = query(usersRef, where("email", "==", user.email));
         const userSnapshot = await getDocs(userQuery);
@@ -86,6 +95,7 @@ const StudentAssignments = () => {
           department: student.course || student.department || "",
           division: student.division || "",
           year: student.year || "",
+          subjects: student.subjects || [], // Fetch subjects array, default to empty array if not present
         });
       } catch (error) {
         console.error("Error fetching student data:", error);
@@ -103,6 +113,14 @@ const StudentAssignments = () => {
       if (!user) {
         console.log("User not available:", user);
         setError("User not authenticated.");
+        setIsLoading(false);
+        return;
+      }
+
+      // Ensure studentData has required fields before proceeding
+      if (!studentData.department || !studentData.division || !studentData.year) {
+        console.log("Student data incomplete:", studentData);
+        setError("Incomplete student data. Please ensure your profile is complete.");
         setIsLoading(false);
         return;
       }
@@ -195,7 +213,7 @@ const StudentAssignments = () => {
     };
 
     fetchAssignmentsAndSubmissions();
-  }, [studentData, user]);
+  }, [studentData.department, studentData.division, studentData.year, user]); // Optimized dependencies
 
   const handleUploadClick = (assignment) => {
     if (!isAssignmentSubmitted(assignment.id)) {
@@ -275,6 +293,47 @@ const StudentAssignments = () => {
         year: studentData.year,
       });
 
+      // Handle subject in "subjects" collection
+      const subjectName = selectedAssignment.subject || selectedAssignment.title;
+      if (!subjectName) {
+        console.warn("Subject name is missing for assignment:", selectedAssignment);
+        throw new Error("Subject name is required for the assignment.");
+      }
+
+      // Check if the subject already exists in the "subjects" collection
+      const subjectsRef = collection(db, "subjects");
+      const subjectQuery = query(
+        subjectsRef,
+        where("subject", "==", subjectName),
+        where("department", "==", studentData.department),
+        where("division", "==", studentData.division),
+        where("year", "==", studentData.year)
+      );
+      const subjectSnapshot = await getDocs(subjectQuery);
+
+      if (subjectSnapshot.empty) {
+        // If subject doesn't exist, create a new document
+        await addDoc(collection(db, "subjects"), {
+          subject: subjectName,
+          department: studentData.department,
+          division: studentData.division,
+          year: studentData.year,
+          subjects: studentData.subjects, // Include the student's subjects array
+          assignmentId: selectedAssignment.id, // Optional: Link to the assignment
+          createdAt: new Date().toISOString(),
+        });
+        console.log(`Added new subject "${subjectName}" to Firestore.`);
+      } else {
+        // Subject exists, update the existing document (optional)
+        const subjectDoc = subjectSnapshot.docs[0];
+        await setDoc(doc(db, "subjects", subjectDoc.id), {
+          ...subjectDoc.data(),
+          assignmentId: selectedAssignment.id, // Update assignmentId if needed
+          updatedAt: new Date().toISOString(),
+        }, { merge: true });
+        console.log(`Updated existing subject "${subjectName}" in Firestore.`);
+      }
+
       setSubmissions({
         ...submissions,
         [selectedAssignment.id]: { submittedAt, filePath },
@@ -284,9 +343,9 @@ const StudentAssignments = () => {
       setShowSuccessPopup(true);
       setTimeout(() => setShowSuccessPopup(false), 3000);
     } catch (error) {
-      console.error("Error uploading file:", error);
+      console.error("Error uploading file or saving subject:", error);
       setUploadError(
-        error.message || "Failed to upload file. Please try again."
+        error.message || "Failed to upload file or save subject. Please try again."
       );
     } finally {
       setIsLoading(false);
@@ -333,7 +392,7 @@ const StudentAssignments = () => {
                 className="bg-white shadow-md rounded-lg p-4 border border-gray-300 hover:shadow-lg transition-shadow"
               >
                 <h2 className="text-lg font-bold text-gray-700">
-                  {assignment.title || assignment.subject}
+                  {assignment.subject || assignment.title}
                 </h2>
                 <p className="text-sm text-gray-600">
                   Due Date: {new Date(assignment.dueDate).toLocaleDateString()}
@@ -409,7 +468,11 @@ const StudentAssignments = () => {
               </div>
               <div>
                 <span className="font-semibold">Subject:</span>{" "}
-                {selectedAssignment.title || selectedAssignment.subject}
+                {selectedAssignment.subject || selectedAssignment.title}
+              </div>
+              <div>
+                <span className="font-semibold">Subjects Enrolled:</span>{" "}
+                {studentData.subjects.length > 0 ? studentData.subjects.join(", ") : "None"}
               </div>
               <div>
                 <label className="font-semibold block mb-1">Upload File:</label>
