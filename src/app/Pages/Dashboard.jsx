@@ -7,6 +7,7 @@ import {
   getDocs,
   doc,
   getDoc,
+  onSnapshot,
 } from "firebase/firestore";
 import { db, auth } from "../../config"; // Adjusted path
 import { useNavigate, Link } from "react-router-dom"; // Use react-router-dom
@@ -33,6 +34,7 @@ const Dashboard = () => {
   const [attendance] = useState(75);
   const [notices, setNotices] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
+  const [timers, setTimers] = useState({}); // State to store timers for each event
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate(); // Use useNavigate from react-router-dom
@@ -55,15 +57,22 @@ const Dashboard = () => {
     return "Invalid Date";
   };
 
-  const calculateTimer = (startTime, endTime) => {
-    if (!startTime || !endTime) return "0h 0m 0s";
-    const [startHours, startMinutes] = startTime.split(":").map(Number);
-    const [endHours, endMinutes] = endTime.split(":").map(Number);
-    let totalMinutes =
-      endHours * 60 + endMinutes - (startHours * 60 + startMinutes);
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return `${hours}h ${minutes}m 0s`;
+  // Updated calculateTimer to use createdAt and duration
+  const calculateTimer = (createdAt, duration) => {
+    if (!createdAt) return "N/A";
+    const created = createdAt.toDate(); // Convert Firestore timestamp to JS Date
+    const durationMs = duration * 60 * 60 * 1000; // Convert hours to milliseconds
+    const endTime = new Date(created.getTime() + durationMs);
+    const now = new Date();
+    const timeDiff = endTime - now;
+
+    if (timeDiff <= 0) return "Event ended";
+
+    const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+    const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+
+    return `${hours}h ${minutes}m ${seconds}s`;
   };
 
   useEffect(() => {
@@ -165,51 +174,83 @@ const Dashboard = () => {
     const fetchUpcomingEvents = async () => {
       try {
         console.log("Fetching upcoming events from daytimetable...");
-        const timetableSnapshot = await getDocs(collection(db, "daytimetable"));
-        console.log(
-          "Raw data from daytimetable:",
-          timetableSnapshot.docs.map((doc) => doc.data())
-        );
         const currentDate = new Date();
         currentDate.setHours(0, 0, 0, 0);
 
-        const fetchedEvents = timetableSnapshot.docs
-          .map((doc) => {
-            const data = doc.data();
-            const compositeId = doc.id;
-            const dateStr = compositeId.split("_")[3];
+        const unsubscribe = onSnapshot(
+          collection(db, "daytimetable"),
+          (timetableSnapshot) => {
+            console.log(
+              "Raw data from daytimetable:",
+              timetableSnapshot.docs.map((doc) => doc.data())
+            );
 
-            console.log("Processing compositeId:", compositeId, "Data:", data);
+            const fetchedEvents = [];
+            timetableSnapshot.forEach((doc) => {
+              const data = doc.data();
+              const compositeId = doc.id;
+              const dateStr = compositeId.split("_")[3];
 
-            if (dateStr && dateStr.length === 8) {
-              const year = parseInt(dateStr.substring(0, 4));
-              const month = parseInt(dateStr.substring(4, 6)) - 1;
-              const day = parseInt(dateStr.substring(6, 8));
-              const eventDate = new Date(year, month, day);
-              eventDate.setHours(0, 0, 0, 0);
+              console.log(
+                "Processing compositeId:",
+                compositeId,
+                "Data:",
+                data
+              );
 
-              console.log("Parsed eventDate:", eventDate);
+              if (dateStr && dateStr.length === 8) {
+                const year = parseInt(dateStr.substring(0, 4));
+                const month = parseInt(dateStr.substring(4, 6)) - 1;
+                const day = parseInt(dateStr.substring(6, 8));
+                const eventDate = new Date(year, month, day);
+                eventDate.setHours(0, 0, 0, 0);
 
-              return {
-                id: doc.id,
-                date: eventDate,
-                formattedDate: parseDateFromCompositeId(compositeId),
-                description: data.description || "No description available",
-                department: data.department || "Unknown Department",
-                division: data.division || "Unknown Division",
-                startTime: data.startTime || "07:00",
-                endTime: data.endTime || "08:00",
-                location: data.location || "LC",
-              };
-            }
-            console.log("Invalid date format for compositeId:", compositeId);
-            return null;
-          })
-          .filter((event) => event && event.date >= currentDate)
-          .sort((a, b) => a.date - b.date);
+                console.log("Parsed eventDate:", eventDate);
 
-        console.log("Filtered and sorted upcoming events:", fetchedEvents);
-        setUpcomingEvents(fetchedEvents);
+                // Map over the lectures array to create an event for each lecture
+                if (data.lectures && Array.isArray(data.lectures)) {
+                  data.lectures.forEach((lecture, index) => {
+                    fetchedEvents.push({
+                      id: `${doc.id}_${index}`,
+                      date: eventDate,
+                      formattedDate: parseDateFromCompositeId(compositeId),
+                      description:
+                        data.description || "No description available",
+                      department: data.department || "Unknown Department",
+                      division: data.division || "Unknown Division",
+                      startTime: lecture.startTime || "07:00",
+                      endTime: lecture.endTime || "08:00",
+                      location: lecture.location || "LC",
+                      subject: lecture.subject || "Unknown Subject",
+                      duration: data.duration || 24, // Default to 24 if not set
+                      createdAt: data.createdAt,
+                    });
+                  });
+                }
+              } else {
+                console.log(
+                  "Invalid date format for compositeId:",
+                  compositeId
+                );
+              }
+            });
+
+            // Filter and sort events
+            const filteredEvents = fetchedEvents
+              .filter((event) => event && event.date >= currentDate)
+              .sort((a, b) => a.date - b.date);
+
+            console.log("Filtered and sorted upcoming events:", filteredEvents);
+            setUpcomingEvents(filteredEvents);
+          },
+          (error) => {
+            console.error("Error listening to upcoming events:", error);
+            setError("Failed to fetch upcoming events: " + error.message);
+          }
+        );
+
+        // Cleanup subscription on unmount
+        return unsubscribe;
       } catch (error) {
         console.error("Error fetching upcoming events:", error);
         setError("Failed to fetch upcoming events: " + error.message);
@@ -220,6 +261,22 @@ const Dashboard = () => {
     fetchNotices();
     fetchUpcomingEvents();
   }, []);
+
+  // Update timers every second
+  useEffect(() => {
+    const intervals = upcomingEvents.map((event) => {
+      return setInterval(() => {
+        const remainingTime = calculateTimer(event.createdAt, event.duration);
+        setTimers((prev) => ({
+          ...prev,
+          [event.id]: remainingTime,
+        }));
+      }, 1000);
+    });
+
+    // Cleanup intervals on unmount
+    return () => intervals.forEach((interval) => clearInterval(interval));
+  }, [upcomingEvents]);
 
   if (loading) {
     return renderSkeleton();
@@ -366,26 +423,55 @@ const Dashboard = () => {
               Upcoming Events
             </h2>
             {upcomingEvents.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-4 max-h-96 overflow-y-auto">
                 {upcomingEvents.map((event) => (
                   <div
                     key={event.id}
                     className="bg-white shadow-md rounded-lg p-4 border border-gray-200"
                   >
                     <div className="flex justify-between items-center mb-2">
-                      <p className="text-gray-600">
+                      <p className="text-gray-600 font-medium">
                         Date: {event.formattedDate}
                       </p>
-                      <p className="text-gray-600">
-                        Timer: {calculateTimer(event.startTime, event.endTime)}
+                      <p className="text-gray-600 font-medium">
+                        Timer: {timers[event.id] || "Calculating..."}
                       </p>
                     </div>
-                    <p className="text-gray-600">
+                    <p className="text-gray-600 font-medium">
                       Time: {event.startTime} - {event.endTime}
                     </p>
-                    <p className="text-gray-600">Location: {event.location}</p>
-                    <div className="text-gray-800 mt-2">
-                      <ReactMarkdown>{event.description}</ReactMarkdown>
+                    <p className="text-gray-600 font-medium">
+                      Location: {event.location}
+                    </p>
+                    <p className="text-gray-600 font-medium">
+                      Subject: {event.subject}
+                    </p>
+                    <div className="mt-2">
+                      <div className="bg-blue-100 text-gray-800 p-3 rounded-lg">
+                        <ReactMarkdown
+                          components={{
+                            p: ({ node, ...props }) => (
+                              <p className="text-gray-800 mb-2" {...props} />
+                            ),
+                            ul: ({ node, ...props }) => (
+                              <ul className="list-disc pl-5 mb-2" {...props} />
+                            ),
+                            li: ({ node, ...props }) => (
+                              <li className="text-gray-800" {...props} />
+                            ),
+                            strong: ({ node, ...props }) => (
+                              <strong
+                                className="font-bold text-gray-900"
+                                {...props}
+                              />
+                            ),
+                          }}
+                        >
+                          {event.description === "No description available"
+                            ? ""
+                            : `**Notice to Students**  \n${event.description}`}
+                        </ReactMarkdown>
+                      </div>
                     </div>
                   </div>
                 ))}
