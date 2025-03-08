@@ -208,7 +208,7 @@ const Teachers = () => {
                         <button
                           onClick={() => handleViewDetail(teacher.id)}
                           disabled={loading}
-                          className="bg-blue-500 text-white px-2.5 py-1 rounded cursor-pointer text-sm hover:bg-blue-600"
+                          className="bg-green-500 text-white px-2.5 py-1 rounded cursor-pointer text-sm hover:bg-green-600"
                         >
                           View Detail
                         </button>

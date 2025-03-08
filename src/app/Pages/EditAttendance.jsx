@@ -104,18 +104,11 @@ const EditAttendance = () => {
   return (
     <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
-      <div
-        onMouseEnter={() => setIsSidebarHovered(true)}
-        onMouseLeave={() => setIsSidebarHovered(false)}
-        className={`${
-          isSidebarHovered ? "w-64" : "w-16"
-        } bg-blue-800 text-white h-screen transition-all duration-300 overflow-hidden`}
-      >
+      <div className="fixed w-64 bg-blue-800 text-white h-screen overflow-y-auto border-0 outline-0">
         <Sidebar />
       </div>
-
       {/* Main Content */}
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-6 ml-64">
         {/* Header */}
         <h1 className="text-5xl font-bold mb-8 text-green-500">
           EDIT ATTENDANCE
@@ -171,7 +164,7 @@ const EditAttendance = () => {
           <button
             onClick={handleSearch}
             disabled={loading}
-            className="p-3 bg-blue-500 text-white rounded-md shadow-sm hover:bg-blue-600"
+            className="p-3 bg-green-500 text-white rounded-md shadow-sm hover:bg-green-600"
           >
             {loading ? "Searching..." : "Search"}
           </button>
@@ -228,7 +221,7 @@ const EditAttendance = () => {
             <div className="flex justify-center mt-6">
               <button
                 onClick={handleSaveAttendance}
-                className="p-4 bg-purple-500 text-white rounded-md shadow-md hover:bg-purple-600"
+                className="p-4 bg-green-500 text-white rounded-md shadow-md hover:bg-green-600"
               >
                 Save Attendance
               </button>

@@ -41,6 +41,14 @@ const teacherRoutes = [
     component: React.lazy(() => import("./app/Pages/Courses")),
   },
   {
+    path: "/syllabus",
+    component: React.lazy(() => import("./app/Pages/Syllabus")),
+  },
+  {
+    path: "/addsyllabus",
+    component: React.lazy(() => import("./app/Pages/AddSyllabus")),
+  },
+  {
     path: "/AddDayTimetable",
     component: React.lazy(() => import("./app/Pages/AddDayTimetable")),
   },
@@ -150,6 +158,10 @@ const adminRoutes = [
   {
     path: "/edit-timetable",
     component: React.lazy(() => import("./app/Pages/EditTimetable")),
+  },
+  {
+    path: "Addclasses",
+    component: React.lazy(() => import("./app/Pages/Class")),
   },
 ];
 

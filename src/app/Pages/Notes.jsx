@@ -95,19 +95,19 @@ const ShowNotes = () => {
   return (
     <div className="min-h-screen bg-gray-100 flex">
       {/* Fixed Sidebar */}
-      <div className="fixed w-56 bg-blue-800 text-white h-screen overflow-y-auto border-0 outline-0">
+      <div className="fixed w-64 bg-blue-800 text-white h-screen overflow-y-auto border-0 outline-0">
         {" "}
         {/* Fixed width, no borders or outlines */}
         <Sidebar />
       </div>
 
       {/* Main Content with Margin for Fixed Sidebar */}
-      <div className="flex-1 p-6 ml-56">
+      <div className="flex-1 p-6 ml-64">
         {" "}
         {/* Added margin-left to avoid overlap with fixed sidebar */}
         {/* Header Section */}
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-blue-800">NOTES</h1>
+          <h1 className="text-5xl font-bold text-green-500">NOTES</h1>
           <Link
             to="/add-notes" // Replace with your Add Notes route
             className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition duration-300"

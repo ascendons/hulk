@@ -8,14 +8,14 @@ const Attendance = () => {
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Fixed Sidebar */}
-      <div className="fixed w-56 bg-blue-800 text-white h-screen overflow-y-auto border-0 outline-0">
+      <div className="fixed w-64 bg-blue-800 text-white h-screen overflow-y-auto border-0 outline-0">
         {" "}
         {/* Fixed width, no borders or outlines */}
         <Sidebar />
       </div>
 
       {/* Main Content with Margin for Fixed Sidebar */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 ml-56">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 ml-64">
         {" "}
         {/* Added margin-left to avoid overlap with fixed sidebar */}
         <h1 className="text-5xl font-extrabold mb-12 text-green-500">

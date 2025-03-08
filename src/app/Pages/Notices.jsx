@@ -43,12 +43,12 @@ const Notices = () => {
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Fixed Sidebar */}
-      <div className="fixed w-56 bg-blue-800 text-white h-screen overflow-y-auto border-0 outline-0">
+      <div className="fixed w-64 bg-gray-900 text-white h-screen overflow-y-auto border-0 outline-0">
         <Sidebar />
       </div>
 
       {/* Main Content with Margin for Fixed Sidebar */}
-      <div className="flex-1 p-6 ml-56 bg-gray-100 overflow-y-auto">
+      <div className="flex-1 p-6 ml-64 bg-gray-100 overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-5xl font-bold mb-8 text-green-500">NOTICES</h1>
           {/* Create Notice Button */}
@@ -64,7 +64,7 @@ const Notices = () => {
             key={index}
             className="bg-white shadow-md rounded-md p-4 mb-4 border border-gray-300"
           >
-            <div className="flex justify-between items-center mb-2">
+            <div className="flex justify-between items-center  mb-2">
               <div>
                 <h2 className="text-lg font-bold">
                   Title: {notice.title}{" "}
@@ -116,7 +116,9 @@ const Notices = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white p-6 rounded-lg w-full max-w-4xl h-[80vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-gray-800">Attachment Preview</h2>
+                <h2 className="text-2xl font-bold text-gray-800">
+                  Attachment Preview
+                </h2>
                 <button
                   onClick={closePreview}
                   className="text-red-500 hover:text-red-700 text-lg font-bold"
@@ -136,7 +138,9 @@ const Notices = () => {
                   aria-label="PDF Preview"
                   onError={(e) => {
                     console.error("Embed error:", e);
-                    alert("Failed to preview PDF. The file may be corrupted or blocked.");
+                    alert(
+                      "Failed to preview PDF. The file may be corrupted or blocked."
+                    );
                   }}
                 />
               ) : /\.(jpg|jpeg|png|gif)$/i.test(selectedFileUrl) ? (
@@ -148,12 +152,15 @@ const Notices = () => {
                   aria-label="Image Preview"
                   onError={(e) => {
                     console.error("Image error:", e);
-                    alert("Failed to preview image. The file may be corrupted or blocked.");
+                    alert(
+                      "Failed to preview image. The file may be corrupted or blocked."
+                    );
                   }}
                 />
               ) : (
                 <p className="text-gray-600">
-                  Preview not available for this file type. Please download to view.
+                  Preview not available for this file type. Please download to
+                  view.
                 </p>
               )}
             </div>

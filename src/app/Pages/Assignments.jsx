@@ -180,7 +180,7 @@ const Assignments = () => {
 
       <div className="flex-grow p-6 ml-64">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-gray-800">ASSIGNMENTS</h1>
+          <h1 className="text-5xl font-bold text-green-500">ASSIGNMENTS</h1>
           <div className="flex items-center space-x-4">
             <select
               value={filter}
@@ -192,7 +192,7 @@ const Assignments = () => {
             </select>
             <button
               onClick={handleAddAssignments}
-              className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
+              className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors"
             >
               Create Assignment
             </button>

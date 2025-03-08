@@ -20,7 +20,9 @@ const AddAssignment = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [fileVisibility, setFileVisibility] = useState("Students can view file");
+  const [fileVisibility, setFileVisibility] = useState(
+    "Students can view file"
+  );
   const [previewFile, setPreviewFile] = useState(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewError, setPreviewError] = useState(null);
@@ -183,7 +185,10 @@ const AddAssignment = () => {
           throw new Error("Public URL not found in response");
         }
 
-        fileURLs.push({ url: publicUrlData.publicUrl, visibility: fileVisibility });
+        fileURLs.push({
+          url: publicUrlData.publicUrl,
+          visibility: fileVisibility,
+        });
       }
 
       await addDoc(collection(db, "assignments"), {
@@ -236,12 +241,14 @@ const AddAssignment = () => {
         onSubmit={handleSubmit}
       >
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-green-600">ADD ASSIGNMENT</h1>
+          <h1 className="text-5xl font-bold text-green-600">ADD ASSIGNMENT</h1>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-gray-700 font-bold mb-2">Description</label>
+            <label className="block text-gray-700 font-bold mb-2">
+              Description
+            </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -251,7 +258,9 @@ const AddAssignment = () => {
             />
 
             <div className="mb-6">
-              <label className="block text-gray-700 font-bold mb-2">Upload File</label>
+              <label className="block text-gray-700 font-bold mb-2">
+                Upload File
+              </label>
               <div
                 className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 cursor-pointer hover:bg-gray-50 transition-all"
                 onClick={() => {
@@ -318,7 +327,9 @@ const AddAssignment = () => {
                         </div>
                       </div>
                     ))}
-                    <p className="text-sm text-gray-600">Click to add more files</p>
+                    <p className="text-sm text-gray-600">
+                      Click to add more files
+                    </p>
                   </div>
                 ) : (
                   <>
@@ -327,7 +338,9 @@ const AddAssignment = () => {
                       alt="Upload"
                       className="w-12 h-12 mb-2"
                     />
-                    <p className="text-sm text-gray-600">Click to upload a file</p>
+                    <p className="text-sm text-gray-600">
+                      Click to upload a file
+                    </p>
                   </>
                 )}
               </div>
@@ -347,7 +360,9 @@ const AddAssignment = () => {
           </div>
 
           <div>
-            <label className="block text-gray-700 font-bold mb-2">Assigned By</label>
+            <label className="block text-gray-700 font-bold mb-2">
+              Assigned By
+            </label>
             <input
               type="text"
               value={assignedBy}
@@ -355,7 +370,9 @@ const AddAssignment = () => {
               className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none mb-6 bg-gray-100"
             />
 
-            <label className="block text-gray-700 font-bold mb-2">Department</label>
+            <label className="block text-gray-700 font-bold mb-2">
+              Department
+            </label>
             <select
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
@@ -370,7 +387,9 @@ const AddAssignment = () => {
               ))}
             </select>
 
-            <label className="block text-gray-700 font-bold mb-2">Division</label>
+            <label className="block text-gray-700 font-bold mb-2">
+              Division
+            </label>
             <select
               value={division}
               onChange={(e) => setDivision(e.target.value)}
@@ -400,7 +419,9 @@ const AddAssignment = () => {
               ))}
             </select>
 
-            <label className="block text-gray-700 font-bold mb-2">Subject</label>
+            <label className="block text-gray-700 font-bold mb-2">
+              Subject
+            </label>
             <select
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
@@ -425,7 +446,9 @@ const AddAssignment = () => {
               required
             />
 
-            <label className="block text-gray-700 font-bold mb-2">Due Date</label>
+            <label className="block text-gray-700 font-bold mb-2">
+              Due Date
+            </label>
             <input
               type="date"
               value={dueDate}
@@ -436,7 +459,7 @@ const AddAssignment = () => {
 
             <button
               type="submit"
-              className="w-full bg-blue-500 text-white py-3 px-8 rounded-lg hover:bg-blue-600 transition-all disabled:bg-gray-400"
+              className="w-full bg-green-500 text-white py-3 px-8 rounded-lg hover:bg-green-600 transition-all disabled:bg-gray-400"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -463,7 +486,9 @@ const AddAssignment = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white p-6 rounded-lg w-full max-w-4xl h-[80vh] overflow-y-auto">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold text-gray-800">Preview File</h2>
+                <h2 className="text-2xl font-bold text-gray-800">
+                  Preview File
+                </h2>
                 <button
                   onClick={() => {
                     setIsPreviewOpen(false);
@@ -501,7 +526,8 @@ const AddAssignment = () => {
                         );
                       }}
                     />
-                  ) : previewFile.startsWith("blob:") && previewFile.includes("image/") ? (
+                  ) : previewFile.startsWith("blob:") &&
+                    previewFile.includes("image/") ? (
                     <img
                       src={previewFile}
                       alt="File Preview"
@@ -517,7 +543,8 @@ const AddAssignment = () => {
                     />
                   ) : (
                     <p className="text-gray-600">
-                      Preview not available for this file type. Click "Review File" to download or open in a new tab.
+                      Preview not available for this file type. Click "Review
+                      File" to download or open in a new tab.
                     </p>
                   )}
                 </>

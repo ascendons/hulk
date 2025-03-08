@@ -173,18 +173,12 @@ const SeeAttendance = () => {
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
-      <div
-        onMouseEnter={() => setIsSidebarHovered(true)}
-        onMouseLeave={() => setIsSidebarHovered(false)}
-        className={`${
-          isSidebarHovered ? "w-64" : "w-16"
-        } bg-blue-800 text-white h-screen transition-all duration-300 overflow-hidden`}
-      >
+      <div className="fixed w-64 bg-blue-800 text-white h-screen overflow-y-auto border-0 outline-0">
         <Sidebar />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col p-6">
+      <div className="flex-1 flex flex-col p-6 ml-64">
         {/* Header */}
         <h1 className="text-5xl font-bold mb-8 text-green-500">
           SEE ATTENDANCE
@@ -235,7 +229,7 @@ const SeeAttendance = () => {
                 </p>
                 <button
                   onClick={() => setIsModalOpen(true)}
-                  className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   Show Charts
                 </button>

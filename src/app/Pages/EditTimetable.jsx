@@ -21,10 +21,9 @@ const EditTimetable = () => {
   const [teacher, setTeacher] = useState("");
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
-  const [subjects, setSubjects] = useState([]); // Initialize as an array
+  const [subjects, setSubjects] = useState([]);
   const navigate = useNavigate();
 
-  // Predefined options
   const departments = ["Bsc.IT", "BCOM", "BMS"];
   const divisions = ["A", "B", "C", "D"];
 

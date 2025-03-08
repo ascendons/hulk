@@ -1,10 +1,4 @@
-export const DEPARTMENTS = [
-  "Bsc.IT",
-  "BCOM",
-  "BMS",
-  "BBA",
-  "BCA",
-];
+export const DEPARTMENTS = ["Bsc.IT", "BCOM", "BMS", "BBA", "BCA"];
 
 export const DIVISIONS = ["A", "B", "C", "D"];
 
@@ -16,4 +10,4 @@ export const YEARS = {
 
 export const ROLE = ["Select Role", "admin", "teacher", "Coordinator"];
 
-export const SUBJECTS = ["Select Subjects", "SQA", "SIC", "ITSM", "GIS"];
+export const SUBJECTS = ["Select Subjects", "SQA", "SIC", "ITSM", "GIS", "BI"];

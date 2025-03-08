@@ -89,6 +89,7 @@ const Dashboard = () => {
 
         console.log("Authenticated user:", user);
 
+        // Fetch user data
         const userDocRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userDocRef);
 
@@ -107,6 +108,7 @@ const Dashboard = () => {
         const name = userData.name || "Teacher Name";
         const role = userData.role || "Teacher";
 
+        // Fetch teacher info
         const teacherQuery = query(
           collection(db, "teachersinfo"),
           where("userId", "==", user.uid)
@@ -133,13 +135,7 @@ const Dashboard = () => {
           userId: user.uid,
         });
 
-        const studentsQuery = query(
-          collection(db, "users"),
-          where("role", "==", "student")
-        );
-        const studentsSnapshot = await getDocs(studentsQuery);
-        setTotalStudents(studentsSnapshot.size);
-
+        // Fetch total teachers
         const teachersQuery = query(
           collection(db, "users"),
           where("role", "==", "teacher")
@@ -147,8 +143,64 @@ const Dashboard = () => {
         const teachersSnapshot = await getDocs(teachersQuery);
         setTotalTeachers(teachersSnapshot.size);
 
-        const subjectsSnapshot = await getDocs(collection(db, "subjects"));
-        setTotalSubjects(subjectsSnapshot.size);
+        // Fetch total subjects for the logged-in teacher by their name
+        if (name) {
+          const subjectsQuery = query(
+            collection(db, "subjects"),
+            where("teacherName", "==", name)
+          );
+          const subjectsSnapshot = await getDocs(subjectsQuery);
+          setTotalSubjects(subjectsSnapshot.size);
+          console.log(
+            `Total subjects for teacher ${name}: ${subjectsSnapshot.size}`
+          );
+        } else {
+          console.warn("Teacher name not found, cannot fetch subjects.");
+          setTotalSubjects(0);
+        }
+
+        // Fetch total students from classes where the teacher name matches
+        let totalClassStudents = 0;
+        if (name) {
+          // Get all departments (documents under 'classes')
+          const departmentsSnapshot = await getDocs(collection(db, "classes"));
+          for (const deptDoc of departmentsSnapshot.docs) {
+            const deptId = deptDoc.id; // e.g., "Bsc.IT"
+            // Query the 'teachers' subcollection under the department
+            const teachersQuery = query(
+              collection(db, "classes", deptId, "teachers")
+            );
+            const teachersSnapshot = await getDocs(teachersQuery);
+
+            // Check if any teacher in the teachers subcollection has the matching name
+            let teacherFound = false;
+            for (const teacherDoc of teachersSnapshot.docs) {
+              const teacherData = teacherDoc.data();
+              if (teacherData["teacher_name"] === name) {
+                teacherFound = true;
+                break;
+              }
+            }
+
+            if (teacherFound) {
+              // Count students in the 'students' subcollection under the same department
+              const studentsSubcollection = collection(
+                db,
+                "classes",
+                deptId,
+                "students"
+              );
+              const studentsSnapshot = await getDocs(studentsSubcollection);
+              totalClassStudents += studentsSnapshot.size;
+              console.log(
+                `Students in class under ${deptId}: ${studentsSnapshot.size}`
+              );
+            }
+          }
+        } else {
+          console.warn("Teacher name not found, cannot fetch students.");
+        }
+        setTotalStudents(totalClassStudents);
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
         setError("Failed to fetch dashboard data: " + error.message);
@@ -349,17 +401,19 @@ const Dashboard = () => {
             <p className="text-gray-600 mt-2">Total Teachers</p>
           </div>
           <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
-            <h2 className="text-3xl font-bold text-red-600">{totalSubjects}</h2>
+            <h2 className="text-3xl font-bold text-purple-600">
+              {totalSubjects}
+            </h2>
             <p className="text-gray-600 mt-2">Total Subjects</p>
           </div>
           <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
-            <h2 className="text-3xl font-bold text-yellow-600">
+            <h2 className="text-3xl font-bold text-orange-600">
               {attendance}%
             </h2>
             <p className="text-gray-600 mt-2">Attendance</p>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
           <button
             onClick={() => navigate("/courses")}
             className="bg-blue-500 text-white px-6 py-4 rounded-lg font-bold hover:bg-blue-600 transition-colors"
@@ -384,8 +438,14 @@ const Dashboard = () => {
           >
             Assignments
           </button>
+          <button
+            onClick={() => navigate("/syllabus")}
+            className="bg-yellow-500 text-white px-6 py-4 rounded-lg font-bold hover:bg-yellow-600 transition-colors"
+          >
+            Syllabus
+          </button>
         </div>
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white shadow-lg rounded-lg p-6 max-h-96 overflow-y-auto">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">
               Notice Board
@@ -398,18 +458,23 @@ const Dashboard = () => {
                       {notice.title}
                     </h3>
                     <p className="text-sm text-gray-600 mb-2">
-                      By: {notice.author}
+                      By: {notice.noticeBy}
                     </p>
                     <p className="text-gray-800">{notice.content}</p>
-                    {notice.attachment && (
-                      <a
-                        href={notice.attachment}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-500 underline block mt-2"
-                      >
-                        View Attachment
-                      </a>
+                    {notice.files && notice.files.length > 0 && (
+                      <div className="mt-2">
+                        {notice.files.map((file, index) => (
+                          <a
+                            key={index}
+                            href={file}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 underline block"
+                          >
+                            View Attachment {index + 1}
+                          </a>
+                        ))}
+                      </div>
                     )}
                   </li>
                 ))}

@@ -1,9 +1,7 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";  
-import {
-  signOut,  
-} from "firebase/auth";
-import { auth } from "../../config";  
+import { Link, useNavigate } from "react-router-dom";
+import { signOut } from "firebase/auth";
+import { auth } from "../../config";
 import {
   LayoutDashboard,
   Bell,
@@ -15,12 +13,13 @@ import {
   School,
   Menu,
   X,
-  MessageSquare, 
+  MessageSquare,
+  Book,
 } from "lucide-react";
 
 const Sidebar = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const navigate = useNavigate(); // Added useNavigate for navigation
+  const navigate = useNavigate();
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
@@ -28,13 +27,13 @@ const Sidebar = () => {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);  
+      await signOut(auth);
       console.log("User logged out successfully");
-      navigate("/signup");  
-      setIsSidebarOpen(false);  
+      navigate("/signup");
+      setIsSidebarOpen(false);
     } catch (error) {
       console.error("Error logging out:", error);
-      alert("Failed to logout. Please try again.");  
+      alert("Failed to logout. Please try again.");
     }
   };
 
@@ -54,7 +53,7 @@ const Sidebar = () => {
       <div
         className={`fixed lg:relative h-screen bg-gray-900 text-white w-64 p-6 flex flex-col transform transition-transform duration-300 ease-in-out ${
           isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        }`}
+        } overflow-y-hidden`}
       >
         <button
           onClick={toggleSidebar}
@@ -71,7 +70,7 @@ const Sidebar = () => {
           </h1>
         </div>
 
-        <ul className="flex-grow space-y-2">
+        <ul className="flex-grow space-y-2 overflow-y-hidden">
           <li>
             <Link
               to="/dashboard"
@@ -160,7 +159,17 @@ const Sidebar = () => {
             </Link>
           </li>
 
-          {/* New Community Link */}
+          {/* <li>
+            <Link
+              to="/addsyllabus"
+              className="flex items-center p-3 rounded-lg hover:bg-orange-700 transition-colors"
+              onClick={() => setIsSidebarOpen(false)}
+            >
+              <Book className="mr-3 text-green-600" />
+              Add Syllabus
+            </Link>
+          </li> */}
+
           <li>
             <Link
               to="/community"
@@ -172,7 +181,6 @@ const Sidebar = () => {
             </Link>
           </li>
 
-          {/* Logout Button */}
           <li className="mt-auto">
             <button
               onClick={handleLogout}

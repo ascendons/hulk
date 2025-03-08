@@ -207,6 +207,7 @@ const StudentViewProfile = () => {
 
     fetchStudentInfo();
   }, [studentId, navigate]);
+
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) {
@@ -228,7 +229,7 @@ const StudentViewProfile = () => {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("upload_preset", "students_profile");
+      formData.append("upload_preset", "students_profile"); // Ensure this matches your Cloudinary upload preset
       formData.append("folder", "student_profiles");
 
       const response = await fetch(
@@ -241,21 +242,26 @@ const StudentViewProfile = () => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.error?.message || "Upload failed");
+        throw new Error(
+          errorData.error?.message || "Failed to upload image to Cloudinary"
+        );
       }
 
       const data = await response.json();
       const imageUrl = data.secure_url;
 
+      // Update Firestore with the new image URL
       const studentRef = doc(db, "students", studentInfo.userId);
       await updateDoc(studentRef, { profilePhotoUrl: imageUrl });
 
       setStudentInfo((prev) => ({ ...prev, profilePhotoUrl: imageUrl }));
       setProfilePhotoUrl(imageUrl);
-      setErrorMessage("");
+      setErrorMessage(""); // Clear any previous error message
     } catch (error) {
       console.error("Image upload error:", error);
-      setErrorMessage(`Failed to upload image: ${error.message}`);
+      setErrorMessage(
+        `Failed to upload image: ${error.message}. Please check if the upload preset 'students_profile' is correctly configured in Cloudinary.`
+      );
     } finally {
       setUploading(false);
     }

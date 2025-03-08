@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; // Import useNavigate for linking
+import { useNavigate } from "react-router-dom";
 import Sidebar from "../Components/Sidebar";
 import {
   collection,
@@ -12,9 +12,11 @@ import {
 } from "firebase/firestore";
 import { db } from "../../config";
 import { Users } from "lucide-react";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const MarkAttendance = () => {
-  const navigate = useNavigate(); // Initialize navigate for routing
+  const navigate = useNavigate();
   const [students, setStudents] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [attendance, setAttendance] = useState({});
@@ -27,8 +29,7 @@ const MarkAttendance = () => {
   const [endTime, setEndTime] = useState("");
   const [loading, setLoading] = useState(false);
   const [isDataFetched, setIsDataFetched] = useState(false);
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
-  const [viewType, setViewType] = useState("table"); // State to toggle between table and tiles
+  const [viewType, setViewType] = useState("table");
 
   const fetchStudents = async () => {
     try {
@@ -72,7 +73,7 @@ const MarkAttendance = () => {
       setStudents(fetchedStudents);
       const initialAttendance = {};
       fetchedStudents.forEach((student) => {
-        initialAttendance[student.id] = "A"; // Default to Absent (red)
+        initialAttendance[student.id] = "A";
       });
       setAttendance(initialAttendance);
       setIsDataFetched(true);
@@ -104,60 +105,82 @@ const MarkAttendance = () => {
   }, [selectedClass]);
 
   const handleAttendanceChange = (studentId, status) => {
-    setAttendance({ ...attendance, [studentId]: status === "A" ? "P" : "A" });
+    console.log(`Setting attendance for student ${studentId} to ${status}`);
+    setAttendance((prevAttendance) => ({
+      ...prevAttendance,
+      [studentId]: status,
+    }));
   };
 
   const handleSaveAttendance = async () => {
     if (!lectureName || !startTime || !endTime) {
-      alert("Please fill in all the fields!");
+      toast.error("Please fill in all the fields!", {
+        style: { backgroundColor: "#FF6B6B" },
+      });
       return;
     }
 
     if (students.length === 0) {
-      alert("No students fetched to save attendance.");
+      toast.error("No students fetched to save attendance.", {
+        style: { backgroundColor: "#FF6B6B" },
+      });
       return;
     }
 
     try {
       const attendanceData = students.map((student) => ({
-        course: selectedClass, // Add course from selectedClass
-        date: date, // Use the date state
-        name: student.studentname, // Student name
-        rollNo: student.rollno, // Student roll number
-        status: attendance[student.id], // Present or Absent
-        subject: lectureName, // Selected lecture/subject
-        year: selectedYear, // Add year from selectedYear
+        course: selectedClass,
+        date: date,
+        name: student.studentname,
+        rollNo: student.rollno,
+        status: attendance[student.id],
+        subject: lectureName,
+        year: selectedYear,
       }));
 
       await addDoc(collection(db, "studentAttendance"), {
         attendance: attendanceData,
       });
 
-      alert("Attendance saved successfully!");
+      toast.success("Attendance saved successfully!", {
+        style: { backgroundColor: "#4A90E2", color: "#FFFFFF" },
+      });
+
+      // Redirect to AddSyllabus with data
+      setTimeout(() => {
+        navigate("/addsyllabus", {
+          state: {
+            department: selectedClass,
+            year: selectedYear,
+            division: selectedDivision,
+            subject: lectureName,
+          },
+        });
+      }, 2000);
+
+      setLectureName("");
+      setStartTime("");
+      setEndTime("");
+      setAttendance({});
     } catch (error) {
       console.error("Error saving attendance:", error.message);
-      alert("Failed to save attendance. Please try again.");
+      toast.error(`Firebase: Error (${error.code}).`, {
+        style: { backgroundColor: "#FF6B6B" },
+      });
     }
   };
 
-  // Function to handle Link button click (navigate to a new route or URL)
   const handleLinkClick = () => {
-    navigate("/attendance-report"); // Example route; adjust as needed
-    // Alternatively, for an external link:
-    // window.open("https://example.com/attendance-report", "_blank");
+    navigate("/attendance-report");
   };
 
   return (
     <div className="w-screen h-screen bg-gray-100 flex">
-      {/* Fixed Sidebar */}
-      <div className="fixed w-56 bg-blue-800 text-white h-screen overflow-y-auto border-0 outline-0">
+      <div className="fixed w-64 bg-blue-800 text-white h-screen overflow-y-auto border-0 outline-0">
         <Sidebar />
       </div>
 
-      {/* Main Content with Margin for Fixed Sidebar */}
-      <div className="flex-grow p-4 md:p-6 ml-56">
-        {" "}
-        {/* Updated margin-left to match sidebar width (w-56 = 14rem) */}
+      <div className="flex-grow p-4 md:p-6 ml-64">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
             <h1 className="text-5xl font-bold mb-8 text-green-500">
@@ -201,7 +224,6 @@ const MarkAttendance = () => {
             >
               {loading ? "Searching..." : "Search"}
             </button>
-            {/* Link Button (always visible) */}
             <button
               onClick={handleLinkClick}
               className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600"
@@ -210,10 +232,8 @@ const MarkAttendance = () => {
             </button>
           </div>
         </div>
-        {/* Attendance Table or Tiles */}
         {isDataFetched && (
           <>
-            {/* Date, Tiles, Lecture, Time */}
             <div className="flex flex-wrap gap-2 md:gap-4 mb-2 md:mb-4 justify-center">
               <button
                 onClick={() =>
@@ -257,7 +277,6 @@ const MarkAttendance = () => {
               />
             </div>
 
-            {/* Render Table or Tiles based on viewType */}
             {viewType === "table" ? (
               <div className="overflow-x-auto">
                 <table className="min-w-full bg-white shadow-md rounded-lg">
@@ -291,10 +310,10 @@ const MarkAttendance = () => {
                         </td>
                         <td className="px-4 md:px-6 py-2 md:py-4 text-xs md:text-sm text-gray-700 flex justify-center gap-1 md:gap-3">
                           <button
-                            className={`px-2 md:px-4 py-1 md:py-2 rounded-lg text-xs md:text-sm ${
+                            className={`px-2 md:px-4 py-1 md:py-2 rounded-lg text-xs md:text-sm cursor-pointer ${
                               attendance[student.id] === "P"
                                 ? "bg-green-500 text-white"
-                                : "bg-gray-200"
+                                : "bg-gray-200 text-gray-700"
                             }`}
                             onClick={() =>
                               handleAttendanceChange(student.id, "P")
@@ -303,10 +322,10 @@ const MarkAttendance = () => {
                             Present
                           </button>
                           <button
-                            className={`px-2 md:px-4 py-1 md:py-2 rounded-lg text-xs md:text-sm ${
+                            className={`px-2 md:px-4 py-1 md:py-2 rounded-lg text-xs md:text-sm cursor-pointer ${
                               attendance[student.id] === "A"
                                 ? "bg-red-500 text-white"
-                                : "bg-gray-200"
+                                : "bg-gray-200 text-gray-700"
                             }`}
                             onClick={() =>
                               handleAttendanceChange(student.id, "A")
@@ -331,7 +350,10 @@ const MarkAttendance = () => {
                         : "bg-green-500 hover:bg-green-600"
                     }`}
                     onClick={() =>
-                      handleAttendanceChange(student.id, attendance[student.id])
+                      handleAttendanceChange(
+                        student.id,
+                        attendance[student.id] === "A" ? "P" : "A"
+                      )
                     }
                   >
                     {student.rollno}
@@ -351,6 +373,18 @@ const MarkAttendance = () => {
           </>
         )}
       </div>
+
+      <ToastContainer
+        position="top-right"
+        autoClose={2000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
     </div>
   );
 };

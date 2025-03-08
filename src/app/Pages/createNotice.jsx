@@ -9,13 +9,13 @@ import supabase from "../../supabaseclient";
 const CreateNotice = () => {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const [files, setFiles] = useState([]);  
+  const [files, setFiles] = useState([]);
   const [category, setCategory] = useState("");
   const [noticeBy, setNoticeBy] = useState("Guest");
   const [loading, setLoading] = useState(false);
   const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);  
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   useEffect(() => {
     const fetchUserName = async () => {
@@ -48,7 +48,12 @@ const CreateNotice = () => {
   const handleFileUpload = async (file) => {
     try {
       // Validate file type (PDF or image)
-      const validTypes = ["application/pdf", "image/jpeg", "image/png", "image/gif"];
+      const validTypes = [
+        "application/pdf",
+        "image/jpeg",
+        "image/png",
+        "image/gif",
+      ];
       if (!validTypes.includes(file.type)) {
         throw new Error("Only PDF, JPEG, PNG, and GIF files are supported.");
       }
@@ -85,11 +90,11 @@ const CreateNotice = () => {
         ...prevFiles,
         { name: file.name, type: file.type, url: publicUrlData.publicUrl },
       ]);
-      setUploadProgress(100);  
+      setUploadProgress(100);
     } catch (error) {
       console.error("Error in handleFileUpload:", error);
       alert(error.message);
-      setUploadProgress(0); 
+      setUploadProgress(0);
     }
   };
 
@@ -132,19 +137,15 @@ const CreateNotice = () => {
   return (
     <div className="flex h-screen w-screen bg-gray-50 overflow-hidden">
       {/* Sidebar */}
-      <div
-        onMouseEnter={() => setIsSidebarHovered(true)}
-        onMouseLeave={() => setIsSidebarHovered(false)}
-        className={`${
-          isSidebarHovered ? "w-64" : "w-16"
-        } bg-blue-800 text-white h-full transition-all duration-300 overflow-hidden`}
-      >
+      <div className="fixed w-64 bg-gray-900 text-white h-screen overflow-y-auto border-0 outline-0">
         <Sidebar />
       </div>
 
-      <div className="flex-1 flex overflow-y-auto">
+      <div className="flex-1 ml-64 flex overflow-y-auto">
         <div className="bg-white shadow-lg rounded-2xl p-10 w-full">
-          <h2 className="text-5xl font-bold mb-8 text-green-500">CREATE NOTICE</h2>
+          <h2 className="text-5xl font-bold mb-8 text-green-500">
+            CREATE NOTICE
+          </h2>
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Title */}
             <div>

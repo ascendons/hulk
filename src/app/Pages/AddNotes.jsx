@@ -38,7 +38,10 @@ const AddNotes = () => {
 
       try {
         const subjectsRef = collection(db, "subjects");
-        const q = query(subjectsRef, where("department", "==", formData.department.trim()));
+        const q = query(
+          subjectsRef,
+          where("department", "==", formData.department.trim())
+        );
         const querySnapshot = await getDocs(q);
 
         if (querySnapshot.empty) {
@@ -96,14 +99,17 @@ const AddNotes = () => {
           .upload(filePath, file, {
             upsert: true,
             onUploadProgress: (progressEvent) => {
-              const progress = (progressEvent.loaded / progressEvent.total) * 100;
+              const progress =
+                (progressEvent.loaded / progressEvent.total) * 100;
               setUploadProgress(progress);
             },
           });
 
         if (uploadError) throw uploadError;
 
-        const { data: { publicUrl } } = supabase.storage.from("notes").getPublicUrl(filePath);
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("notes").getPublicUrl(filePath);
         supabaseFilePath = filePath;
         console.log("File uploaded successfully:", publicUrl);
       }
@@ -140,21 +146,27 @@ const AddNotes = () => {
 
   return (
     <div className="bg-gray-100 flex p-0">
-      <div
-        onMouseEnter={() => setIsSidebarHovered(true)}
-        onMouseLeave={() => setIsSidebarHovered(false)}
-        className={`${
-          isSidebarHovered ? "w-64" : "w-16"
-        } bg-blue-800 text-white h-screen transition-all duration-300 overflow-hidden`}
-      >
+      <div className="fixed w-64 bg-blue-800 text-white h-screen overflow-y-auto border-0 outline-0">
+        {" "}
+        {/* Fixed width, no borders or outlines */}
         <Sidebar />
       </div>
 
-      <div className="w-full h-screen bg-white border border-gray-300 rounded-lg p-6">
-        <form onSubmit={handleSubmit} className="flex flex-col md:flex-row gap-6 h-full">
+      <div className="w-full h-screen ml-64 bg-white border border-gray-300 rounded-lg p-6">
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col md:flex-row gap-6 h-full"
+        >
           <div className="w-full md:w-1/2">
-            <h2 className="text-5xl font-bold text-blue-600 mb-4">Add Notes</h2>
-            <FormField label="Title" name="title" value={formData.title} onChange={handleChange} />
+            <h2 className="text-5xl font-bold text-green-500 mb-4">
+              ADD NOTES
+            </h2>
+            <FormField
+              label="Title"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+            />
             <FormField
               label="Description"
               name="description"
@@ -210,7 +222,7 @@ const AddNotes = () => {
             />
             <button
               type="submit"
-              className="mt-4 w-full bg-gray-300 text-black px-4 py-2 rounded-md hover:bg-gray-400"
+              className="mt-4 w-full bg-green-400 text-black px-4 py-2 rounded-md hover:bg-green-500"
               disabled={loading}
             >
               {loading ? "Submitting..." : "POST"}
@@ -230,7 +242,14 @@ const AddNotes = () => {
   );
 };
 
-const FormField = ({ label, name, value, onChange, type = "text", isTextArea = false }) => (
+const FormField = ({
+  label,
+  name,
+  value,
+  onChange,
+  type = "text",
+  isTextArea = false,
+}) => (
   <div className="mb-4">
     <label className="block text-sm font-medium text-gray-700">{label}</label>
     {isTextArea ? (
@@ -252,7 +271,15 @@ const FormField = ({ label, name, value, onChange, type = "text", isTextArea = f
   </div>
 );
 
-const FormSelect = ({ label, name, value, onChange, options, isLoading = false, error = null }) => (
+const FormSelect = ({
+  label,
+  name,
+  value,
+  onChange,
+  options,
+  isLoading = false,
+  error = null,
+}) => (
   <div className="mb-4">
     <label className="block text-sm font-medium text-gray-700">{label}</label>
     <select
@@ -301,8 +328,14 @@ const FileUploadSection = ({ file, uploadProgress, onUploadClick }) => (
     </div>
     {uploadProgress > 0 && uploadProgress < 100 && (
       <div className="mt-4">
-        <p className="text-sm text-gray-600">Uploading: {Math.round(uploadProgress)}%</p>
-        <progress value={uploadProgress} max="100" className="w-full h-2 rounded-lg" />
+        <p className="text-sm text-gray-600">
+          Uploading: {Math.round(uploadProgress)}%
+        </p>
+        <progress
+          value={uploadProgress}
+          max="100"
+          className="w-full h-2 rounded-lg"
+        />
       </div>
     )}
   </div>

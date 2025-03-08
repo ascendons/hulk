@@ -6,6 +6,7 @@ import {
   BookOpenIcon,
   UserIcon,
   AcademicCapIcon,
+  PlusCircleIcon, // Added for Add Classes
 } from "@heroicons/react/solid"; // Example Heroicons
 
 const Admin = () => {
@@ -62,13 +63,22 @@ const Admin = () => {
         </Link>
 
         {/* Add Subjects Card */}
-        <div
+        <Link
+          to="/add-subjects"
           className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col items-center justify-center text-center cursor-pointer"
-          onClick={() => handleAdd("Add Subjects")}
         >
           <BookOpenIcon className="h-12 w-12 text-blue-500 mb-4" />
           <h2 className="text-xl font-semibold text-gray-800">Add Subjects</h2>
-        </div>
+        </Link>
+
+        {/* Add Classes Card (New) */}
+        <Link
+          to="/Addclasses" // New route for adding classes
+          className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col items-center justify-center text-center cursor-pointer"
+        >
+          <PlusCircleIcon className="h-12 w-12 text-blue-500 mb-4" />
+          <h2 className="text-xl font-semibold text-gray-800">Add Classes</h2>
+        </Link>
 
         {/* See Students Card */}
         <Link
