@@ -138,7 +138,7 @@ const AddSyllabus = () => {
         progress,
         remark,
         createdAt: new Date().toISOString(),
-        userId, // Add the userId to the data
+        userId, // Store the userId of the logged-in user
       };
 
       await addDoc(collection(db, "syllabus"), syllabusData);

@@ -9,8 +9,8 @@ import {
   getDoc,
   onSnapshot,
 } from "firebase/firestore";
-import { db, auth } from "../../config"; // Adjusted path
-import { useNavigate, Link } from "react-router-dom"; // Use react-router-dom
+import { db, auth } from "../../config";
+import { useNavigate, Link } from "react-router-dom";
 import { renderSkeleton } from "../Components/reactSkelton";
 import { Cloudinary } from "@cloudinary/url-gen";
 import { AdvancedImage } from "@cloudinary/react";
@@ -34,10 +34,10 @@ const Dashboard = () => {
   const [attendance] = useState(75);
   const [notices, setNotices] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
-  const [timers, setTimers] = useState({}); // State to store timers for each event
+  const [timers, setTimers] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const navigate = useNavigate(); // Use useNavigate from react-router-dom
+  const navigate = useNavigate();
 
   const getPublicIdFromUrl = (url) => {
     if (!url) return "";
@@ -57,11 +57,10 @@ const Dashboard = () => {
     return "Invalid Date";
   };
 
-  // Updated calculateTimer to use createdAt and duration
   const calculateTimer = (createdAt, duration) => {
     if (!createdAt) return "N/A";
-    const created = createdAt.toDate(); // Convert Firestore timestamp to JS Date
-    const durationMs = duration * 60 * 60 * 1000; // Convert hours to milliseconds
+    const created = createdAt.toDate();
+    const durationMs = duration * 60 * 60 * 1000;
     const endTime = new Date(created.getTime() + durationMs);
     const now = new Date();
     const timeDiff = endTime - now;
@@ -89,7 +88,6 @@ const Dashboard = () => {
 
         console.log("Authenticated user:", user);
 
-        // Fetch user data
         const userDocRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userDocRef);
 
@@ -108,7 +106,6 @@ const Dashboard = () => {
         const name = userData.name || "Teacher Name";
         const role = userData.role || "Teacher";
 
-        // Fetch teacher info
         const teacherQuery = query(
           collection(db, "teachersinfo"),
           where("userId", "==", user.uid)
@@ -135,7 +132,6 @@ const Dashboard = () => {
           userId: user.uid,
         });
 
-        // Fetch total teachers
         const teachersQuery = query(
           collection(db, "users"),
           where("role", "==", "teacher")
@@ -143,7 +139,6 @@ const Dashboard = () => {
         const teachersSnapshot = await getDocs(teachersQuery);
         setTotalTeachers(teachersSnapshot.size);
 
-        // Fetch total subjects for the logged-in teacher by their name
         if (name) {
           const subjectsQuery = query(
             collection(db, "subjects"),
@@ -159,20 +154,16 @@ const Dashboard = () => {
           setTotalSubjects(0);
         }
 
-        // Fetch total students from classes where the teacher name matches
         let totalClassStudents = 0;
         if (name) {
-          // Get all departments (documents under 'classes')
           const departmentsSnapshot = await getDocs(collection(db, "classes"));
           for (const deptDoc of departmentsSnapshot.docs) {
-            const deptId = deptDoc.id; // e.g., "Bsc.IT"
-            // Query the 'teachers' subcollection under the department
+            const deptId = deptDoc.id;
             const teachersQuery = query(
               collection(db, "classes", deptId, "teachers")
             );
             const teachersSnapshot = await getDocs(teachersQuery);
 
-            // Check if any teacher in the teachers subcollection has the matching name
             let teacherFound = false;
             for (const teacherDoc of teachersSnapshot.docs) {
               const teacherData = teacherDoc.data();
@@ -183,7 +174,6 @@ const Dashboard = () => {
             }
 
             if (teacherFound) {
-              // Count students in the 'students' subcollection under the same department
               const studentsSubcollection = collection(
                 db,
                 "classes",
@@ -259,7 +249,6 @@ const Dashboard = () => {
 
                 console.log("Parsed eventDate:", eventDate);
 
-                // Map over the lectures array to create an event for each lecture
                 if (data.lectures && Array.isArray(data.lectures)) {
                   data.lectures.forEach((lecture, index) => {
                     fetchedEvents.push({
@@ -274,7 +263,7 @@ const Dashboard = () => {
                       endTime: lecture.endTime || "08:00",
                       location: lecture.location || "LC",
                       subject: lecture.subject || "Unknown Subject",
-                      duration: data.duration || 24, // Default to 24 if not set
+                      duration: data.duration || 24,
                       createdAt: data.createdAt,
                     });
                   });
@@ -287,7 +276,6 @@ const Dashboard = () => {
               }
             });
 
-            // Filter and sort events
             const filteredEvents = fetchedEvents
               .filter((event) => event && event.date >= currentDate)
               .sort((a, b) => a.date - b.date);
@@ -301,7 +289,6 @@ const Dashboard = () => {
           }
         );
 
-        // Cleanup subscription on unmount
         return unsubscribe;
       } catch (error) {
         console.error("Error fetching upcoming events:", error);
@@ -314,7 +301,6 @@ const Dashboard = () => {
     fetchUpcomingEvents();
   }, []);
 
-  // Update timers every second
   useEffect(() => {
     const intervals = upcomingEvents.map((event) => {
       return setInterval(() => {
@@ -326,7 +312,6 @@ const Dashboard = () => {
       }, 1000);
     });
 
-    // Cleanup intervals on unmount
     return () => intervals.forEach((interval) => clearInterval(interval));
   }, [upcomingEvents]);
 
@@ -381,9 +366,9 @@ const Dashboard = () => {
               Role: {teacherInfo.role || "Teacher"}
             </p>
           </div>
-          <Link to={`/view-profile/teacher/${teacherInfo.userId}`}>
+          <Link to={`/teacher/${teacherInfo.userId}`}>
             <button className="bg-green-500 text-white px-4 py-2 rounded-full hover:bg-green-600 transition-colors text-sm font-medium">
-              View Details
+              View Profile
             </button>
           </Link>
         </div>

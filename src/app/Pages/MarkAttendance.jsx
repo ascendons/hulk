@@ -66,6 +66,7 @@ const MarkAttendance = () => {
             year: studentData.year,
             studentname: userDoc.exists() ? userDoc.data().name : "Unknown",
             email: userDoc.exists() ? userDoc.data().email : "Unknown",
+            userId: studentData.userId, // Explicitly include userId from student data
           };
         })
       );
@@ -136,6 +137,7 @@ const MarkAttendance = () => {
         status: attendance[student.id],
         subject: lectureName,
         year: selectedYear,
+        userId: student.userId,
       }));
 
       await addDoc(collection(db, "studentAttendance"), {
