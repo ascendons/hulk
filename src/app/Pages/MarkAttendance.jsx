@@ -62,11 +62,11 @@ const MarkAttendance = () => {
             division: studentData.division,
             phonenumber: studentData.phonenumber,
             rollno: studentData.rollno,
-            studentid: studentData.studentid,
+            studentid: studentData.studentid, 
             year: studentData.year,
             studentname: userDoc.exists() ? userDoc.data().name : "Unknown",
             email: userDoc.exists() ? userDoc.data().email : "Unknown",
-            userId: studentData.userId, // Explicitly include userId from student data
+            userId: studentData.userId,  
           };
         })
       );

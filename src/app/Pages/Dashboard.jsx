@@ -86,7 +86,7 @@ const Dashboard = () => {
           return;
         }
 
-        console.log("Authenticated user:", user);
+        console.log("Authenticated user:");
 
         const userDocRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userDocRef);
@@ -94,14 +94,13 @@ const Dashboard = () => {
         if (!userDoc.exists()) {
           console.warn(
             "No user data found in 'users' collection for UID:",
-            user.uid
           );
           setError("User data not found in Firestore.");
           return;
         }
 
         const userData = userDoc.data();
-        console.log("User data from 'users':", userData);
+        console.log("User data from 'users':");
 
         const name = userData.name || "Teacher Name";
         const role = userData.role || "Teacher";
@@ -116,11 +115,11 @@ const Dashboard = () => {
         let profilePhotoUrl = "";
         if (!teacherSnapshot.empty) {
           const teacherData = teacherSnapshot.docs[0].data();
-          console.log("Teacher data from 'teachersinfo':", teacherData);
+          console.log("Teacher data from 'teachersinfo':");
           department = teacherData.department || "Department";
           profilePhotoUrl = teacherData.profilePhotoUrl || "";
         } else {
-          console.warn("No teacher info found for UID:", user.uid);
+          console.warn("No teacher info found for UID:");
         }
 
         setTeacherInfo({
@@ -146,9 +145,6 @@ const Dashboard = () => {
           );
           const subjectsSnapshot = await getDocs(subjectsQuery);
           setTotalSubjects(subjectsSnapshot.size);
-          console.log(
-            `Total subjects for teacher ${name}: ${subjectsSnapshot.size}`
-          );
         } else {
           console.warn("Teacher name not found, cannot fetch subjects.");
           setTotalSubjects(0);
@@ -182,9 +178,6 @@ const Dashboard = () => {
               );
               const studentsSnapshot = await getDocs(studentsSubcollection);
               totalClassStudents += studentsSnapshot.size;
-              console.log(
-                `Students in class under ${deptId}: ${studentsSnapshot.size}`
-              );
             }
           }
         } else {
@@ -192,7 +185,6 @@ const Dashboard = () => {
         }
         setTotalStudents(totalClassStudents);
       } catch (error) {
-        console.error("Error fetching dashboard data:", error);
         setError("Failed to fetch dashboard data: " + error.message);
       } finally {
         setLoading(false);
@@ -222,23 +214,12 @@ const Dashboard = () => {
         const unsubscribe = onSnapshot(
           collection(db, "daytimetable"),
           (timetableSnapshot) => {
-            console.log(
-              "Raw data from daytimetable:",
-              timetableSnapshot.docs.map((doc) => doc.data())
-            );
-
             const fetchedEvents = [];
             timetableSnapshot.forEach((doc) => {
               const data = doc.data();
               const compositeId = doc.id;
               const dateStr = compositeId.split("_")[3];
 
-              console.log(
-                "Processing compositeId:",
-                compositeId,
-                "Data:",
-                data
-              );
 
               if (dateStr && dateStr.length === 8) {
                 const year = parseInt(dateStr.substring(0, 4));
@@ -247,7 +228,6 @@ const Dashboard = () => {
                 const eventDate = new Date(year, month, day);
                 eventDate.setHours(0, 0, 0, 0);
 
-                console.log("Parsed eventDate:", eventDate);
 
                 if (data.lectures && Array.isArray(data.lectures)) {
                   data.lectures.forEach((lecture, index) => {
@@ -271,7 +251,6 @@ const Dashboard = () => {
               } else {
                 console.log(
                   "Invalid date format for compositeId:",
-                  compositeId
                 );
               }
             });

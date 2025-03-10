@@ -39,9 +39,9 @@ const TeacherViewProfile = () => {
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
+  
     const validTypes = ["image/jpeg", "image/png", "image/jpg"];
-    const maxSize = 5 * 1024 * 1024;
+    const maxSize = 5 * 1024 * 1024; // 5MB
     if (!validTypes.includes(file.type)) {
       setUploadError("Only JPEG, PNG, and JPG files are allowed.");
       setShowUploadErrorModal(true);
@@ -52,16 +52,16 @@ const TeacherViewProfile = () => {
       setShowUploadErrorModal(true);
       return;
     }
-
+  
     setUploading(true);
     setUploadError("");
-
+  
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("upload_preset", "teacher_profiles");
+      formData.append("upload_preset", "teachers_profiles");
       formData.append("cloud_name", "dwdejk1u3");
-
+  
       const response = await fetch(
         `https://api.cloudinary.com/v1_1/dwdejk1u3/image/upload`,
         {
@@ -69,34 +69,42 @@ const TeacherViewProfile = () => {
           body: formData,
         }
       );
-
+  
+      const data = await response.json();
       if (!response.ok) {
-        const errorData = await response.json();
         throw new Error(
           `Cloudinary upload failed: ${response.status} - ${
-            errorData.error?.message || "Unknown error"
+            data.error?.message || "Unknown error"
           }`
         );
       }
-
-      const data = await response.json();
+  
       if (data.secure_url) {
-        const userDocRef = doc(db, "users", teacherId);
-        await updateDoc(userDocRef, {
-          profilePhotoUrl: data.secure_url,
+        // Update Firestore: teachersinfo collection
+        const teacherInfoDocRef = doc(db, "teachersinfo", teacherId); // Use teacherId as the document ID
+        try {
+          await updateDoc(teacherInfoDocRef, {
+            profilePhotoUrl: data.secure_url,
+          });
+        } catch (firestoreError) {
+          throw new Error("Failed to update Firestore (teachersinfo): " + firestoreError.message);
+        }
+  
+        // Update local state
+        setTeacher((prev) => {
+          const updatedTeacher = {
+            ...prev,
+            profilePhotoUrl: data.secure_url,
+          };
+          console.log("Updated teacher state:");
+          return updatedTeacher;
         });
-
-        setTeacher((prev) => ({
-          ...prev,
-          profilePhotoUrl: data.secure_url,
-        }));
       } else {
-        setUploadError("Failed to upload image. No secure URL returned.");
-        setShowUploadErrorModal(true);
+        throw new Error("No secure URL returned from Cloudinary.");
       }
     } catch (error) {
-      console.error("Error uploading image:", error);
-      setUploadError(`Failed to upload image: ${error.message}`);
+      console.error("Error uploading image:");
+      setUploadError(`Failed to upload image:`);
       setShowUploadErrorModal(true);
     } finally {
       setUploading(false);
@@ -165,7 +173,6 @@ const TeacherViewProfile = () => {
             teacherInfoData.profilePhotoUrl || userData.profilePhotoUrl || "",
         });
       } catch (error) {
-        console.error("Error fetching teacher:", error);
         setError("Failed to load teacher details: " + error.message);
       } finally {
         setLoading(false);
