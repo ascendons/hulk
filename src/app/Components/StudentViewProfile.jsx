@@ -24,16 +24,17 @@ const cld = new Cloudinary({
   },
 });
 
-// Function to extract public ID from a full Cloudinary URL
 const getPublicIdFromUrl = (url) => {
   if (!url) return "";
   const regex = /\/v\d+\/(.+?)(?:\.\w+)?$/;
   const match = url.match(regex);
-  return match ? match[1] : url; // Returns public ID or original string if no match
+  return match ? match[1] : url;  
 };
 
+
+
 const StudentViewProfile = () => {
-  const { studentId } = useParams(); // Get optional studentId from URL (document ID from "students")
+  const { studentId } = useParams();  
   const [studentInfo, setStudentInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -42,7 +43,9 @@ const StudentViewProfile = () => {
   const [profilePhotoUrl, setProfilePhotoUrl] = useState("");
   const [currentUserRole, setCurrentUserRole] = useState(null); // Track current user's role
   const navigate = useNavigate();
+  const [showUploadErrorModal, setShowUploadErrorModal] = useState(false);
 
+  
   useEffect(() => {
     const fetchStudentInfo = async () => {
       try {
@@ -58,7 +61,6 @@ const StudentViewProfile = () => {
         let targetStudentId = studentId; // Use studentId from URL if provided (document ID)
 
         if (!targetStudentId) {
-          // If no studentId in URL, use the current user's email/uid (for students or admins viewing their own profile)
           const userEmail = user.email || user.uid;
           if (!userEmail) {
             console.error("No email or UID available for the user.");
@@ -216,12 +218,14 @@ const StudentViewProfile = () => {
     }
 
     const validTypes = ["image/jpeg", "image/png", "image/gif"];
+    const maxSize = 5 * 1024 * 1024;
     if (!validTypes.includes(file.type)) {
       setErrorMessage("Please upload a valid image (JPEG, PNG, or GIF)");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
+    if (file.size > maxSize) {
       setErrorMessage("Image size must be less than 5MB");
+      setShowUploadErrorModal(true);
       return;
     }
 
@@ -229,8 +233,8 @@ const StudentViewProfile = () => {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("upload_preset", "students_profile"); // Ensure this matches your Cloudinary upload preset
-      formData.append("folder", "student_profiles");
+      formData.append("upload_preset", "student_profile");  
+      formData.append("cloud_name", "dwdejk1u3");
 
       const response = await fetch(
         `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
@@ -250,13 +254,12 @@ const StudentViewProfile = () => {
       const data = await response.json();
       const imageUrl = data.secure_url;
 
-      // Update Firestore with the new image URL
       const studentRef = doc(db, "students", studentInfo.userId);
       await updateDoc(studentRef, { profilePhotoUrl: imageUrl });
 
       setStudentInfo((prev) => ({ ...prev, profilePhotoUrl: imageUrl }));
       setProfilePhotoUrl(imageUrl);
-      setErrorMessage(""); // Clear any previous error message
+      setErrorMessage("");  
     } catch (error) {
       console.error("Image upload error:", error);
       setErrorMessage(
@@ -339,7 +342,7 @@ const StudentViewProfile = () => {
                 <span className="text-gray-500 font-bold text-lg">IMG</span>
               )}
               {currentUserRole === "student" &&
-                !studentId && ( // Only allow upload for the student's own profile
+                !studentId && (  
                   <label
                     htmlFor="profilePhoto"
                     className={`absolute bottom-0 right-0 bg-blue-500 text-white p-2 rounded-full cursor-pointer hover:bg-blue-600 transition-colors ${

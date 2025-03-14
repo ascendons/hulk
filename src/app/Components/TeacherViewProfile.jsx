@@ -19,23 +19,19 @@ const TeacherViewProfile = () => {
   const [error, setError] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [activeTab, setActiveTab] = useState("Details");
-
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [formError, setFormError] = useState("");
   const [showModal, setShowModal] = useState(false);
-
   const [currentPasswordVisible, setCurrentPasswordVisible] = useState(false);
   const [newPasswordVisible, setNewPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
-
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [showUploadErrorModal, setShowUploadErrorModal] = useState(false);
-
-  const [attendance] = useState(85); // Kept for potential future use in Analytics tab
-
+  const [attendance] = useState(85); 
+  
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -80,7 +76,6 @@ const TeacherViewProfile = () => {
       }
   
       if (data.secure_url) {
-        // Update Firestore: teachersinfo collection
         const teacherInfoDocRef = doc(db, "teachersinfo", teacherId); // Use teacherId as the document ID
         try {
           await updateDoc(teacherInfoDocRef, {
@@ -90,7 +85,6 @@ const TeacherViewProfile = () => {
           throw new Error("Failed to update Firestore (teachersinfo): " + firestoreError.message);
         }
   
-        // Update local state
         setTeacher((prev) => {
           const updatedTeacher = {
             ...prev,
