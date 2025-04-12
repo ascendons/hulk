@@ -162,20 +162,16 @@ const StudentTimetable = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-100">
-      <div
-        onMouseEnter={() => setIsSidebarHovered(true)}
-        onMouseLeave={() => setIsSidebarHovered(false)}
-        className={`${
-          isSidebarHovered ? "w-64" : "w-16"
-        } bg-gray-900 text-white h-screen transition-all duration-300 overflow-hidden`}
-      >
+      <div className="fixed w-56 bg-blue-800 text-white h-screen overflow-y-hidden border-0 outline-0">
         <StudentSidebar />
       </div>
 
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-6 ml-56">
         <div className="flex justify-between items-center mb-6">
           <Link to="/student-dashboard">
-            <h1 className="text-5xl font-bold mb-8 text-orange-500">TIMETABLE</h1>
+            <h1 className="text-5xl font-bold mb-8 text-orange-500">
+              TIMETABLE
+            </h1>
           </Link>
           <p className="text-xl text-gray-600">Today's Date: {formattedDate}</p>
         </div>

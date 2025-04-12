@@ -160,21 +160,15 @@ const StudentNotes = () => {
   return (
     <div className="min-h-screen bg-gray-100 flex">
       {/* Sidebar */}
-      <div
-        onMouseEnter={() => setIsSidebarHovered(true)}
-        onMouseLeave={() => setIsSidebarHovered(false)}
-        className={`${
-          isSidebarHovered ? "w-64" : "w-16"
-        } bg-blue-800 text-white h-screen transition-all duration-300 overflow-hidden`}
-      >
+      <div className="fixed w-56 bg-blue-800 text-white h-screen overflow-y-hidden border-0 outline-0">
         <StudentSidebar />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-6">
+      <div className="flex-1 p-6 ml-56">
         {/* Header Section */}
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-orange-500">NOTES</h1>
+          <h1 className="text-5xl font-bold text-orange-500">NOTES</h1>
           {/* Removed Add Notes button as requested */}
         </div>
 

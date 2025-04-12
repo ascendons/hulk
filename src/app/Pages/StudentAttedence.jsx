@@ -213,20 +213,14 @@ const StudentAttendance = () => {
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
-      <div
-        onMouseEnter={() => setIsSidebarHovered(true)}
-        onMouseLeave={() => setIsSidebarHovered(false)}
-        className={`${
-          isSidebarHovered ? "w-64" : "w-16"
-        } bg-orange-800 text-white h-screen fixed top-0 left-0 transition-all duration-300 overflow-y-hidden`}
-      >
+      <div className="fixed w-56 bg-blue-800 text-white h-screen overflow-y-hidden border-0 outline-0">
         <StudentSidebar />
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col p-6 ml-16">
+      <div className="flex-1 flex flex-col p-6 ml-56">
         {/* Header */}
-        <h1 className="text-4xl font-bold mb-8 text-orange-500">ATTENDANCE</h1>
+        <h1 className="text-5xl font-bold mb-8 text-orange-500">ATTENDANCE</h1>
         {/* Student Name */}
         <div className="mb-6">
           <input

@@ -1,6 +1,14 @@
 import React, { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, getDocs, query, where, addDoc, setDoc, doc } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  addDoc,
+  setDoc,
+  doc,
+} from "firebase/firestore";
 import { db } from "../../config";
 import { AuthContext } from "../../authContext";
 import StudentSidebar from "../Components/StudentSidebar";
@@ -68,7 +76,10 @@ const StudentAssignments = () => {
 
         // Validate required fields
         if (!student.department && !student.course) {
-          console.warn("Student document missing department/course field:", student);
+          console.warn(
+            "Student document missing department/course field:",
+            student
+          );
           setError("Student profile incomplete: Department/Course is missing.");
           setIsLoading(false);
           return;
@@ -118,9 +129,15 @@ const StudentAssignments = () => {
       }
 
       // Ensure studentData has required fields before proceeding
-      if (!studentData.department || !studentData.division || !studentData.year) {
+      if (
+        !studentData.department ||
+        !studentData.division ||
+        !studentData.year
+      ) {
         console.log("Student data incomplete:", studentData);
-        setError("Incomplete student data. Please ensure your profile is complete.");
+        setError(
+          "Incomplete student data. Please ensure your profile is complete."
+        );
         setIsLoading(false);
         return;
       }
@@ -294,9 +311,13 @@ const StudentAssignments = () => {
       });
 
       // Handle subject in "subjects" collection
-      const subjectName = selectedAssignment.subject || selectedAssignment.title;
+      const subjectName =
+        selectedAssignment.subject || selectedAssignment.title;
       if (!subjectName) {
-        console.warn("Subject name is missing for assignment:", selectedAssignment);
+        console.warn(
+          "Subject name is missing for assignment:",
+          selectedAssignment
+        );
         throw new Error("Subject name is required for the assignment.");
       }
 
@@ -326,11 +347,15 @@ const StudentAssignments = () => {
       } else {
         // Subject exists, update the existing document (optional)
         const subjectDoc = subjectSnapshot.docs[0];
-        await setDoc(doc(db, "subjects", subjectDoc.id), {
-          ...subjectDoc.data(),
-          assignmentId: selectedAssignment.id, // Update assignmentId if needed
-          updatedAt: new Date().toISOString(),
-        }, { merge: true });
+        await setDoc(
+          doc(db, "subjects", subjectDoc.id),
+          {
+            ...subjectDoc.data(),
+            assignmentId: selectedAssignment.id, // Update assignmentId if needed
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true }
+        );
         console.log(`Updated existing subject "${subjectName}" in Firestore.`);
       }
 
@@ -345,7 +370,8 @@ const StudentAssignments = () => {
     } catch (error) {
       console.error("Error uploading file or saving subject:", error);
       setUploadError(
-        error.message || "Failed to upload file or save subject. Please try again."
+        error.message ||
+          "Failed to upload file or save subject. Please try again."
       );
     } finally {
       setIsLoading(false);
@@ -366,9 +392,9 @@ const StudentAssignments = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex">
+    <div className="fixed w-56 bg-blue-800 text-white h-screen overflow-y-hidden border-0 outline-0">
       <StudentSidebar />
-      <div className="flex-grow p-6">
+      <div className="flex-grow ">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-orange-500">ASSIGNMENTS</h1>
         </div>
@@ -472,7 +498,9 @@ const StudentAssignments = () => {
               </div>
               <div>
                 <span className="font-semibold">Subjects Enrolled:</span>{" "}
-                {studentData.subjects.length > 0 ? studentData.subjects.join(", ") : "None"}
+                {studentData.subjects.length > 0
+                  ? studentData.subjects.join(", ")
+                  : "None"}
               </div>
               <div>
                 <label className="font-semibold block mb-1">Upload File:</label>

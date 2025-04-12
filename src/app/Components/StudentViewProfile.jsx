@@ -41,6 +41,7 @@ const StudentViewProfile = () => {
   const [uploading, setUploading] = useState(false);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState("");
   const [currentUserRole, setCurrentUserRole] = useState(null); // Track current user's role
+  const [activeTab, setActiveTab] = useState("Details"); // Add tabs like in TeacherViewProfile
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -269,16 +270,16 @@ const StudentViewProfile = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <p className="text-gray-600 text-xl font-semibold">Loading...</p>
+      <div className="flex justify-center items-center h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <p className="text-gray-600 text-lg">Loading...</p>
       </div>
     );
   }
 
   if (!studentInfo) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <p className="text-red-600 text-xl font-semibold">
+      <div className="flex justify-center items-center h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+        <p className="text-red-500 text-lg font-bold">
           {errorMessage ||
             "Unable to fetch student info. Please try again later."}
         </p>
@@ -287,197 +288,194 @@ const StudentViewProfile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      {errorMessage && (
-        <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-lg w-full max-w-4xl">
-          {errorMessage}
-        </div>
-      )}
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl p-8 border border-gray-200">
-        <div className="flex justify-between mb-8">
-          <button
-            onClick={
-              () =>
-                navigate(
-                  currentUserRole === "student"
-                    ? "/student-dashboard"
-                    : currentUserRole === "admin"
-                    ? "/adminstudents"
-                    : "/students"
-                ) // Dynamic back navigation based on role
-            }
-            className="bg-gray-200 text-gray-800 font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-gray-300 transition-colors"
-          >
-            Back To Home
-          </button>
-          {currentUserRole === "student" &&
-            !studentId && ( // Only show Change Password for the student's own profile (no studentId in URL)
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="bg-red-500 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-red-600 transition-colors"
-              >
-                Change Password
-              </button>
-            )}
-        </div>
-
-        <div className="flex flex-col md:flex-row gap-8">
-          <div className="flex-shrink-0 flex flex-col items-center md:items-start">
-            <div className="relative w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center mb-4 shadow-md border-2 border-blue-300">
-              {profilePhotoUrl ? (
-                <AdvancedImage
-                  cldImg={cld
-                    .image(getPublicIdFromUrl(profilePhotoUrl))
-                    .resize(
-                      fill().width(150).height(150).gravity(autoGravity())
-                    )
-                    .format("auto")
-                    .quality("auto")}
-                  className="w-full h-full object-cover rounded-full"
-                />
-              ) : (
-                <span className="text-gray-500 font-bold text-lg">IMG</span>
-              )}
-              {currentUserRole === "student" &&
-                !studentId && ( // Only allow upload for the student's own profile
-                  <label
-                    htmlFor="profilePhoto"
-                    className={`absolute bottom-0 right-0 bg-blue-500 text-white p-2 rounded-full cursor-pointer hover:bg-blue-600 transition-colors ${
-                      uploading ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    {uploading ? (
-                      <span className="flex items-center">
-                        <svg
-                          className="animate-spin h-5 w-5 mr-2"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                            fill="none"
-                          />
-                        </svg>
-                        Uploading
-                      </span>
-                    ) : (
-                      "Upload"
-                    )}
-                  </label>
-                )}
-              <input
-                type="file"
-                id="profilePhoto"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-                disabled={
-                  uploading || currentUserRole !== "student" || !!studentId
-                }
+    <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="flex-1 p-8">
+        {/* Header Section */}
+        <div className="bg-white shadow-lg rounded-lg p-4 mb-8 flex items-center border border-gray-200">
+          <div className="relative w-24 h-24 rounded-full mr-4 border border-orange-300 overflow-hidden flex-shrink-0">
+            {profilePhotoUrl ? (
+              <AdvancedImage
+                cldImg={cld
+                  .image(getPublicIdFromUrl(profilePhotoUrl))
+                  .resize(fill().width(150).height(150).gravity(autoGravity()))
+                  .format("auto")
+                  .quality("auto")}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.src = "https://via.placeholder.com/64";
+                }}
               />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900">
+            ) : (
+              <img
+                src="https://via.placeholder.com/64"
+                alt={`${studentInfo.name}'s profile`}
+                className="w-full h-full object-cover"
+              />
+            )}
+            {currentUserRole === "student" && !studentId && (
+              <label
+                htmlFor="profile-upload"
+                className="absolute bottom-0 right-0 bg-orange-500 rounded-full p-1 cursor-pointer shadow-md hover:bg-orange-600 transition duration-300"
+              >
+                <svg
+                  className="w-4 h-4 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                </svg>
+              </label>
+            )}
+            <input
+              id="profile-upload"
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              className="hidden"
+              disabled={
+                uploading || currentUserRole !== "student" || !!studentId
+              }
+            />
+            {uploading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
+                <p className="text-white text-xs">Uploading...</p>
+              </div>
+            )}
+          </div>
+          <div className="flex-1">
+            <h2 className="text-xl font-semibold text-gray-900">
               {studentInfo.name}
             </h2>
+            <p className="text-gray-600 text-sm">{studentInfo.email}</p>
+            <p className="text-gray-600 text-sm">
+              Course: {studentInfo.course}
+            </p>
+            <span className="inline-block bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs mt-1">
+              Student
+            </span>
           </div>
+        </div>
 
-          <div className="w-full md:w-2/3">
-            <div className="space-y-6">
-              <div className="mb-4">
-                <label className="block text-gray-600 font-medium mb-2">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  value={studentInfo.name}
-                  readOnly
-                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
+        {/* Tabs */}
+        <div className="border-b border-gray-200 mb-8">
+          <nav className="flex space-x-6">
+            {["Details", "Security", "Payment", "Analytics"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === tab
+                    ? "border-orange-500 text-orange-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        {/* Tab Content */}
+        <div className="bg-white shadow-lg rounded-lg p-6">
+          {activeTab === "Details" && (
+            <div>
+              <h3 className="text-xl font-bold text-gray-800 mb-6">
+                Student Details
+              </h3>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <p className="text-gray-600">
+                    <strong className="text-gray-800">Name:</strong>{" "}
+                    {studentInfo.name}
+                  </p>
+                  <p className="text-gray-600">
+                    <strong className="text-gray-800">Email:</strong>{" "}
+                    {studentInfo.email}
+                  </p>
+                  <p className="text-gray-600">
+                    <strong className="text-gray-800">Phone:</strong>{" "}
+                    {studentInfo.phonenumber || "N/A"}
+                  </p>
+                  <p className="text-gray-600">
+                    <strong className="text-gray-800">Course:</strong>{" "}
+                    {studentInfo.course || "N/A"}
+                  </p>
+                  <p className="text-gray-600">
+                    <strong className="text-gray-800">Division:</strong>{" "}
+                    {studentInfo.division || "N/A"}
+                  </p>
+                  <p className="text-gray-600">
+                    <strong className="text-gray-800">Year:</strong>{" "}
+                    {studentInfo.year || "N/A"}
+                  </p>
+                  <p className="text-gray-600">
+                    <strong className="text-gray-800">Student ID:</strong>{" "}
+                    {studentInfo.studentid || "N/A"}
+                  </p>
+                  <p className="text-gray-600">
+                    <strong className="text-gray-800">Roll Number:</strong>{" "}
+                    {studentInfo.rollno || "N/A"}
+                  </p>
+                </div>
               </div>
-              <div className="mb-4">
-                <label className="block text-gray-600 font-medium mb-2">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  value={studentInfo.email}
-                  readOnly
-                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <span className="text-green-500 text-sm ml-2">✔</span>
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-600 font-medium mb-2">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  value={studentInfo.phonenumber || "N/A"}
-                  readOnly
-                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <span className="text-green-500 text-sm ml-2">✔</span>
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-600 font-medium mb-2">
-                  Course
-                </label>
-                <input
-                  type="text"
-                  value={studentInfo.course || "N/A"}
-                  readOnly
-                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-600 font-medium mb-2">
-                  Division
-                </label>
-                <input
-                  type="text"
-                  value={studentInfo.division || "N/A"}
-                  readOnly
-                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-600 font-medium mb-2">
-                  Year
-                </label>
-                <input
-                  type="text"
-                  value={studentInfo.year || "N/A"}
-                  readOnly
-                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-600 font-medium mb-2">
-                  Student ID
-                </label>
-                <input
-                  type="text"
-                  value={studentInfo.studentid || "N/A"}
-                  readOnly
-                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-600 font-medium mb-2">
-                  Roll Number
-                </label>
-                <input
-                  type="text"
-                  value={studentInfo.rollno || "N/A"}
-                  readOnly
-                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+              <button
+                onClick={() =>
+                  navigate(
+                    currentUserRole === "student"
+                      ? "/student-dashboard"
+                      : currentUserRole === "admin"
+                      ? "/adminstudents"
+                      : "/students"
+                  )
+                }
+                className="mt-6 bg-purple-600 text-white px-4 py-2 rounded-full hover:bg-purple-700 transition duration-300"
+              >
+                Back to Students
+              </button>
             </div>
-          </div>
+          )}
+          {activeTab === "Security" && (
+            <div>
+              <h3 className="text-xl font-bold text-gray-800 mb-4">Security</h3>
+              <p className="text-gray-600 mb-6">
+                Update your password to keep your account secure.
+              </p>
+              {currentUserRole === "student" && !studentId && (
+                <button
+                  onClick={() => setIsModalOpen(true)}
+                  className="bg-orange-500 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-orange-600 transition-colors"
+                >
+                  Change Password
+                </button>
+              )}
+            </div>
+          )}
+          {activeTab === "Payment" && (
+            <div>
+              <h3 className="text-xl font-bold text-gray-800 mb-4">Payment</h3>
+              <p className="text-gray-600">Payment features coming soon.</p>
+            </div>
+          )}
+          {activeTab === "Analytics" && (
+            <div>
+              <h3 className="text-xl font-bold text-gray-800 mb-4">
+                Analytics
+              </h3>
+              <p className="text-gray-600">Analytics features coming soon.</p>
+            </div>
+          )}
         </div>
       </div>
 

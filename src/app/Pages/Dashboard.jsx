@@ -92,9 +92,7 @@ const Dashboard = () => {
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
-          console.warn(
-            "No user data found in 'users' collection for UID:",
-          );
+          console.warn("No user data found in 'users' collection for UID:");
           setError("User data not found in Firestore.");
           return;
         }
@@ -220,14 +218,12 @@ const Dashboard = () => {
               const compositeId = doc.id;
               const dateStr = compositeId.split("_")[3];
 
-
               if (dateStr && dateStr.length === 8) {
                 const year = parseInt(dateStr.substring(0, 4));
                 const month = parseInt(dateStr.substring(4, 6)) - 1;
                 const day = parseInt(dateStr.substring(6, 8));
                 const eventDate = new Date(year, month, day);
                 eventDate.setHours(0, 0, 0, 0);
-
 
                 if (data.lectures && Array.isArray(data.lectures)) {
                   data.lectures.forEach((lecture, index) => {
@@ -249,9 +245,7 @@ const Dashboard = () => {
                   });
                 }
               } else {
-                console.log(
-                  "Invalid date format for compositeId:",
-                );
+                console.log("Invalid date format for compositeId:");
               }
             });
 
