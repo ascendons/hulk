@@ -34,7 +34,6 @@ const Notices = () => {
     setIsPreviewOpen(true);
   };
 
-  // Close preview modal
   const closePreview = () => {
     setIsPreviewOpen(false);
     setSelectedFileUrl(null);

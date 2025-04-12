@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react"; // Add useContext
 import { useNavigate } from "react-router-dom";
 import Sidebar from "../Components/Sidebar";
 import {
@@ -11,12 +11,14 @@ import {
   doc,
 } from "firebase/firestore";
 import { db } from "../../config";
+import { AuthContext } from "../../authContext"; // Import AuthContext
 import { Users } from "lucide-react";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
 const MarkAttendance = () => {
   const navigate = useNavigate();
+  const { user } = useContext(AuthContext); // Access the logged-in user
   const [students, setStudents] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [attendance, setAttendance] = useState({});
@@ -62,11 +64,11 @@ const MarkAttendance = () => {
             division: studentData.division,
             phonenumber: studentData.phonenumber,
             rollno: studentData.rollno,
-            studentid: studentData.studentid, 
+            studentid: studentData.studentid,
             year: studentData.year,
             studentname: userDoc.exists() ? userDoc.data().name : "Unknown",
             email: userDoc.exists() ? userDoc.data().email : "Unknown",
-            userId: studentData.userId,  
+            userId: studentData.userId,
           };
         })
       );
@@ -114,6 +116,13 @@ const MarkAttendance = () => {
   };
 
   const handleSaveAttendance = async () => {
+    if (!user || !user.uid) {
+      toast.error("User not authenticated. Please log in.", {
+        style: { backgroundColor: "#FF6B6B" },
+      });
+      return;
+    }
+
     if (!lectureName || !startTime || !endTime) {
       toast.error("Please fill in all the fields!", {
         style: { backgroundColor: "#FF6B6B" },
@@ -137,11 +146,15 @@ const MarkAttendance = () => {
         status: attendance[student.id],
         subject: lectureName,
         year: selectedYear,
-        userId: student.userId,
+        userId: student.userId, // Student userId
       }));
 
       await addDoc(collection(db, "studentAttendance"), {
         attendance: attendanceData,
+        teacherUserId: user.uid, // Add the logged-in teacher's userId
+        startTime: startTime,
+        endTime: endTime,
+        createdAt: new Date().toISOString(),
       });
 
       toast.success("Attendance saved successfully!", {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   collection,
@@ -23,13 +23,12 @@ const StudentAssignments = () => {
   const [assignments, setAssignments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [studentData, setStudentData] = useState({
     name: "",
     department: "",
     division: "",
     year: "",
-    subjects: [], // Added subjects field as an array
+    subjects: [],
   });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
@@ -38,8 +37,36 @@ const StudentAssignments = () => {
   const [submissions, setSubmissions] = useState({});
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   const { user } = useContext(AuthContext);
+
+  useEffect(() => {
+    console.log("Assignments state updated:", assignments);
+  }, [assignments]);
+
+  useEffect(() => {
+    const testSupabase = async () => {
+      try {
+        const { data, error } = await supabase.storage
+          .from("assignments")
+          .list();
+        if (error) {
+          console.error("Supabase connectivity test failed:", error);
+          setError(
+            "Cannot connect to Supabase. Check your network or Supabase configuration."
+          );
+        } else {
+          console.log("Supabase connectivity test successful:", data);
+        }
+      } catch (err) {
+        console.error("Unexpected error during Supabase test:", err);
+        setError("Unexpected error connecting to Supabase.");
+      }
+    };
+    testSupabase();
+  }, []);
 
   useEffect(() => {
     const fetchStudentData = async () => {
@@ -74,7 +101,6 @@ const StudentAssignments = () => {
         const student = studentSnapshot.docs[0].data();
         console.log("Fetched student data:", student);
 
-        // Validate required fields
         if (!student.department && !student.course) {
           console.warn(
             "Student document missing department/course field:",
@@ -101,13 +127,15 @@ const StudentAssignments = () => {
           );
         }
 
-        setStudentData({
+        const updatedStudentData = {
           name: studentName,
           department: student.course || student.department || "",
           division: student.division || "",
           year: student.year || "",
-          subjects: student.subjects || [], // Fetch subjects array, default to empty array if not present
-        });
+          subjects: student.subjects || [],
+        };
+        console.log("Setting studentData:", updatedStudentData);
+        setStudentData(updatedStudentData);
       } catch (error) {
         console.error("Error fetching student data:", error);
         setError("Failed to fetch student data. Check console for details.");
@@ -128,7 +156,6 @@ const StudentAssignments = () => {
         return;
       }
 
-      // Ensure studentData has required fields before proceeding
       if (
         !studentData.department ||
         !studentData.division ||
@@ -159,33 +186,30 @@ const StudentAssignments = () => {
           where("year", "==", studentData.year)
         );
         const querySnapshot = await getDocs(q);
+        console.log("Firestore query snapshot size:", querySnapshot.size);
+        querySnapshot.forEach((doc) => {
+          console.log("Assignment document:", doc.id, doc.data());
+        });
 
         let fetchedAssignments = [];
         if (!querySnapshot.empty) {
-          fetchedAssignments = await Promise.all(
-            querySnapshot.docs.map(async (doc) => {
-              const assignmentData = doc.data();
-              if (assignmentData.filePath) {
-                const { data: fileData, error: fileError } =
-                  await supabase.storage
-                    .from("assignments")
-                    .getPublicUrl(assignmentData.filePath);
-
-                if (fileError) {
-                  console.error(
-                    "Error fetching file URL from Supabase:",
-                    fileError
-                  );
-                  return { id: doc.id, ...assignmentData, fileURL: null };
-                }
-                return {
-                  id: doc.id,
-                  ...assignmentData,
-                  fileURL: fileData.publicUrl,
-                };
-              }
-              return { id: doc.id, ...assignmentData };
-            })
+          fetchedAssignments = querySnapshot.docs.map((doc) => {
+            const assignmentData = doc.data();
+            return {
+              id: doc.id,
+              ...assignmentData,
+              dueDate: assignmentData.dueDate
+                ? new Date(assignmentData.dueDate).toISOString()
+                : null,
+              timestamp: assignmentData.timestamp
+                ? assignmentData.timestamp.toDate().toISOString()
+                : null,
+              fileURLs: assignmentData.fileURLs || [],
+            };
+          });
+          console.log(
+            "Fetched assignments before setting state:",
+            fetchedAssignments
           );
           setAssignments(fetchedAssignments);
           localStorage.setItem(
@@ -211,13 +235,15 @@ const StudentAssignments = () => {
         );
         const submissionSnapshot = await getDocs(submissionQuery);
         const submissionData = {};
-        submissionSnapshot.docs.forEach((doc) => {
+        submissionSnapshot.forEach((doc) => {
           const data = doc.data();
           submissionData[data.assignmentId] = {
             submittedAt: data.submittedAt,
             filePath: data.filePath,
+            marks: data.marks, // Add marks to the submission data
           };
         });
+        console.log("Fetched submissions:", submissionData);
         setSubmissions(submissionData);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -229,8 +255,24 @@ const StudentAssignments = () => {
       }
     };
 
-    fetchAssignmentsAndSubmissions();
-  }, [studentData.department, studentData.division, studentData.year, user]); // Optimized dependencies
+    if (
+      studentData.department &&
+      studentData.division &&
+      studentData.year &&
+      user
+    ) {
+      console.log(
+        "fetchAssignmentsAndSubmissions triggered with dependencies:",
+        {
+          department: studentData.department,
+          division: studentData.division,
+          year: studentData.year,
+          user: user,
+        }
+      );
+      fetchAssignmentsAndSubmissions();
+    }
+  }, [studentData.department, studentData.division, studentData.year, user]);
 
   const handleUploadClick = (assignment) => {
     if (!isAssignmentSubmitted(assignment.id)) {
@@ -310,7 +352,6 @@ const StudentAssignments = () => {
         year: studentData.year,
       });
 
-      // Handle subject in "subjects" collection
       const subjectName =
         selectedAssignment.subject || selectedAssignment.title;
       if (!subjectName) {
@@ -321,7 +362,6 @@ const StudentAssignments = () => {
         throw new Error("Subject name is required for the assignment.");
       }
 
-      // Check if the subject already exists in the "subjects" collection
       const subjectsRef = collection(db, "subjects");
       const subjectQuery = query(
         subjectsRef,
@@ -333,25 +373,23 @@ const StudentAssignments = () => {
       const subjectSnapshot = await getDocs(subjectQuery);
 
       if (subjectSnapshot.empty) {
-        // If subject doesn't exist, create a new document
         await addDoc(collection(db, "subjects"), {
           subject: subjectName,
           department: studentData.department,
           division: studentData.division,
           year: studentData.year,
-          subjects: studentData.subjects, // Include the student's subjects array
-          assignmentId: selectedAssignment.id, // Optional: Link to the assignment
+          subjects: studentData.subjects,
+          assignmentId: selectedAssignment.id,
           createdAt: new Date().toISOString(),
         });
         console.log(`Added new subject "${subjectName}" to Firestore.`);
       } else {
-        // Subject exists, update the existing document (optional)
         const subjectDoc = subjectSnapshot.docs[0];
         await setDoc(
           doc(db, "subjects", subjectDoc.id),
           {
             ...subjectDoc.data(),
-            assignmentId: selectedAssignment.id, // Update assignmentId if needed
+            assignmentId: selectedAssignment.id,
             updatedAt: new Date().toISOString(),
           },
           { merge: true }
@@ -391,10 +429,36 @@ const StudentAssignments = () => {
     return null;
   };
 
+  const getSubmissionMarks = (assignmentId) => {
+    if (
+      submissions[assignmentId] &&
+      submissions[assignmentId].marks !== undefined
+    ) {
+      return submissions[assignmentId].marks;
+    }
+    return null;
+  };
+
+  const handlePreview = (url) => {
+    console.log("handlePreview called with URL:", url);
+    setPreviewUrl(url);
+    setIsPreviewOpen(true);
+  };
+
+  const closePreview = () => {
+    setIsPreviewOpen(false);
+    setPreviewUrl(null);
+    console.log("Preview modal closed");
+  };
+
   return (
-    <div className="fixed w-56 bg-blue-800 text-white h-screen overflow-y-hidden border-0 outline-0">
-      <StudentSidebar />
-      <div className="flex-grow ">
+    <div className="flex min-h-screen">
+      <Suspense fallback={<div>Loading Sidebar...</div>}>
+        <div className="fixed w-56 bg-blue-800 text-white h-screen overflow-y-hidden border-0 outline-0">
+          <StudentSidebar />
+        </div>
+      </Suspense>
+      <div className="flex-grow ml-56 p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-orange-500">ASSIGNMENTS</h1>
         </div>
@@ -421,27 +485,52 @@ const StudentAssignments = () => {
                   {assignment.subject || assignment.title}
                 </h2>
                 <p className="text-sm text-gray-600">
-                  Due Date: {new Date(assignment.dueDate).toLocaleDateString()}
+                  Due Date:{" "}
+                  {assignment.dueDate
+                    ? new Date(assignment.dueDate).toLocaleDateString()
+                    : "N/A"}
                 </p>
                 <p className="text-sm text-gray-600">
                   Marks: {assignment.marks}
                 </p>
-                {assignment.fileURL && (
-                  <a
-                    href={assignment.fileURL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-500 hover:text-blue-600 underline"
-                  >
-                    Download File
-                  </a>
-                )}
+                <p className="text-sm text-gray-600">
+                  <span className="font-semibold">Attachments:</span>{" "}
+                  {assignment.fileURLs && assignment.fileURLs.length > 0 ? (
+                    assignment.fileURLs.map((url, index) => (
+                      <span key={index}>
+                        <a
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-orange-500 underline hover:text-orange-600 mr-2"
+                        >
+                          Download File {index + 1}
+                        </a>
+                        <button
+                          onClick={() => handlePreview(url)}
+                          className="text-blue-500 underline hover:text-blue-700 mr-2"
+                        >
+                          View Preview
+                        </button>
+                      </span>
+                    ))
+                  ) : (
+                    <span>No attachments</span>
+                  )}
+                </p>
                 {isAssignmentSubmitted(assignment.id) && (
-                  <p className="text-sm text-green-600">
-                    Submitted: {getSubmissionDateTime(assignment.id)}
-                  </p>
+                  <>
+                    <p className="text-sm text-green-600">
+                      Submitted: {getSubmissionDateTime(assignment.id)}
+                    </p>
+                    {getSubmissionMarks(assignment.id) !== null && (
+                      <p className="text-sm text-blue-600">
+                        Obtained Marks: {getSubmissionMarks(assignment.id)}
+                      </p>
+                    )}
+                  </>
                 )}
-                <div className="flex justify-end">
+                <div className="flex justify-end mt-2">
                   <button
                     className={`px-4 py-2 rounded-md text-white font-medium ${
                       isAssignmentSubmitted(assignment.id)
@@ -472,6 +561,7 @@ const StudentAssignments = () => {
         )}
       </div>
 
+      {/* Upload Modal */}
       {isModalOpen && selectedAssignment && (
         <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-xl">
@@ -573,9 +663,70 @@ const StudentAssignments = () => {
         </div>
       )}
 
+      {/* Success Popup */}
       {showSuccessPopup && (
         <div className="fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md shadow-lg">
           Assignment uploaded successfully!
+        </div>
+      )}
+
+      {/* Preview Modal */}
+      {isPreviewOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg w-full max-w-4xl h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold text-gray-800">
+                Attachment Preview
+              </h2>
+              <button
+                onClick={closePreview}
+                className="text-red-500 hover:text-red-700 text-lg font-bold"
+              >
+                ×
+              </button>
+            </div>
+            {previewUrl && typeof previewUrl === "string" ? (
+              previewUrl.endsWith(".pdf") ||
+              previewUrl.includes("application/pdf") ? (
+                <iframe
+                  src={previewUrl}
+                  width="100%"
+                  height="600px"
+                  className="rounded-lg"
+                  title="PDF Preview"
+                  onError={(e) => {
+                    console.error("Iframe error:", e);
+                    alert(
+                      "Failed to preview PDF. The file may be corrupted, blocked, or inaccessible."
+                    );
+                  }}
+                />
+              ) : /\.(jpg|jpeg|png|gif)$/i.test(previewUrl) ? (
+                <img
+                  src={previewUrl}
+                  alt="Attachment Preview"
+                  className="w-full h-auto rounded-lg"
+                  title="Image Preview"
+                  aria-label="Image Preview"
+                  onError={(e) => {
+                    console.error("Image error:", e);
+                    alert(
+                      "Failed to preview image. The file may be corrupted or blocked."
+                    );
+                  }}
+                />
+              ) : (
+                <p className="text-gray-600">
+                  Preview not available for this file type. Please download to
+                  view.
+                </p>
+              )
+            ) : (
+              <p className="text-red-500">
+                Error: Invalid file URL for preview.
+              </p>
+            )}
+          </div>
         </div>
       )}
     </div>

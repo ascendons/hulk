@@ -14,8 +14,8 @@ const CreateNotice = () => {
   const [noticeBy, setNoticeBy] = useState("Guest");
   const [loading, setLoading] = useState(false);
   const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadComplete, setUploadComplete] = useState(false);
 
   useEffect(() => {
     const fetchUserName = async () => {
@@ -45,9 +45,20 @@ const CreateNotice = () => {
     fetchUserName();
   }, []);
 
+  const simulateProgress = () => {
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 10;
+      setUploadProgress(progress);
+      if (progress >= 90) {
+        clearInterval(interval); // Stop at 90% to wait for the actual upload to finish
+      }
+    }, 200); // Update every 200ms
+    return interval;
+  };
+
   const handleFileUpload = async (file) => {
     try {
-      // Validate file type (PDF or image)
       const validTypes = [
         "application/pdf",
         "image/jpeg",
@@ -58,15 +69,20 @@ const CreateNotice = () => {
         throw new Error("Only PDF, JPEG, PNG, and GIF files are supported.");
       }
 
+      // Start simulating progress
+      const progressInterval = simulateProgress();
+
       const timestamp = Date.now();
-      const filePath = `notices/${timestamp}_${file.name}`; // Unique path in notices bucket
+      const filePath = `notices/${timestamp}_${file.name}`;
       console.log("Uploading file to path:", filePath);
 
       const { error: uploadError } = await supabase.storage
-        .from("notices") // Use the 'notices' bucket
+        .from("notices")
         .upload(filePath, file, {
           upsert: true,
         });
+
+      clearInterval(progressInterval); // Stop the simulation
 
       if (uploadError) {
         console.error("Upload error:", uploadError);
@@ -90,17 +106,26 @@ const CreateNotice = () => {
         ...prevFiles,
         { name: file.name, type: file.type, url: publicUrlData.publicUrl },
       ]);
-      setUploadProgress(100);
+      setUploadProgress(100); // Set to 100% on completion
+      setUploadComplete(true);
+
+      // Reset after 2 seconds
+      setTimeout(() => {
+        setUploadComplete(false);
+        setUploadProgress(0);
+      }, 2000);
     } catch (error) {
       console.error("Error in handleFileUpload:", error);
       alert(error.message);
       setUploadProgress(0);
+      setUploadComplete(false);
     }
   };
 
   const handleRemoveFile = (index) => {
     setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
-    setUploadProgress(0); // Reset progress when removing a file
+    setUploadProgress(0);
+    setUploadComplete(false);
   };
 
   const handleSubmit = async (e) => {
@@ -119,12 +144,12 @@ const CreateNotice = () => {
 
       await setDoc(doc(collection(db, "notices")), noticeData);
 
-      // Reset form
       setTitle("");
       setContent("");
       setFiles([]);
       setCategory("");
-      setUploadProgress(0); // Reset progress
+      setUploadProgress(0);
+      setUploadComplete(false);
       alert("Notice created successfully!");
     } catch (error) {
       console.error("Error creating notice:", error);
@@ -136,7 +161,6 @@ const CreateNotice = () => {
 
   return (
     <div className="flex h-screen w-screen bg-gray-50 overflow-hidden">
-      {/* Sidebar */}
       <div className="fixed w-64 bg-gray-900 text-white h-screen overflow-y-auto border-0 outline-0">
         <Sidebar />
       </div>
@@ -147,7 +171,6 @@ const CreateNotice = () => {
             CREATE NOTICE
           </h2>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Title */}
             <div>
               <label className="block text-lg text-gray-700 font-semibold mb-2">
                 Title
@@ -193,12 +216,9 @@ const CreateNotice = () => {
                     key={index}
                     className="flex justify-between items-center bg-gray-50 p-3 rounded-lg border mb-2"
                   >
-                    {/* Display the file name */}
                     <span className="text-gray-800 truncate max-w-[80%]">
                       {file.name}
                     </span>
-
-                    {/* Remove button with icon */}
                     <button
                       type="button"
                       onClick={() => handleRemoveFile(index)}
@@ -221,7 +241,7 @@ const CreateNotice = () => {
                     </button>
                   </div>
                 ))}
-                {uploadProgress > 0 && uploadProgress < 100 && (
+                {uploadProgress > 0 && !uploadComplete && (
                   <div className="mt-2">
                     <p className="text-sm text-gray-600">
                       Uploading: {Math.round(uploadProgress)}%
@@ -231,6 +251,11 @@ const CreateNotice = () => {
                       max="100"
                       className="w-full h-2 rounded-lg"
                     />
+                  </div>
+                )}
+                {uploadComplete && (
+                  <div className="mt-2">
+                    <p className="text-sm text-green-600">Upload complete!</p>
                   </div>
                 )}
               </div>
@@ -255,7 +280,6 @@ const CreateNotice = () => {
               </select>
             </div>
 
-            {/* Notice By */}
             <div>
               <label className="block text-lg text-gray-700 font-semibold mb-2">
                 Notice By
