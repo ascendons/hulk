@@ -18,7 +18,6 @@ import { fill } from "@cloudinary/url-gen/actions/resize";
 import { autoGravity } from "@cloudinary/url-gen/qualifiers/gravity";
 import ReactMarkdown from "react-markdown";
 
-// Initialize Cloudinary
 const CLOUD_NAME = "dwdejk1u3";
 const cld = new Cloudinary({
   cloud: {
@@ -403,6 +402,7 @@ const Dashboard = () => {
             Syllabus
           </button>
         </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white shadow-lg rounded-lg p-6 max-h-96 overflow-y-auto">
             <h2 className="text-2xl font-bold text-gray-800 mb-4">

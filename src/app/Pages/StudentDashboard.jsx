@@ -15,10 +15,35 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "../../config";
 import { renderSkeleton } from "../Components/reactSkelton";
+<<<<<<< HEAD
 import ReactMarkdown from "react-markdown"; // Add for Markdown rendering
+=======
+import { Cloudinary } from "@cloudinary/url-gen";
+import { AdvancedImage } from "@cloudinary/react";
+import { fill } from "@cloudinary/url-gen/actions/resize";
+import { autoGravity } from "@cloudinary/url-gen/qualifiers/gravity";
+
+const CLOUD_NAME = "dwdejk1u3";
+const cld = new Cloudinary({
+  cloud: {
+    cloudName: CLOUD_NAME,
+  },
+});
+
+const getPublicIdFromUrl = (url) => {
+  if (!url) return "";
+  const regex = /\/v\d+\/(.+?)(?:\.\w+)?$/; // Matches /v[version]/public_id(.extension)?
+  const match = url.match(regex);
+  if (!match) {
+    console.warn("Invalid Cloudinary URL, using full URL as fallback:", url);
+    return url; // Fallback to full URL if regex fails
+  }
+  return match[1]; // Returns the public_id (e.g., "teachers_profiles/some-image")
+};
+>>>>>>> eaa7921233d0d266183d89e80df2faf16e28343e
 
 const StudentDashboard = () => {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [, setIsSidebarOpen] = useState(false); // Fixed unused state variable
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [studentData, setStudentData] = useState(null);
   const [attendancePercentage, setAttendancePercentage] = useState(0);
@@ -29,6 +54,7 @@ const StudentDashboard = () => {
   const [timers, setTimers] = useState({});
   const [loading, setLoading] = useState(true);
 
+<<<<<<< HEAD
   const handleMouseEnter = () => {
     setIsSidebarHovered(true);
   };
@@ -193,6 +219,8 @@ const StudentDashboard = () => {
     }
   };
 
+=======
+>>>>>>> eaa7921233d0d266183d89e80df2faf16e28343e
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -201,6 +229,7 @@ const StudentDashboard = () => {
           const studentDoc = await getDoc(studentDocRef);
 
           if (studentDoc.exists()) {
+<<<<<<< HEAD
             const data = studentDoc.data();
             const userdocRef = doc(db, "users", data.userId);
             const userdoc = await getDoc(userdocRef);
@@ -280,10 +309,30 @@ const StudentDashboard = () => {
               // Fetch notices and upcoming events
               await fetchNotices();
               await fetchUpcomingEvents();
+=======
+            console.log("Student document found:", studentDoc.data());
+            const data = studentDoc.data();
+            const userDocRef = doc(db, "users", data.userId);
+            const userDoc = await getDoc(userDocRef);
+
+            if (userDoc.exists()) {
+              const userData = userDoc.data();
+              setStudentData({
+                name: userData.name || "Student Name",
+                department: data.department || "Department",
+                course: data.course || "Course",
+                division: data.division || "Division",
+                year: data.year || "Year",
+                rollNo: data.rollno || "Roll No",
+                phoneNumber: data.phonenumber || "Phone Number",
+                profilePhotoUrl: data.profilePhotoUrl || "",
+              });
+>>>>>>> eaa7921233d0d266183d89e80df2faf16e28343e
             } else {
               console.error("No user document found for userId:", data.userId);
               setStudentData({
                 name: "Student Name",
+<<<<<<< HEAD
                 department: data.department || "Bsc.IT",
                 course: data.course || "Bsc.IT",
                 division: "A",
@@ -296,17 +345,37 @@ const StudentDashboard = () => {
               setTotalAssignments(0);
               setNotices([]);
               setUpcomingEvents([]);
+=======
+                department: data.department || "Department",
+                course: data.course || "Course",
+                division: data.division || "Division",
+                year: data.year || "Year",
+                rollNo: data.rollno || "Roll No",
+                phoneNumber: data.phonenumber || "Phone Number",
+                profilePhotoUrl: data.profilePhotoUrl || "",
+              });
+>>>>>>> eaa7921233d0d266183d89e80df2faf16e28343e
             }
           } else {
             console.error("No student document found for UID:", user.uid);
             setStudentData({
               name: "Student Name",
+<<<<<<< HEAD
               department: "Bsc.IT",
               course: "Bsc.IT",
               division: "A",
               year: "Third Year",
               rollNo: "Roll No",
               phoneNumber: "Phone Number",
+=======
+              department: "Department",
+              course: "Course",
+              division: "Division",
+              year: "Year",
+              rollNo: "Roll No",
+              phoneNumber: "Phone Number",
+              profilePhotoUrl: "",
+>>>>>>> eaa7921233d0d266183d89e80df2faf16e28343e
             });
             setAttendancePercentage(0);
             setTotalNotes(0);
@@ -324,6 +393,7 @@ const StudentDashboard = () => {
             year: "Third Year",
             rollNo: "Roll No",
             phoneNumber: "Phone Number",
+            profilePhotoUrl: "",
           });
           setAttendancePercentage(0);
           setTotalNotes(0);
@@ -365,7 +435,18 @@ const StudentDashboard = () => {
     return renderSkeleton();
   }
 
+  if (!studentData) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <p className="text-red-600 text-xl font-semibold">
+          No student data available. Please log in.
+        </p>
+      </div>
+    );
+  }
+
   return (
+<<<<<<< HEAD
     <div className="flex min-h-screen bg-gray-50">
       <div className="fixed w-56 bg-blue-800 text-white h-screen overflow-y-hidden border-0 outline-0">
         <StudentSidebar />
@@ -373,9 +454,14 @@ const StudentDashboard = () => {
       {/* Main Content */}
       <div className="flex-1 p-6 ml-56">
         <h1 className="text-5xl font-bold text-orange-500 mb-6">Dashboard</h1>
+=======
+    <div className="flex min-h-screen bg-gray-100">
+      <StudentSidebar />
+>>>>>>> eaa7921233d0d266183d89e80df2faf16e28343e
 
         {/* Welcome Section */}
         <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex items-center justify-between border border-gray-200">
+<<<<<<< HEAD
           <div className="flex items-center">
             <div className="w-12 h-12 bg-gray-300 rounded-full mr-4 flex items-center justify-center">
               <span className="text-gray-500 font-bold text-lg">IMG</span>
@@ -383,9 +469,38 @@ const StudentDashboard = () => {
             <div>
               <p className="text-gray-800 font-semibold">
                 Welcome back, <span className="text-orange-500">Student!</span>
+=======
+          <div className="flex items-center space-x-4">
+            <div className="w-16 h-16 rounded-full border-2 border-blue-300 overflow-hidden">
+              {studentData.profilePhotoUrl ? (
+                <AdvancedImage
+                  cldImg={cld
+                    .image(getPublicIdFromUrl(studentData.profilePhotoUrl))
+                    .resize(fill().width(64).height(64).gravity(autoGravity()))
+                    .format("auto")
+                    .quality("auto")}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    console.error("Error loading image:", studentData.profilePhotoUrl);
+                    e.target.style.display = "none"; // Hide on error
+                  }}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gray-300 text-gray-500 font-bold text-lg">
+                  IMG
+                </div>
+              )}
+            </div>
+            <div>
+              <p className="text-gray-800 font-semibold">
+                Welcome back,{" "}
+                <span className="text-orange-500 font-semibold">
+                  {studentData.name.split(" ")[0]}!
+                </span>
+>>>>>>> eaa7921233d0d266183d89e80df2faf16e28343e
               </p>
-              <p className="text-gray-600">Student Name: {studentData?.name}</p>
-              <p className="text-gray-600">Department: {studentData?.course}</p>
+              <p className="text-gray-600">Student Name: {studentData.name}</p>
+              <p className="text-gray-600">Department: {studentData.course}</p>
               <p className="text-gray-600">Role: Student</p>
             </div>
           </div>
@@ -397,7 +512,6 @@ const StudentDashboard = () => {
           </Link>
         </div>
 
-        {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <div className="bg-white p-4 rounded-lg shadow-md text-center border border-gray-200">
             <p className="text-3xl font-bold text-blue-600">15</p>
@@ -421,7 +535,6 @@ const StudentDashboard = () => {
           </div>
         </div>
 
-        {/* Action Buttons */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <Link
             to="/student-timetable"
@@ -449,6 +562,7 @@ const StudentDashboard = () => {
           </Link>
         </div>
 
+<<<<<<< HEAD
         {/* Notice Board and Upcoming Events */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Notice Board */}
@@ -552,6 +666,16 @@ const StudentDashboard = () => {
             ) : (
               <p className="text-gray-600">No upcoming events available.</p>
             )}
+=======
+        <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Notice Board</h2>
+          <div className="space-y-4">
+            <div>
+              <p className="text-gray-600">New testing notice</p>
+              <p className="text-gray-500 text-sm">By: </p>
+              <p className="text-gray-700">Hellownladiskdidad a dakdald</p>
+            </div>
+>>>>>>> eaa7921233d0d266183d89e80df2faf16e28343e
           </div>
         </div>
       </div>
