@@ -23,33 +23,33 @@ const Signuppage = ({ onLogin }) => {
     setIsLoading(true);
 
     try {
-      console.log("Attempting to sign in with email:", email, "and password length:", password.length);
+      // console.log("Attempting to sign in with email:", email, "and password length:", password.length);
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
         password
       );
       const user = userCredential.user;
-      console.log("User signed in with UID:", user.uid);
+      // console.log("User signed in with UID:", user.uid);
 
       const userDocRef = doc(db, "users", user.uid);
       const userDoc = await getDoc(userDocRef);
 
       if (userDoc.exists()) {
-        console.log("User document found:", userDoc.data());
+        // console.log("User document found:", userDoc.data());
         const userData = userDoc.data();
         const role = userData.role;
 
         if (role === "Admin") {
-          console.log("Redirecting admin to /admin");
+          // console.log("Redirecting admin to /admin");
           toast.success("Welcome, Admin!");
           navigate("/admin");
         } else if (role === "teacher") {
-          console.log("Redirecting teacher to /dashboard");
+          // console.log("Redirecting teacher to /dashboard");
           toast.success("Welcome, Teacher!");
           navigate("/dashboard");
         } else if (role === "student") {
-          console.log("Redirecting student to /student-dashboard");
+          // console.log("Redirecting student to /student-dashboard");
           toast.success("Welcome, Student!");
           navigate("/student-dashboard");
         } else {
@@ -57,14 +57,18 @@ const Signuppage = ({ onLogin }) => {
           toast.error("Unknown role detected. Please contact support.");
         }
       } else {
-        console.error("User document not found for UID:", user.uid);
-        toast.error("User data not found in Firestore. Please ensure your account is registered with a role.");
+        // console.error("User document not found for UID:", user.uid);
+        toast.error(
+          "User data not found in Firestore. Please ensure your account is registered with a role."
+        );
       }
 
       onLogin();
     } catch (err) {
       console.error("Sign-in error details:", err.code, err.message);
-      toast.error(err.message || "An unexpected error occurred during sign-in.");
+      toast.error(
+        err.message || "An unexpected error occurred during sign-in."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -230,7 +234,6 @@ const Signuppage = ({ onLogin }) => {
                 Forgot your password?
               </a>
             </div>
-            
           </div>
         </div>
       </div>

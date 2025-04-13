@@ -17,6 +17,105 @@ import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 
 const CACHE_KEY = "student_assignments_cache";
+const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes cache expiry
+
+// File type detection helper
+const getFileType = (url) => {
+  if (!url || typeof url !== "string") {
+    console.log("getFileType: Invalid URL:", url);
+    return "unknown";
+  }
+  const extension = url.split(".").pop()?.toLowerCase();
+  console.log("getFileType: Extension detected:", extension);
+  if (["jpg", "jpeg", "png", "gif"].includes(extension)) return "image";
+  if (extension === "pdf") return "pdf";
+  if (["doc", "docx", "txt", "ppt", "pptx"].includes(extension))
+    return "document";
+  return "unknown";
+};
+
+// Preview Modal Component
+const PreviewModal = ({ isOpen, onClose, url, fileType }) => {
+  const [previewError, setPreviewError] = useState(null);
+
+  console.log("PreviewModal props:", { isOpen, url, fileType });
+
+  if (!isOpen) return null;
+
+  const handleError = () => {
+    console.log("PreviewModal: Error loading content for URL:", url);
+    setPreviewError(
+      "Failed to load preview. The file may be inaccessible or corrupted."
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg w-full max-w-4xl h-[80vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-gray-800">
+            Attachment Preview
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-red-500 hover:text-red-700 text-lg font-bold"
+            aria-label="Close preview"
+          >
+            ×
+          </button>
+        </div>
+        {previewError ? (
+          <p className="text-red-500">
+            {previewError}{" "}
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 underline"
+            >
+              Try downloading the file
+            </a>
+          </p>
+        ) : fileType === "pdf" ? (
+          <iframe
+            src={url}
+            width="100%"
+            height="600px"
+            className="rounded-lg"
+            title="PDF Preview"
+            onError={handleError}
+          />
+        ) : fileType === "image" ? (
+          <img
+            src={url}
+            alt="Attachment Preview"
+            className="w-full h-auto rounded-lg"
+            title="Image Preview"
+            onError={handleError}
+          />
+        ) : fileType === "document" ? (
+          <p className="text-gray-600">
+            Preview not available for this file type.{" "}
+            <a
+              href={`https://docs.google.com/viewer?url=${encodeURIComponent(
+                url
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 underline"
+            >
+              Try viewing in Google Docs Viewer
+            </a>
+          </p>
+        ) : (
+          <p className="text-gray-600">
+            Preview not available for this file type.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+};
 
 const StudentAssignments = () => {
   const navigate = useNavigate();
@@ -39,6 +138,7 @@ const StudentAssignments = () => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [previewFileType, setPreviewFileType] = useState(null);
 
   const { user } = useContext(AuthContext);
 
@@ -195,6 +295,16 @@ const StudentAssignments = () => {
         if (!querySnapshot.empty) {
           fetchedAssignments = querySnapshot.docs.map((doc) => {
             const assignmentData = doc.data();
+            // Extract URLs from fileURLs array of objects
+            const fileURLs = Array.isArray(assignmentData.fileURLs)
+              ? assignmentData.fileURLs
+                  .map((file) =>
+                    file && typeof file === "object" && file.url
+                      ? file.url
+                      : null
+                  )
+                  .filter((url) => typeof url === "string")
+              : [];
             return {
               id: doc.id,
               ...assignmentData,
@@ -204,7 +314,8 @@ const StudentAssignments = () => {
               timestamp: assignmentData.timestamp
                 ? assignmentData.timestamp.toDate().toISOString()
                 : null,
-              fileURLs: assignmentData.fileURLs || [],
+              fileURLs,
+              fileTypes: fileURLs.map(getFileType),
             };
           });
           console.log(
@@ -240,7 +351,7 @@ const StudentAssignments = () => {
           submissionData[data.assignmentId] = {
             submittedAt: data.submittedAt,
             filePath: data.filePath,
-            marks: data.marks, // Add marks to the submission data
+            marks: data.marks,
           };
         });
         console.log("Fetched submissions:", submissionData);
@@ -441,18 +552,23 @@ const StudentAssignments = () => {
 
   const handlePreview = (url) => {
     console.log("handlePreview called with URL:", url);
+    const fileType = getFileType(url);
+    console.log("Detected file type:", fileType);
     setPreviewUrl(url);
+    setPreviewFileType(fileType);
     setIsPreviewOpen(true);
+    console.log("Preview modal should open with:", { url, fileType });
   };
 
   const closePreview = () => {
     setIsPreviewOpen(false);
     setPreviewUrl(null);
+    setPreviewFileType(null);
     console.log("Preview modal closed");
   };
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-gray-100">
       <Suspense fallback={<div>Loading Sidebar...</div>}>
         <div className="fixed w-56 bg-blue-800 text-white h-screen overflow-y-hidden border-0 outline-0">
           <StudentSidebar />
@@ -461,6 +577,12 @@ const StudentAssignments = () => {
       <div className="flex-grow ml-56 p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-orange-500">ASSIGNMENTS</h1>
+          <button
+            onClick={() => navigate("/")}
+            className="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600"
+          >
+            Back to Dashboard
+          </button>
         </div>
 
         {error && (
@@ -470,7 +592,7 @@ const StudentAssignments = () => {
         )}
 
         {isLoading ? (
-          <div className="bg-white shadow-md rounded-lg p-4 border border-gray-300">
+          <div className="bg-white shadow-md rounded-lg p-4 border border-gray-200">
             <Skeleton height={30} width={150} className="mb-4" />
             <Skeleton count={3} />
           </div>
@@ -479,9 +601,9 @@ const StudentAssignments = () => {
             {assignments.map((assignment) => (
               <div
                 key={assignment.id}
-                className="bg-white shadow-md rounded-lg p-4 border border-gray-300 hover:shadow-lg transition-shadow"
+                className="bg-white shadow-md rounded-lg p-4 border border-gray-200 hover:shadow-lg transition-shadow"
               >
-                <h2 className="text-lg font-bold text-gray-700">
+                <h2 className="text-lg font-bold text-gray-800">
                   {assignment.subject || assignment.title}
                 </h2>
                 <p className="text-sm text-gray-600">
@@ -491,29 +613,39 @@ const StudentAssignments = () => {
                     : "N/A"}
                 </p>
                 <p className="text-sm text-gray-600">
-                  Marks: {assignment.marks}
+                  Marks: {assignment.marks || "N/A"}
                 </p>
                 <p className="text-sm text-gray-600">
                   <span className="font-semibold">Attachments:</span>{" "}
                   {assignment.fileURLs && assignment.fileURLs.length > 0 ? (
-                    assignment.fileURLs.map((url, index) => (
-                      <span key={index}>
-                        <a
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-orange-500 underline hover:text-orange-600 mr-2"
-                        >
-                          Download File {index + 1}
-                        </a>
-                        <button
-                          onClick={() => handlePreview(url)}
-                          className="text-blue-500 underline hover:text-blue-700 mr-2"
-                        >
-                          View Preview
-                        </button>
-                      </span>
-                    ))
+                    assignment.fileURLs.map((url, index) => {
+                      console.log(
+                        `Rendering URL ${index + 1} for assignment ${
+                          assignment.id
+                        }:`,
+                        url
+                      );
+                      return (
+                        <span key={index} className="inline-block mr-2">
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-orange-500 underline hover:text-orange-600 mr-2"
+                          >
+                            Download File {index + 1}
+                          </a>
+                          {url && typeof url === "string" && (
+                            <button
+                              onClick={() => handlePreview(url)}
+                              className="text-blue-500 underline hover:text-blue-700"
+                            >
+                              View Preview
+                            </button>
+                          )}
+                        </span>
+                      );
+                    })
                   ) : (
                     <span>No attachments</span>
                   )}
@@ -553,7 +685,7 @@ const StudentAssignments = () => {
             ))}
           </div>
         ) : (
-          <div className="bg-white shadow-md rounded-lg p-4 border border-gray-300">
+          <div className="bg-white shadow-md rounded-lg p-4 border border-gray-200">
             <p className="text-gray-600 text-center">
               No assignments available.
             </p>
@@ -671,64 +803,12 @@ const StudentAssignments = () => {
       )}
 
       {/* Preview Modal */}
-      {isPreviewOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-4xl h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-gray-800">
-                Attachment Preview
-              </h2>
-              <button
-                onClick={closePreview}
-                className="text-red-500 hover:text-red-700 text-lg font-bold"
-              >
-                ×
-              </button>
-            </div>
-            {previewUrl && typeof previewUrl === "string" ? (
-              previewUrl.endsWith(".pdf") ||
-              previewUrl.includes("application/pdf") ? (
-                <iframe
-                  src={previewUrl}
-                  width="100%"
-                  height="600px"
-                  className="rounded-lg"
-                  title="PDF Preview"
-                  onError={(e) => {
-                    console.error("Iframe error:", e);
-                    alert(
-                      "Failed to preview PDF. The file may be corrupted, blocked, or inaccessible."
-                    );
-                  }}
-                />
-              ) : /\.(jpg|jpeg|png|gif)$/i.test(previewUrl) ? (
-                <img
-                  src={previewUrl}
-                  alt="Attachment Preview"
-                  className="w-full h-auto rounded-lg"
-                  title="Image Preview"
-                  aria-label="Image Preview"
-                  onError={(e) => {
-                    console.error("Image error:", e);
-                    alert(
-                      "Failed to preview image. The file may be corrupted or blocked."
-                    );
-                  }}
-                />
-              ) : (
-                <p className="text-gray-600">
-                  Preview not available for this file type. Please download to
-                  view.
-                </p>
-              )
-            ) : (
-              <p className="text-red-500">
-                Error: Invalid file URL for preview.
-              </p>
-            )}
-          </div>
-        </div>
-      )}
+      <PreviewModal
+        isOpen={isPreviewOpen}
+        onClose={closePreview}
+        url={previewUrl}
+        fileType={previewFileType}
+      />
     </div>
   );
 };

@@ -36,7 +36,7 @@ const Courses = React.lazy(() => import("./app/Pages/Courses"));
 const Syllabustracker = React.lazy(() =>
   import("./app/Components/Syllabustracker")
 );
-const Syllabus = React.lazy(() => import("./app/Pages/Syllabus")); // Updated path
+const Syllabus = React.lazy(() => import("./app/Pages/Syllabus"));
 const AddSyllabus = React.lazy(() => import("./app/Pages/AddSyllabus"));
 const AddDayTimetable = React.lazy(() => import("./app/Pages/AddDayTimetable"));
 const CreateNotice = React.lazy(() => import("./app/Pages/createNotice"));

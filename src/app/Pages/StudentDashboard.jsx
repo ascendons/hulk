@@ -15,61 +15,29 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "../../config";
 import { renderSkeleton } from "../Components/reactSkelton";
-import ReactMarkdown from "react-markdown";
-import { Cloudinary } from "@cloudinary/url-gen";
-import { AdvancedImage } from "@cloudinary/react";
-import { fill } from "@cloudinary/url-gen/actions/resize";
-import { autoGravity } from "@cloudinary/url-gen/qualifiers/gravity";
-
-const CLOUD_NAME = "dwdejk1u3";
-const cld = new Cloudinary({
-  cloud: {
-    cloudName: CLOUD_NAME,
-  },
-});
-
-const getPublicIdFromUrl = (url) => {
-  if (!url) return "";
-  try {
-    const regex = /\/v\d+\/(.+?)(?:\.\w+)?$/;
-    const match = url.match(regex);
-    return match ? match[1] : "";
-  } catch (error) {
-    console.warn("Invalid Cloudinary URL:", url);
-    return "";
-  }
-};
-
-const ErrorBoundary = ({ children }) => {
-  const [hasError, setHasError] = useState(false);
-
-  useEffect(() => {
-    const errorHandler = () => setHasError(true);
-    window.addEventListener("error", errorHandler);
-    return () => window.removeEventListener("error", errorHandler);
-  }, []);
-
-  if (hasError) {
-    return <p className="text-red-600">Something went wrong.</p>;
-  }
-  return children;
-};
+import ReactMarkdown from "react-markdown"; // Add for Markdown rendering
 
 const StudentDashboard = () => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const [studentData, setStudentData] = useState(null);
   const [attendancePercentage, setAttendancePercentage] = useState(0);
   const [totalNotes, setTotalNotes] = useState(0);
   const [totalAssignments, setTotalAssignments] = useState(0);
-  const [totalClasses, setTotalClasses] = useState(0);
   const [notices, setNotices] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [timers, setTimers] = useState({});
   const [loading, setLoading] = useState(true);
 
-  const handleMouseEnter = () => setIsSidebarHovered(true);
-  const handleMouseLeave = () => setIsSidebarHovered(false);
+  const handleMouseEnter = () => {
+    setIsSidebarHovered(true);
+  };
 
+  const handleMouseLeave = () => {
+    setIsSidebarHovered(false);
+  };
+
+  // Function to parse date from composite ID (e.g., from daytimetable)
   const parseDateFromCompositeId = (compositeId) => {
     const datePart = compositeId.split("_")[3];
     if (datePart && datePart.length === 8) {
@@ -81,10 +49,11 @@ const StudentDashboard = () => {
     return "Invalid Date";
   };
 
+  // Function to calculate remaining time for events
   const calculateTimer = (createdAt, duration) => {
-    if (!createdAt || !duration) return "N/A";
+    if (!createdAt) return "N/A";
     const created = createdAt.toDate();
-    const durationMs = duration * 60 * 60 * 1000;
+    const durationMs = duration * 60 * 60 * 1000; // Convert hours to milliseconds
     const endTime = new Date(created.getTime() + durationMs);
     const now = new Date();
     const timeDiff = endTime - now;
@@ -100,6 +69,7 @@ const StudentDashboard = () => {
 
   const fetchNotesAndAssignmentsCount = async (department, year, division) => {
     try {
+      // console.log("Querying notes with:", { department, year, division });
       const notesRef = collection(db, "notes");
       const notesQuery = query(
         notesRef,
@@ -108,8 +78,13 @@ const StudentDashboard = () => {
         where("division", "==", division)
       );
       const notesSnapshot = await getDocs(notesQuery);
+      // console.log(
+      //   "All notes data:",
+      //   notesSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+      // );
       const notesCount = notesSnapshot.size;
 
+      // console.log("Querying assignments with:", { department, year, division });
       const assignmentsRef = collection(db, "assignments");
       const assignmentsQuery = query(
         assignmentsRef,
@@ -118,6 +93,10 @@ const StudentDashboard = () => {
         where("division", "==", division)
       );
       const assignmentsSnapshot = await getDocs(assignmentsQuery);
+      // console.log(
+      //   "All assignments data:",
+      //   assignmentsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+      // );
       const assignmentsCount = assignmentsSnapshot.size;
 
       return { notesCount, assignmentsCount };
@@ -127,59 +106,31 @@ const StudentDashboard = () => {
     }
   };
 
-  const fetchTotalClasses = async (department, division) => {
-    try {
-      const timetableRef = collection(db, "daytimetable");
-      const timetableQuery = query(
-        timetableRef,
-        where("department", "==", department),
-        where("division", "==", division)
-      );
-      const snapshot = await getDocs(timetableQuery);
-      let totalLectures = 0;
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        if (data.lectures && Array.isArray(data.lectures)) {
-          totalLectures += data.lectures.length;
-        }
-      });
-      return totalLectures;
-    } catch (error) {
-      console.error("Error fetching total classes:", error);
-      return 0;
-    }
-  };
-
   const fetchNotices = async () => {
     try {
       const noticesRef = collection(db, "notices");
-      const noticesQuery = query(noticesRef, orderBy("createdAt", "desc"));
+      const noticesQuery = query(noticesRef, orderBy("createdAt", "desc")); // Order by creation date, newest first
       const noticesSnapshot = await getDocs(noticesQuery);
       const noticesData = noticesSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
+      // console.log("Fetched Notices:", noticesData);
       setNotices(noticesData);
     } catch (error) {
-      console.error("Error fetching notices:", error);
+      // console.error("Error fetching notices:", error);
       setNotices([]);
     }
   };
 
-  const fetchUpcomingEvents = (department, division) => {
+  const fetchUpcomingEvents = async () => {
     try {
+      console.log("Fetching upcoming events from daytimetable...");
       const currentDate = new Date();
       currentDate.setHours(0, 0, 0, 0);
 
-      const timetableRef = collection(db, "daytimetable");
-      const timetableQuery = query(
-        timetableRef,
-        where("department", "==", department),
-        where("division", "==", division)
-      );
-
       const unsubscribe = onSnapshot(
-        timetableQuery,
+        collection(db, "daytimetable"),
         (timetableSnapshot) => {
           const fetchedEvents = [];
           timetableSnapshot.forEach((doc) => {
@@ -194,32 +145,39 @@ const StudentDashboard = () => {
               const eventDate = new Date(year, month, day);
               eventDate.setHours(0, 0, 0, 0);
 
-              if (
-                data.lectures &&
-                Array.isArray(data.lectures) &&
-                eventDate >= currentDate
-              ) {
+              if (data.lectures && Array.isArray(data.lectures)) {
                 data.lectures.forEach((lecture, index) => {
-                  fetchedEvents.push({
-                    id: `${doc.id}_${index}`,
-                    date: eventDate,
-                    formattedDate: parseDateFromCompositeId(compositeId),
-                    description: data.description || "No description available",
-                    department: data.department || "Unknown Department",
-                    division: data.division || "Unknown Division",
-                    startTime: lecture.startTime || "07:00",
-                    endTime: lecture.endTime || "08:00",
-                    location: lecture.location || "LC",
-                    subject: lecture.subject || "Unknown Subject",
-                    duration: data.duration || 24,
-                    createdAt: data.createdAt,
-                  });
+                  // Filter events based on student's department and division
+                  if (
+                    data.department === studentData?.department &&
+                    data.division === studentData?.division &&
+                    eventDate >= currentDate
+                  ) {
+                    fetchedEvents.push({
+                      id: `${doc.id}_${index}`,
+                      date: eventDate,
+                      formattedDate: parseDateFromCompositeId(compositeId),
+                      description:
+                        data.description || "No description available",
+                      department: data.department || "Unknown Department",
+                      division: data.division || "Unknown Division",
+                      startTime: lecture.startTime || "07:00",
+                      endTime: lecture.endTime || "08:00",
+                      location: lecture.location || "LC",
+                      subject: lecture.subject || "Unknown Subject",
+                      duration: data.duration || 24,
+                      createdAt: data.createdAt,
+                    });
+                  }
                 });
               }
+            } else {
+              console.log("Invalid date format for compositeId:", compositeId);
             }
           });
 
           const filteredEvents = fetchedEvents.sort((a, b) => a.date - b.date);
+          // console.log("Filtered and sorted upcoming events:", filteredEvents);
           setUpcomingEvents(filteredEvents);
         },
         (error) => {
@@ -230,47 +188,13 @@ const StudentDashboard = () => {
 
       return unsubscribe;
     } catch (error) {
-      console.error("Error setting up upcoming events listener:", error);
+      console.error("Error fetching upcoming events:", error);
       setUpcomingEvents([]);
-      return () => {};
-    }
-  };
-
-  const fetchAttendance = async (studentName, department, division) => {
-    try {
-      const attendanceRef = collection(db, "studentAttendance");
-      const querySnapshot = await getDocs(attendanceRef);
-      let totalPresent = 0;
-      let totalSessions = 0;
-
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        if (data.attendance && Array.isArray(data.attendance)) {
-          const studentRecords = data.attendance.filter(
-            (record) =>
-              record.name.trim() === studentName.trim() &&
-              (!data.department || data.department === department) &&
-              (!data.division || data.division === division)
-          );
-          studentRecords.forEach((record) => {
-            totalSessions++;
-            if (record.status === "P") totalPresent++;
-          });
-        }
-      });
-
-      return totalSessions > 0
-        ? Math.round((totalPresent / totalSessions) * 100)
-        : 0;
-    } catch (error) {
-      console.error("Error fetching attendance:", error);
-      return 0;
     }
   };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setLoading(true);
       if (user) {
         try {
           const studentDocRef = doc(db, "students", user.uid);
@@ -278,23 +202,12 @@ const StudentDashboard = () => {
 
           if (studentDoc.exists()) {
             const data = studentDoc.data();
-            const userDocRef = doc(db, "users", data.userId);
-            const userDoc = await getDoc(userDocRef);
+            const userdocRef = doc(db, "users", data.userId);
+            const userdoc = await getDoc(userdocRef);
 
-            let studentInfo = {
-              name: "Student Name",
-              department: "Bsc.IT",
-              course: "Bsc.IT",
-              division: "A",
-              year: "Third Year",
-              rollNo: "Roll No",
-              phoneNumber: "Phone Number",
-              profilePhotoUrl: "",
-            };
-
-            if (userDoc.exists()) {
-              const userData = userDoc.data();
-              studentInfo = {
+            if (userdoc.exists()) {
+              const userData = userdoc.data();
+              const studentInfo = {
                 name: userData.name || "Student Name",
                 department: data.department || data.course || "Bsc.IT",
                 course: data.course || data.department || "Bsc.IT",
@@ -302,63 +215,119 @@ const StudentDashboard = () => {
                 year: data.year || "Third Year",
                 rollNo: data.rollno || "Roll No",
                 phoneNumber: data.phonenumber || "Phone Number",
-                profilePhotoUrl: data.profilePhotoUrl || "",
               };
+              console.log("Student Info:", studentInfo);
+              setStudentData(studentInfo);
+
+              // Fetch attendance data
+              const attendanceRef = collection(db, "studentAttendance");
+              const querySnapshot = await getDocs(attendanceRef);
+
+              if (querySnapshot.empty) {
+                console.log("No attendance records found.");
+                setAttendancePercentage(0);
+              } else {
+                const fetchedRecords = [];
+                let totalPresent = 0;
+                let totalSessions = 0;
+
+                querySnapshot.forEach((doc) => {
+                  const data = doc.data();
+                  if (data.attendance) {
+                    const studentRecords = data.attendance.filter(
+                      (record) => record.name.trim() === userData.name.trim()
+                    );
+                    fetchedRecords.push(...studentRecords);
+
+                    studentRecords.forEach((record) => {
+                      totalSessions++;
+                      if (record.status === "P") totalPresent++;
+                    });
+                  }
+                });
+
+                if (fetchedRecords.length > 0) {
+                  setAttendancePercentage(
+                    totalSessions > 0
+                      ? Math.round((totalPresent / totalSessions) * 100)
+                      : 0
+                  );
+                } else {
+                  console.log(
+                    "No attendance records found for this student:",
+                    userData.name
+                  );
+                  setAttendancePercentage(0);
+                }
+              }
+
+              // Fetch notes and assignments counts
+              console.log("Querying with:", {
+                department: studentInfo.department,
+                year: studentInfo.year,
+                division: studentInfo.division,
+              });
+              const { notesCount, assignmentsCount } =
+                await fetchNotesAndAssignmentsCount(
+                  studentInfo.department,
+                  studentInfo.year,
+                  studentInfo.division
+                );
+              console.log("Fetched Counts:", { notesCount, assignmentsCount });
+              setTotalNotes(notesCount);
+              setTotalAssignments(assignmentsCount);
+
+              // Fetch notices and upcoming events
+              await fetchNotices();
+              await fetchUpcomingEvents();
             } else {
-              console.warn("No user document found for userId:", data.userId);
+              console.error("No user document found for userId:", data.userId);
+              setStudentData({
+                name: "Student Name",
+                department: data.department || "Bsc.IT",
+                course: data.course || "Bsc.IT",
+                division: "A",
+                year: "Third Year",
+                rollNo: data.rollno || "Roll No",
+                phoneNumber: data.phonenumber || "Phone Number",
+              });
+              setAttendancePercentage(0);
+              setTotalNotes(0);
+              setTotalAssignments(0);
+              setNotices([]);
+              setUpcomingEvents([]);
             }
-
-            setStudentData(studentInfo);
-
-            const attendancePercent = await fetchAttendance(
-              studentInfo.name,
-              studentInfo.department,
-              studentInfo.division
-            );
-            setAttendancePercentage(attendancePercent);
-
-            const { notesCount, assignmentsCount } =
-              await fetchNotesAndAssignmentsCount(
-                studentInfo.department,
-                studentInfo.year,
-                studentInfo.division
-              );
-            setTotalNotes(notesCount);
-            setTotalAssignments(assignmentsCount);
-
-            const totalClassesCount = await fetchTotalClasses(
-              studentInfo.department,
-              studentInfo.division
-            );
-            setTotalClasses(totalClassesCount);
-
-            await fetchNotices();
-            const unsubscribeEvents = fetchUpcomingEvents(
-              studentInfo.department,
-              studentInfo.division
-            );
-
-            return () => {
-              unsubscribe();
-              unsubscribeEvents();
-            };
           } else {
             console.error("No student document found for UID:", user.uid);
-            setStudentData(null);
+            setStudentData({
+              name: "Student Name",
+              department: "Bsc.IT",
+              course: "Bsc.IT",
+              division: "A",
+              year: "Third Year",
+              rollNo: "Roll No",
+              phoneNumber: "Phone Number",
+            });
             setAttendancePercentage(0);
             setTotalNotes(0);
             setTotalAssignments(0);
-            setTotalClasses(0);
             setNotices([]);
             setUpcomingEvents([]);
           }
         } catch (error) {
-          console.error("Error fetching student data:", error);
-          setStudentData(null);
+          console.error("Error fetching student data or counts:", error);
+          setStudentData({
+            name: "Student Name",
+            department: "Bsc.IT",
+            course: "Bsc.IT",
+            division: "A",
+            year: "Third Year",
+            rollNo: "Roll No",
+            phoneNumber: "Phone Number",
+          });
           setAttendancePercentage(0);
           setTotalNotes(0);
           setTotalAssignments(0);
-          setTotalClasses(0);
           setNotices([]);
           setUpcomingEvents([]);
         }
@@ -368,7 +337,6 @@ const StudentDashboard = () => {
         setAttendancePercentage(0);
         setTotalNotes(0);
         setTotalAssignments(0);
-        setTotalClasses(0);
         setNotices([]);
         setUpcomingEvents([]);
       }
@@ -378,18 +346,17 @@ const StudentDashboard = () => {
     return () => unsubscribe();
   }, []);
 
+  // Timer for upcoming events
   useEffect(() => {
-    const intervals = upcomingEvents
-      .filter((event) => event.createdAt && event.duration)
-      .map((event) => {
-        return setInterval(() => {
-          const remainingTime = calculateTimer(event.createdAt, event.duration);
-          setTimers((prev) => ({
-            ...prev,
-            [event.id]: remainingTime,
-          }));
-        }, 1000);
-      });
+    const intervals = upcomingEvents.map((event) => {
+      return setInterval(() => {
+        const remainingTime = calculateTimer(event.createdAt, event.duration);
+        setTimers((prev) => ({
+          ...prev,
+          [event.id]: remainingTime,
+        }));
+      }, 1000);
+    });
 
     return () => intervals.forEach((interval) => clearInterval(interval));
   }, [upcomingEvents]);
@@ -398,61 +365,27 @@ const StudentDashboard = () => {
     return renderSkeleton();
   }
 
-  if (!studentData) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <p className="text-red-600 text-xl font-semibold">
-          No student data available. Please log in.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <div
-        className={`fixed w-56 bg-blue-800 text-white h-screen overflow-y-hidden border-0 outline-0 transition-all duration-300 ${
-          isSidebarHovered ? "shadow-lg" : ""
-        }`}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-      >
+      <div className="fixed w-56 bg-blue-800 text-white h-screen overflow-y-hidden border-0 outline-0">
         <StudentSidebar />
       </div>
+      {/* Main Content */}
       <div className="flex-1 p-6 ml-56">
         <h1 className="text-5xl font-bold text-orange-500 mb-6">Dashboard</h1>
 
+        {/* Welcome Section */}
         <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex items-center justify-between border border-gray-200">
-          <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 rounded-full border-2 border-blue-300 overflow-hidden">
-              {studentData.profilePhotoUrl &&
-              getPublicIdFromUrl(studentData.profilePhotoUrl) ? (
-                <AdvancedImage
-                  cldImg={cld
-                    .image(getPublicIdFromUrl(studentData.profilePhotoUrl))
-                    .resize(fill().width(64).height(64).gravity(autoGravity()))
-                    .format("auto")
-                    .quality("auto")}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.style.display = "none";
-                  }}
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gray-300 text-gray-500 font-bold text-lg">
-                  {studentData.name.charAt(0).toUpperCase()}
-                </div>
-              )}
+          <div className="flex items-center">
+            <div className="w-12 h-12 bg-gray-300 rounded-full mr-4 flex items-center justify-center">
+              <span className="text-gray-500 font-bold text-lg">IMG</span>
             </div>
             <div>
               <p className="text-gray-800 font-semibold">
-                Welcome back,{" "}
-                <span className="text-orange-500 font-semibold">
-                  {studentData.name.split(" ")[0]}!
-                </span>
+                Welcome back, <span className="text-orange-500">Student!</span>
               </p>
-              <p className="text-gray-600">Student Name: {studentData.name}</p>
-              <p className="text-gray-600">Department: {studentData.course}</p>
+              <p className="text-gray-600">Student Name: {studentData?.name}</p>
+              <p className="text-gray-600">Department: {studentData?.course}</p>
               <p className="text-gray-600">Role: Student</p>
             </div>
           </div>
@@ -464,9 +397,10 @@ const StudentDashboard = () => {
           </Link>
         </div>
 
+        {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <div className="bg-white p-4 rounded-lg shadow-md text-center border border-gray-200">
-            <p className="text-3xl font-bold text-blue-600">{totalClasses}</p>
+            <p className="text-3xl font-bold text-blue-600">15</p>
             <p className="text-gray-600">Total Classes</p>
           </div>
           <div className="bg-white p-4 rounded-lg shadow-md text-center border border-gray-200">
@@ -487,6 +421,7 @@ const StudentDashboard = () => {
           </div>
         </div>
 
+        {/* Action Buttons */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
           <Link
             to="/student-timetable"
@@ -514,117 +449,110 @@ const StudentDashboard = () => {
           </Link>
         </div>
 
+        {/* Notice Board and Upcoming Events */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <ErrorBoundary>
-            <div className="bg-white shadow-lg rounded-lg p-6 max-h-96 overflow-y-auto border border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                Notice Board
-              </h2>
-              {notices.length > 0 ? (
-                <ul className="space-y-4">
-                  {notices.map((notice) => (
-                    <li
-                      key={notice.id}
-                      className="border-b pb-4 last:border-b-0"
-                    >
-                      <h3 className="text-lg font-semibold text-blue-600">
-                        {notice.title}
-                      </h3>
-                      <p className="text-sm text-gray-600 mb-2">
-                        By: {notice.noticeBy}
-                      </p>
-                      <p className="text-gray-800">{notice.content}</p>
-                      {notice.files && notice.files.length > 0 && (
-                        <div className="mt-2">
-                          {notice.files.map((file, index) => (
-                            <a
-                              key={index}
-                              href={file}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-500 underline block"
-                            >
-                              View Attachment {index + 1}
-                            </a>
-                          ))}
-                        </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-gray-600">No notices available.</p>
-              )}
-            </div>
-          </ErrorBoundary>
-
-          <ErrorBoundary>
-            <div className="bg-white shadow-lg rounded-lg p-6 max-h-96 overflow-y-auto border border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-800 mb-4">
-                Upcoming Events
-              </h2>
-              {upcomingEvents.length > 0 ? (
-                <div className="space-y-4">
-                  {upcomingEvents.map((event) => (
-                    <div
-                      key={event.id}
-                      className="bg-white shadow-md rounded-lg p-4 border border-gray-200"
-                    >
-                      <div className="flex justify-between items-center mb-2">
-                        <p className="text-gray-600 font-medium">
-                          Date: {event.formattedDate}
-                        </p>
-                        <p className="text-gray-600 font-medium">
-                          Timer: {timers[event.id] || "Calculating..."}
-                        </p>
-                      </div>
-                      <p className="text-gray-600 font-medium">
-                        Time: {event.startTime} - {event.endTime}
-                      </p>
-                      <p className="text-gray-600 font-medium">
-                        Location: {event.location}
-                      </p>
-                      <p className="text-gray-600 font-medium">
-                        Subject: {event.subject}
-                      </p>
+          {/* Notice Board */}
+          <div className="bg-white shadow-lg rounded-lg p-6 max-h-96 overflow-y-auto border border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              Notice Board
+            </h2>
+            {notices.length > 0 ? (
+              <ul className="space-y-4">
+                {notices.map((notice) => (
+                  <li key={notice.id} className="border-b pb-4 last:border-b-0">
+                    <h3 className="text-lg font-semibold text-blue-600">
+                      {notice.title}
+                    </h3>
+                    <p className="text-sm text-gray-600 mb-2">
+                      By: {notice.noticeBy}
+                    </p>
+                    <p className="text-gray-800">{notice.content}</p>
+                    {notice.files && notice.files.length > 0 && (
                       <div className="mt-2">
-                        <div className="bg-blue-100 text-gray-800 p-3 rounded-lg">
-                          <ReactMarkdown
-                            components={{
-                              p: ({ node, ...props }) => (
-                                <p className="text-gray-800 mb-2" {...props} />
-                              ),
-                              ul: ({ node, ...props }) => (
-                                <ul
-                                  className="list-disc pl-5 mb-2"
-                                  {...props}
-                                />
-                              ),
-                              li: ({ node, ...props }) => (
-                                <li className="text-gray-800" {...props} />
-                              ),
-                              strong: ({ node, ...props }) => (
-                                <strong
-                                  className="font-bold text-gray-900"
-                                  {...props}
-                                />
-                              ),
-                            }}
+                        {notice.files.map((file, index) => (
+                          <a
+                            key={index}
+                            href={file}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-500 underline block"
                           >
-                            {event.description === "No description available"
-                              ? ""
-                              : `**Notice to Students**  \n${event.description}`}
-                          </ReactMarkdown>
-                        </div>
+                            View Attachment {index + 1}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-gray-600">No notices available.</p>
+            )}
+          </div>
+
+          {/* Upcoming Events */}
+          <div className="bg-white shadow-lg rounded-lg p-6 max-h-96 overflow-y-auto border border-gray-200">
+            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+              Upcoming Events
+            </h2>
+            {upcomingEvents.length > 0 ? (
+              <div className="space-y-4">
+                {upcomingEvents.map((event) => (
+                  <div
+                    key={event.id}
+                    className="bg-white shadow-md rounded-lg p-4 border border-gray-200"
+                  >
+                    <div className="flex justify-between items-center mb-2">
+                      <p className="text-gray-600 font-medium">
+                        Date: {event.formattedDate}
+                      </p>
+                      <p className="text-gray-600 font-medium">
+                        Timer: {timers[event.id] || "Calculating..."}
+                      </p>
+                    </div>
+                    <p className="text-gray-600 font-medium">
+                      Time: {event.startTime} - {event.endTime}
+                    </p>
+                    <p className="text-gray-600 font-medium">
+                      Location: {event.location}
+                    </p>
+                    <p className="text-gray-600 font-medium">
+                      Subject: {event.subject}
+                    </p>
+                    <div className="mt-2">
+                      <div className="bg-blue-100 text-gray-800 p-3 rounded-lg">
+                        <ReactMarkdown
+                          components={{
+                            p: ({ node, ...props }) => (
+                              <p className="text-gray-800 mb-2" {...props} />
+                            ),
+                            ul: ({ node, ...props }) => (
+                              <ul className="list-disc pl-5 mb-2" {...props} />
+                            ),
+                            li: ({ node, ...props }) => (
+                              <li className="text-gray-800" {...props} />
+                            ),
+                            strong: ({ node, ...props }) => (
+                              <strong
+                                className="font-bold text-gray-900"
+                                {...props}
+                              />
+                            ),
+                          }}
+                        >
+                          {event.description === "No description available"
+                            ? ""
+                            : `**Notice to Students**  \n${event.description}`}
+                        </ReactMarkdown>
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-gray-600">No upcoming events available.</p>
-              )}
-            </div>
-          </ErrorBoundary>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-600">No upcoming events available.</p>
+            )}
+          </div>
         </div>
       </div>
     </div>
