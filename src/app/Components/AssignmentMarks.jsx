@@ -7,13 +7,16 @@ import {
   doc,
   updateDoc,
   getDoc,
+  writeBatch,
 } from "firebase/firestore";
 import { db } from "../../config";
 import { AuthContext } from "../../authContext";
 import Sidebar from "../Components/Sidebar";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
-import supabase from "../../supabaseclient"; // Import Supabase client
+import supabase from "../../supabaseclient";
+import { ToastContainer, toast } from "react-toastify"; // Import react-toastify
+import "react-toastify/dist/ReactToastify.css"; // Import toastify styles
 
 // File type detection helper
 const getFileType = (filePath) => {
@@ -312,41 +315,67 @@ const AssignmentMarks = () => {
     fetchSubmissionsAndStudents();
   }, [user, selectedAssignmentId]);
 
-  const handleSubmitMarks = async (submissionId) => {
-    const marksValue = marks[submissionId];
-    if (!marksValue || marksValue < 0 || marksValue > 100) {
-      setError("Please enter a valid marks value between 0 and 100.");
-      return;
-    }
-
-    try {
-      const submissionRef = doc(db, "submissions", submissionId);
-      await updateDoc(submissionRef, {
-        marks: parseInt(marksValue, 10),
-      });
-      console.log(
-        `Marks updated for submission ${submissionId}: ${marksValue}`
-      );
-
-      setSubmissions((prevSubmissions) =>
-        prevSubmissions.map((sub) =>
-          sub.id === submissionId
-            ? { ...sub, marks: parseInt(marksValue, 10) }
-            : sub
-        )
-      );
-      setError("");
-    } catch (error) {
-      console.error("Error updating marks:", error);
-      setError("Failed to update marks: " + error.message);
-    }
-  };
-
   const handleMarksChange = (submissionId, value) => {
     setMarks((prevMarks) => ({
       ...prevMarks,
       [submissionId]: value,
     }));
+  };
+
+  const handleSubmitAllMarks = async () => {
+    const invalidMarks = submissions.some((submission) => {
+      const marksValue = marks[submission.id];
+      return (
+        !marksValue || marksValue === "" || marksValue < 0 || marksValue > 100
+      );
+    });
+
+    if (invalidMarks) {
+      setError(
+        "Please enter valid marks (between 0 and 100) for all students."
+      );
+      return;
+    }
+
+    try {
+      const batch = writeBatch(db);
+
+      submissions.forEach((submission) => {
+        const submissionRef = doc(db, "submissions", submission.id);
+        const marksValue = parseInt(marks[submission.id], 10);
+        batch.update(submissionRef, { marks: marksValue });
+      });
+
+      await batch.commit();
+      console.log("All marks submitted successfully.");
+
+      setSubmissions((prevSubmissions) =>
+        prevSubmissions.map((sub) => ({
+          ...sub,
+          marks: parseInt(marks[sub.id], 10),
+        }))
+      );
+      setError("");
+      toast.success("Marks submitted successfully for all students!", {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+    } catch (error) {
+      console.error("Error submitting marks for all students:", error);
+      setError("Failed to submit marks: " + error.message);
+      toast.error("Failed to submit marks: " + error.message, {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+    }
   };
 
   const handlePreview = async (filePath) => {
@@ -357,7 +386,7 @@ const AssignmentMarks = () => {
 
       const { data, error } = await supabase.storage
         .from("student-submissions")
-        .createSignedUrl(filePath, 300); // Increased expiration to 300 seconds (5 minutes)
+        .createSignedUrl(filePath, 300);
 
       if (error) {
         console.error("Error fetching file from Supabase:", error);
@@ -427,73 +456,75 @@ const AssignmentMarks = () => {
 
             <h2 className="text-xl font-semibold mb-4">Submitted Students</h2>
             {submissions.length > 0 && students.length > 0 ? (
-              <ul className="space-y-4">
-                {students.map((student) => {
-                  const submission = submissions.find(
-                    (sub) => sub.studentId === student.userId
-                  );
-                  return (
-                    <li key={student.id} className="border-b py-2">
-                      <p>
-                        <strong>Name:</strong> {student.name || "Unknown"}
-                      </p>
-                      <p>
-                        <strong>Roll No:</strong> {student.rollno || "N/A"}
-                      </p>
-
-                      <p>
-                        <strong>Course:</strong> {student.course || "N/A"}
-                      </p>
-                      <p>
-                        <strong>Division:</strong> {student.division || "N/A"}
-                      </p>
-                      <p>
-                        <strong>Year:</strong> {student.year || "N/A"}
-                      </p>
-                      <p>
-                        <strong>Submitted At:</strong>{" "}
-                        {submission
-                          ? new Date(submission.submittedAt).toLocaleString()
-                          : "N/A"}
-                      </p>
-
-                      <p className="flex items-center space-x-2">
-                        <strong>Submission:</strong>{" "}
-                        {submission && submission.filePath ? (
-                          <button
-                            onClick={() => handlePreview(submission.filePath)}
-                            className="text-blue-500 underline hover:text-blue-700"
-                          >
-                            View Preview
-                          </button>
-                        ) : (
-                          "No file available"
-                        )}
-                      </p>
-                      <p className="flex items-center space-x-2">
-                        <strong>Marks:</strong>{" "}
-                        <input
-                          type="number"
-                          value={marks[submission.id] || ""}
-                          onChange={(e) =>
-                            handleMarksChange(submission.id, e.target.value)
-                          }
-                          placeholder="Enter marks"
-                          className="w-20 p-1 border rounded"
-                          min="0"
-                          max="100"
-                        />
-                        <button
-                          onClick={() => handleSubmitMarks(submission.id)}
-                          className="bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600"
-                        >
-                          Submit Marks
-                        </button>
-                      </p>
-                    </li>
-                  );
-                })}
-              </ul>
+              <>
+                <ul className="space-y-4">
+                  {students.map((student) => {
+                    const submission = submissions.find(
+                      (sub) => sub.studentId === student.userId
+                    );
+                    return (
+                      <li key={student.id} className="border-b py-2">
+                        <p>
+                          <strong>Name:</strong> {student.name || "Unknown"}
+                        </p>
+                        <p>
+                          <strong>Roll No:</strong> {student.rollno || "N/A"}
+                        </p>
+                        <p>
+                          <strong>Course:</strong> {student.course || "N/A"}
+                        </p>
+                        <p>
+                          <strong>Division:</strong> {student.division || "N/A"}
+                        </p>
+                        <p>
+                          <strong>Year:</strong> {student.year || "N/A"}
+                        </p>
+                        <p>
+                          <strong>Submitted At:</strong>{" "}
+                          {submission
+                            ? new Date(submission.submittedAt).toLocaleString()
+                            : "N/A"}
+                        </p>
+                        <p className="flex items-center space-x-2">
+                          <strong>Submission:</strong>{" "}
+                          {submission && submission.filePath ? (
+                            <button
+                              onClick={() => handlePreview(submission.filePath)}
+                              className="text-blue-500 underline hover:text-blue-700"
+                            >
+                              View Preview
+                            </button>
+                          ) : (
+                            "No file available"
+                          )}
+                        </p>
+                        <p className="flex items-center space-x-2">
+                          <strong>Marks:</strong>{" "}
+                          <input
+                            type="number"
+                            value={marks[submission.id] || ""}
+                            onChange={(e) =>
+                              handleMarksChange(submission.id, e.target.value)
+                            }
+                            placeholder="Enter marks"
+                            className="w-20 p-1 border rounded"
+                            min="0"
+                            max="100"
+                          />
+                        </p>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <div className="mt-6 flex justify-end">
+                  <button
+                    onClick={handleSubmitAllMarks}
+                    className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                  >
+                    Submit Marks for All Students
+                  </button>
+                </div>
+              </>
             ) : (
               <p className="text-gray-600 text-center">
                 No submissions found for this assignment.
@@ -509,6 +540,9 @@ const AssignmentMarks = () => {
         url={previewUrl}
         fileType={previewFileType}
       />
+
+      {/* Add ToastContainer to render toast notifications */}
+      <ToastContainer />
     </div>
   );
 };

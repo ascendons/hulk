@@ -15,7 +15,7 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "../../config";
 import { renderSkeleton } from "../Components/reactSkelton";
-import ReactMarkdown from "react-markdown"; // Add for Markdown rendering
+import ReactMarkdown from "react-markdown";
 
 const StudentDashboard = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -37,7 +37,6 @@ const StudentDashboard = () => {
     setIsSidebarHovered(false);
   };
 
-  // Function to parse date from composite ID (e.g., from daytimetable)
   const parseDateFromCompositeId = (compositeId) => {
     const datePart = compositeId.split("_")[3];
     if (datePart && datePart.length === 8) {
@@ -49,11 +48,10 @@ const StudentDashboard = () => {
     return "Invalid Date";
   };
 
-  // Function to calculate remaining time for events
   const calculateTimer = (createdAt, duration) => {
     if (!createdAt) return "N/A";
     const created = createdAt.toDate();
-    const durationMs = duration * 60 * 60 * 1000; // Convert hours to milliseconds
+    const durationMs = duration * 60 * 60 * 1000;
     const endTime = new Date(created.getTime() + durationMs);
     const now = new Date();
     const timeDiff = endTime - now;
@@ -69,7 +67,6 @@ const StudentDashboard = () => {
 
   const fetchNotesAndAssignmentsCount = async (department, year, division) => {
     try {
-      // console.log("Querying notes with:", { department, year, division });
       const notesRef = collection(db, "notes");
       const notesQuery = query(
         notesRef,
@@ -78,13 +75,8 @@ const StudentDashboard = () => {
         where("division", "==", division)
       );
       const notesSnapshot = await getDocs(notesQuery);
-      // console.log(
-      //   "All notes data:",
-      //   notesSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
-      // );
       const notesCount = notesSnapshot.size;
 
-      // console.log("Querying assignments with:", { department, year, division });
       const assignmentsRef = collection(db, "assignments");
       const assignmentsQuery = query(
         assignmentsRef,
@@ -93,10 +85,6 @@ const StudentDashboard = () => {
         where("division", "==", division)
       );
       const assignmentsSnapshot = await getDocs(assignmentsQuery);
-      // console.log(
-      //   "All assignments data:",
-      //   assignmentsSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
-      // );
       const assignmentsCount = assignmentsSnapshot.size;
 
       return { notesCount, assignmentsCount };
@@ -109,23 +97,20 @@ const StudentDashboard = () => {
   const fetchNotices = async () => {
     try {
       const noticesRef = collection(db, "notices");
-      const noticesQuery = query(noticesRef, orderBy("createdAt", "desc")); // Order by creation date, newest first
+      const noticesQuery = query(noticesRef, orderBy("createdAt", "desc"));
       const noticesSnapshot = await getDocs(noticesQuery);
       const noticesData = noticesSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
-      // console.log("Fetched Notices:", noticesData);
       setNotices(noticesData);
     } catch (error) {
-      // console.error("Error fetching notices:", error);
       setNotices([]);
     }
   };
 
   const fetchUpcomingEvents = async () => {
     try {
-      console.log("Fetching upcoming events from daytimetable...");
       const currentDate = new Date();
       currentDate.setHours(0, 0, 0, 0);
 
@@ -147,7 +132,6 @@ const StudentDashboard = () => {
 
               if (data.lectures && Array.isArray(data.lectures)) {
                 data.lectures.forEach((lecture, index) => {
-                  // Filter events based on student's department and division
                   if (
                     data.department === studentData?.department &&
                     data.division === studentData?.division &&
@@ -171,13 +155,10 @@ const StudentDashboard = () => {
                   }
                 });
               }
-            } else {
-              console.log("Invalid date format for compositeId:", compositeId);
             }
           });
 
           const filteredEvents = fetchedEvents.sort((a, b) => a.date - b.date);
-          // console.log("Filtered and sorted upcoming events:", filteredEvents);
           setUpcomingEvents(filteredEvents);
         },
         (error) => {
@@ -215,11 +196,11 @@ const StudentDashboard = () => {
                 year: data.year || "Third Year",
                 rollNo: data.rollno || "Roll No",
                 phoneNumber: data.phonenumber || "Phone Number",
+                profilePhotoUrl: data.profilePhotoUrl || "",
               };
               console.log("Student Info:", studentInfo);
               setStudentData(studentInfo);
 
-              // Fetch attendance data
               const attendanceRef = collection(db, "studentAttendance");
               const querySnapshot = await getDocs(attendanceRef);
 
@@ -261,23 +242,15 @@ const StudentDashboard = () => {
                 }
               }
 
-              // Fetch notes and assignments counts
-              console.log("Querying with:", {
-                department: studentInfo.department,
-                year: studentInfo.year,
-                division: studentInfo.division,
-              });
               const { notesCount, assignmentsCount } =
                 await fetchNotesAndAssignmentsCount(
                   studentInfo.department,
                   studentInfo.year,
                   studentInfo.division
                 );
-              console.log("Fetched Counts:", { notesCount, assignmentsCount });
               setTotalNotes(notesCount);
               setTotalAssignments(assignmentsCount);
 
-              // Fetch notices and upcoming events
               await fetchNotices();
               await fetchUpcomingEvents();
             } else {
@@ -290,6 +263,7 @@ const StudentDashboard = () => {
                 year: "Third Year",
                 rollNo: data.rollno || "Roll No",
                 phoneNumber: data.phonenumber || "Phone Number",
+                profilePhotoUrl: "",
               });
               setAttendancePercentage(0);
               setTotalNotes(0);
@@ -307,6 +281,7 @@ const StudentDashboard = () => {
               year: "Third Year",
               rollNo: "Roll No",
               phoneNumber: "Phone Number",
+              profilePhotoUrl: "",
             });
             setAttendancePercentage(0);
             setTotalNotes(0);
@@ -324,6 +299,7 @@ const StudentDashboard = () => {
             year: "Third Year",
             rollNo: "Roll No",
             phoneNumber: "Phone Number",
+            profilePhotoUrl: "",
           });
           setAttendancePercentage(0);
           setTotalNotes(0);
@@ -346,7 +322,6 @@ const StudentDashboard = () => {
     return () => unsubscribe();
   }, []);
 
-  // Timer for upcoming events
   useEffect(() => {
     const intervals = upcomingEvents.map((event) => {
       return setInterval(() => {
@@ -375,14 +350,29 @@ const StudentDashboard = () => {
         <h1 className="text-5xl font-bold text-orange-500 mb-6">Dashboard</h1>
 
         {/* Welcome Section */}
-        <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex items-center justify-between border border-gray-200">
+        <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex items-center justify-between">
           <div className="flex items-center">
-            <div className="w-12 h-12 bg-gray-300 rounded-full mr-4 flex items-center justify-center">
-              <span className="text-gray-500 font-bold text-lg">IMG</span>
+            <div className="w-16 h-16 rounded-full mr-4 flex items-center justify-center overflow-hidden">
+              {studentData?.profilePhotoUrl ? (
+                <img
+                  src={studentData.profilePhotoUrl}
+                  alt={`Profile of ${studentData.name}`}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = "https://via.placeholder.com/64?text=IMG";
+                  }}
+                />
+              ) : (
+                <div className="w-full h-full bg-gray-300 rounded-full flex items-center justify-center">
+                  <span className="text-gray-500 font-bold text-lg">IMG</span>
+                </div>
+              )}
             </div>
             <div>
-              <p className="text-gray-800 font-semibold">
-                Welcome back, <span className="text-orange-500">Student!</span>
+              <p className="text-gray-600 mb-1">
+                Welcome back,{" "}
+                <span className="text-orange-500 font-semibold">Student!</span>
               </p>
               <p className="text-gray-600">Student Name: {studentData?.name}</p>
               <p className="text-gray-600">Department: {studentData?.course}</p>
