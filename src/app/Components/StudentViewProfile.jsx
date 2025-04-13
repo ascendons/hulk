@@ -28,13 +28,11 @@ const getPublicIdFromUrl = (url) => {
   if (!url) return "";
   const regex = /\/v\d+\/(.+?)(?:\.\w+)?$/;
   const match = url.match(regex);
-  return match ? match[1] : url;  
+  return match ? match[1] : url;
 };
 
-
-
 const StudentViewProfile = () => {
-  const { studentId } = useParams();  
+  const { studentId } = useParams();
   const [studentInfo, setStudentInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -46,7 +44,6 @@ const StudentViewProfile = () => {
   const navigate = useNavigate();
   const [showUploadErrorModal, setShowUploadErrorModal] = useState(false);
 
-  
   useEffect(() => {
     const fetchStudentInfo = async () => {
       try {
@@ -234,7 +231,7 @@ const StudentViewProfile = () => {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("upload_preset", "student_profile");  
+      formData.append("upload_preset", "student_profile");
       formData.append("cloud_name", "dwdejk1u3");
 
       const response = await fetch(
@@ -260,7 +257,7 @@ const StudentViewProfile = () => {
 
       setStudentInfo((prev) => ({ ...prev, profilePhotoUrl: imageUrl }));
       setProfilePhotoUrl(imageUrl);
-      setErrorMessage("");  
+      setErrorMessage("");
     } catch (error) {
       console.error("Image upload error:", error);
       setErrorMessage(
@@ -291,7 +288,6 @@ const StudentViewProfile = () => {
   }
 
   return (
-<<<<<<< HEAD
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="flex-1 p-8">
         {/* Header Section */}
@@ -308,98 +304,6 @@ const StudentViewProfile = () => {
                 onError={(e) => {
                   e.target.src = "https://via.placeholder.com/64";
                 }}
-=======
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      {errorMessage && (
-        <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-lg w-full max-w-4xl">
-          {errorMessage}
-        </div>
-      )}
-      <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl p-8 border border-gray-200">
-        <div className="flex justify-between mb-8">
-          <button
-            onClick={
-              () =>
-                navigate(
-                  currentUserRole === "student"
-                    ? "/student-dashboard"
-                    : currentUserRole === "admin"
-                    ? "/adminstudents"
-                    : "/students"
-                ) // Dynamic back navigation based on role
-            }
-            className="bg-gray-200 text-gray-800 font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-gray-300 transition-colors"
-          >
-            Back To Home
-          </button>
-          {currentUserRole === "student" &&
-            !studentId && ( // Only show Change Password for the student's own profile (no studentId in URL)
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="bg-red-500 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-red-600 transition-colors"
-              >
-                Change Password
-              </button>
-            )}
-        </div>
-
-        <div className="flex flex-col md:flex-row gap-8">
-          <div className="flex-shrink-0 flex flex-col items-center md:items-start">
-            <div className="relative w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center mb-4 shadow-md border-2 border-blue-300">
-              {profilePhotoUrl ? (
-                <AdvancedImage
-                  cldImg={cld
-                    .image(getPublicIdFromUrl(profilePhotoUrl))
-                    .resize(
-                      fill().width(150).height(150).gravity(autoGravity())
-                    )
-                    .format("auto")
-                    .quality("auto")}
-                  className="w-full h-full object-cover rounded-full"
-                />
-              ) : (
-                <span className="text-gray-500 font-bold text-lg">IMG</span>
-              )}
-              {currentUserRole === "student" &&
-                !studentId && (  
-                  <label
-                    htmlFor="profilePhoto"
-                    className={`absolute bottom-0 right-0 bg-blue-500 text-white p-2 rounded-full cursor-pointer hover:bg-blue-600 transition-colors ${
-                      uploading ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
-                  >
-                    {uploading ? (
-                      <span className="flex items-center">
-                        <svg
-                          className="animate-spin h-5 w-5 mr-2"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                            fill="none"
-                          />
-                        </svg>
-                        Uploading
-                      </span>
-                    ) : (
-                      "Upload"
-                    )}
-                  </label>
-                )}
-              <input
-                type="file"
-                id="profilePhoto"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-                disabled={
-                  uploading || currentUserRole !== "student" || !!studentId
-                }
->>>>>>> eaa7921233d0d266183d89e80df2faf16e28343e
               />
             ) : (
               <img
