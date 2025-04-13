@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useContext } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   collection,
   getDocs,
@@ -16,8 +15,99 @@ import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import supabase from "../../supabaseclient"; // Import Supabase client
 
+// File type detection helper
+const getFileType = (filePath) => {
+  if (!filePath || typeof filePath !== "string") {
+    console.log("getFileType: Invalid filePath:", filePath);
+    return "unknown";
+  }
+  const extension = filePath.split(".").pop()?.toLowerCase();
+  console.log("getFileType: Extension detected:", extension);
+  if (["jpg", "jpeg", "png", "gif"].includes(extension)) return "image";
+  if (extension === "pdf") return "pdf";
+  if (["doc", "docx", "txt", "ppt", "pptx"].includes(extension))
+    return "document";
+  return "unknown";
+};
+
+// Preview Modal Component
+const PreviewModal = ({ isOpen, onClose, url, fileType }) => {
+  const [previewError, setPreviewError] = useState(null);
+
+  console.log("PreviewModal props:", { isOpen, url, fileType });
+
+  if (!isOpen) return null;
+
+  const handleError = () => {
+    console.log("PreviewModal: Error loading content for URL:", url);
+    setPreviewError(
+      "Failed to load preview. The file may be inaccessible or corrupted."
+    );
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-lg w-full max-w-4xl h-[80vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-gray-800">
+            Submission Preview
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-red-500 hover:text-red-700 text-lg font-bold"
+            aria-label="Close preview"
+          >
+            ×
+          </button>
+        </div>
+        {previewError ? (
+          <p className="text-red-500">{previewError}</p>
+        ) : url && typeof url === "string" ? (
+          fileType === "pdf" ? (
+            <iframe
+              src={url}
+              width="100%"
+              height="600px"
+              className="rounded-lg"
+              title="PDF Preview"
+              onError={handleError}
+            />
+          ) : fileType === "image" ? (
+            <img
+              src={url}
+              alt="Submission Preview"
+              className="w-full h-auto rounded-lg"
+              title="Image Preview"
+              onError={handleError}
+            />
+          ) : fileType === "document" ? (
+            <p className="text-gray-600">
+              Preview not available for this file type.{" "}
+              <a
+                href={`https://docs.google.com/viewer?url=${encodeURIComponent(
+                  url
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 underline"
+              >
+                Try viewing in Google Docs Viewer
+              </a>
+            </p>
+          ) : (
+            <p className="text-gray-600">
+              Preview not available for this file type.
+            </p>
+          )
+        ) : (
+          <p className="text-red-500">Error: Invalid file URL for preview.</p>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const AssignmentMarks = () => {
-  const navigate = useNavigate();
   const { user } = useContext(AuthContext);
   const [assignments, setAssignments] = useState([]);
   const [submissions, setSubmissions] = useState([]);
@@ -26,8 +116,9 @@ const AssignmentMarks = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [marks, setMarks] = useState({});
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false); // State for preview modal
-  const [previewUrl, setPreviewUrl] = useState(null); // State for preview URL
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [previewFileType, setPreviewFileType] = useState(null);
 
   // Fetch all assignments to populate the dropdown
   useEffect(() => {
@@ -93,11 +184,9 @@ const AssignmentMarks = () => {
 
         let submissionList = [];
         if (!submissionSnapshot.empty) {
-          // Fetch teacherId for each submission
           submissionList = await Promise.all(
             submissionSnapshot.docs.map(async (submissionDoc) => {
               const submissionData = submissionDoc.data();
-              // Fetch the corresponding assignment to get the teacherId
               const assignmentRef = doc(
                 db,
                 "assignments",
@@ -130,7 +219,6 @@ const AssignmentMarks = () => {
             return;
           }
 
-          // Fetch student details
           const studentsRef = collection(db, "students");
           const studentQueries = studentIds.map((studentId) =>
             query(studentsRef, where("userId", "==", studentId))
@@ -155,7 +243,6 @@ const AssignmentMarks = () => {
             .map((doc) => ({ id: doc.id, ...doc.data() }));
           console.log("Fetched students:", studentList);
 
-          // Fetch user details for email
           const usersRef = collection(db, "users");
           const userQueries = studentIds.map((studentId) =>
             query(usersRef, where("uid", "==", studentId))
@@ -180,13 +267,11 @@ const AssignmentMarks = () => {
             .map((doc) => ({ id: doc.id, ...doc.data() }));
           console.log("Fetched users:", userList);
 
-          // Debug: Check if the user is found for the studentId
           studentIds.forEach((studentId) => {
             const user = userList.find((u) => u.uid === studentId);
             console.log(`User for studentId ${studentId}:`, user);
           });
 
-          // Merge student and user data
           const mergedStudents = studentList.map((student) => {
             const user = userList.find((u) => u.uid === student.userId);
             const submission = submissionList.find(
@@ -200,7 +285,6 @@ const AssignmentMarks = () => {
             };
           });
 
-          // Initialize marks state with existing marks (if any)
           const initialMarks = submissionList.reduce((acc, sub) => {
             acc[sub.id] = sub.marks || "";
             return acc;
@@ -228,7 +312,6 @@ const AssignmentMarks = () => {
     fetchSubmissionsAndStudents();
   }, [user, selectedAssignmentId]);
 
-  // Function to handle marks submission
   const handleSubmitMarks = async (submissionId) => {
     const marksValue = marks[submissionId];
     if (!marksValue || marksValue < 0 || marksValue > 100) {
@@ -245,7 +328,6 @@ const AssignmentMarks = () => {
         `Marks updated for submission ${submissionId}: ${marksValue}`
       );
 
-      // Update the local submissions state to reflect the change
       setSubmissions((prevSubmissions) =>
         prevSubmissions.map((sub) =>
           sub.id === submissionId
@@ -260,7 +342,6 @@ const AssignmentMarks = () => {
     }
   };
 
-  // Function to handle marks input change
   const handleMarksChange = (submissionId, value) => {
     setMarks((prevMarks) => ({
       ...prevMarks,
@@ -268,13 +349,15 @@ const AssignmentMarks = () => {
     }));
   };
 
-  // Function to handle preview
   const handlePreview = async (filePath) => {
     try {
       console.log("Fetching file from Supabase with filePath:", filePath);
+      const fileType = getFileType(filePath);
+      console.log("Detected file type:", fileType);
+
       const { data, error } = await supabase.storage
         .from("student-submissions")
-        .createSignedUrl(filePath, 60); // Signed URL valid for 60 seconds
+        .createSignedUrl(filePath, 300); // Increased expiration to 300 seconds (5 minutes)
 
       if (error) {
         console.error("Error fetching file from Supabase:", error);
@@ -285,6 +368,7 @@ const AssignmentMarks = () => {
       const url = data.signedUrl;
       console.log("Fetched signed URL:", url);
       setPreviewUrl(url);
+      setPreviewFileType(fileType);
       setIsPreviewOpen(true);
     } catch (err) {
       console.error("Unexpected error fetching file from Supabase:", err);
@@ -292,21 +376,19 @@ const AssignmentMarks = () => {
     }
   };
 
-  // Function to close the preview modal
   const closePreview = () => {
     setIsPreviewOpen(false);
     setPreviewUrl(null);
+    setPreviewFileType(null);
     console.log("Preview modal closed");
   };
 
   return (
     <div className="min-h-screen bg-gray-100 flex">
-      {/* Fixed Sidebar */}
       <div className="w-56 bg-blue-800 text-white h-screen fixed top-0 left-0 overflow-y-auto">
         <Sidebar />
       </div>
 
-      {/* Main Content with margin to account for fixed sidebar */}
       <div className="flex-grow ml-56 p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-5xl font-bold text-green-500">
@@ -360,10 +442,6 @@ const AssignmentMarks = () => {
                       </p>
 
                       <p>
-                        <strong>Email:</strong> {student.email || "N/A"}
-                      </p>
-
-                      <p>
                         <strong>Course:</strong> {student.course || "N/A"}
                       </p>
                       <p>
@@ -378,10 +456,7 @@ const AssignmentMarks = () => {
                           ? new Date(submission.submittedAt).toLocaleString()
                           : "N/A"}
                       </p>
-                      <p>
-                        <strong>Teacher ID:</strong>{" "}
-                        {submission ? submission.teacherId : "N/A"}
-                      </p>
+
                       <p className="flex items-center space-x-2">
                         <strong>Submission:</strong>{" "}
                         {submission && submission.filePath ? (
@@ -428,64 +503,12 @@ const AssignmentMarks = () => {
         )}
       </div>
 
-      {/* Preview Modal */}
-      {isPreviewOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-full max-w-4xl h-[80vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold text-gray-800">
-                Submission Preview
-              </h2>
-              <button
-                onClick={closePreview}
-                className="text-red-500 hover:text-red-700 text-lg font-bold"
-              >
-                ×
-              </button>
-            </div>
-            {previewUrl && typeof previewUrl === "string" ? (
-              previewUrl.endsWith(".pdf") ||
-              previewUrl.includes("application/pdf") ? (
-                <iframe
-                  src={previewUrl}
-                  width="100%"
-                  height="600px"
-                  className="rounded-lg"
-                  title="PDF Preview"
-                  onError={(e) => {
-                    console.error("Iframe error:", e);
-                    alert(
-                      "Failed to preview PDF. The file may be corrupted, blocked, or inaccessible."
-                    );
-                  }}
-                />
-              ) : /\.(jpg|jpeg|png|gif)$/i.test(previewUrl) ? (
-                <img
-                  src={previewUrl}
-                  alt="Submission Preview"
-                  className="w-full h-auto rounded-lg"
-                  title="Image Preview"
-                  aria-label="Image Preview"
-                  onError={(e) => {
-                    console.error("Image error:", e);
-                    alert(
-                      "Failed to preview image. The file may be corrupted or blocked."
-                    );
-                  }}
-                />
-              ) : (
-                <p className="text-gray-600">
-                  Preview not available for this file type.
-                </p>
-              )
-            ) : (
-              <p className="text-red-500">
-                Error: Invalid file URL for preview.
-              </p>
-            )}
-          </div>
-        </div>
-      )}
+      <PreviewModal
+        isOpen={isPreviewOpen}
+        onClose={closePreview}
+        url={previewUrl}
+        fileType={previewFileType}
+      />
     </div>
   );
 };

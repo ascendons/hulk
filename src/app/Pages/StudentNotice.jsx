@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
 import { collection, query, orderBy, getDocs } from "firebase/firestore";
-import { auth, db } from "../../config";
+import { db } from "../../config";
 import StudentSidebar from "../Components/StudentSidebar";
-import supabase from "../../supabaseclient";
 
 const CACHE_KEY = "notices_cache";
 const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes cache expiry
 
 const getFileType = (url) => {
-  if (!url) return "unknown";
+  if (!url || typeof url !== "string") {
+    console.log("getFileType: Invalid URL:", url);
+    return "unknown";
+  }
   const extension = url.split(".").pop()?.toLowerCase();
+  console.log("getFileType: Extension detected:", extension);
   if (["jpg", "jpeg", "png", "gif"].includes(extension)) return "image";
   if (extension === "pdf") return "pdf";
   if (["doc", "docx", "txt", "ppt", "pptx"].includes(extension))
@@ -20,7 +22,18 @@ const getFileType = (url) => {
 
 // Modal component for previews
 const PreviewModal = ({ isOpen, onClose, url, fileType }) => {
+  const [previewError, setPreviewError] = useState(null);
+
+  console.log("PreviewModal props:", { isOpen, url, fileType });
+
   if (!isOpen) return null;
+
+  const handleError = () => {
+    console.log("PreviewModal: Error loading content for URL:", url);
+    setPreviewError(
+      "Failed to load preview. The file may be inaccessible or corrupted."
+    );
+  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -32,26 +45,36 @@ const PreviewModal = ({ isOpen, onClose, url, fileType }) => {
             className="text-gray-500 hover:text-gray-700"
             aria-label="Close preview"
           >
-            &times;
+            ×
           </button>
         </div>
-        {fileType === "pdf" && (
+        {previewError ? (
+          <p className="text-red-500">
+            {previewError}{" "}
+            <a
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 underline"
+            >
+              Try downloading the file
+            </a>
+          </p>
+        ) : fileType === "pdf" ? (
           <iframe
             src={url}
             title="PDF Preview"
             className="w-full h-[60vh]"
-            onError={() => alert("Failed to load PDF preview.")}
+            onError={handleError}
           />
-        )}
-        {fileType === "image" && (
+        ) : fileType === "image" ? (
           <img
             src={url}
             alt="Preview"
             className="w-full h-auto max-h-[60vh] object-contain"
-            onError={() => alert("Failed to load image preview.")}
+            onError={handleError}
           />
-        )}
-        {fileType === "document" && (
+        ) : fileType === "document" ? (
           <div className="text-gray-600">
             <p>
               Preview not available for this file type.{" "}
@@ -67,8 +90,7 @@ const PreviewModal = ({ isOpen, onClose, url, fileType }) => {
               </a>
             </p>
           </div>
-        )}
-        {fileType === "unknown" && (
+        ) : (
           <p className="text-gray-600">
             Preview not available for this file type.
           </p>
@@ -86,7 +108,6 @@ const StudentNotice = () => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [previewFileType, setPreviewFileType] = useState(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const navigate = useNavigate();
 
   const fetchNotices = async (bypassCache = false) => {
     setLoading(true);
@@ -99,6 +120,7 @@ const StudentNotice = () => {
         if (cachedData) {
           const { data, timestamp } = JSON.parse(cachedData);
           if (now - timestamp < CACHE_EXPIRY) {
+            console.log("Using cached notices:", data);
             setNotices(data);
             setLoading(false);
             return;
@@ -110,57 +132,52 @@ const StudentNotice = () => {
       const noticesRef = collection(db, "notices");
       const noticesQuery = query(noticesRef, orderBy("createdAt", "desc"));
       const querySnapshot = await getDocs(noticesQuery);
-      const fetchedNotices = await Promise.all(
-        querySnapshot.docs.map(async (doc) => {
-          const docData = doc.data();
-          const noticeData = {
-            id: doc.id,
-            title: docData.title || "No Title",
-            noticeBy: docData.noticeBy || "Unknown",
-            content: docData.content || "No content available",
-            createdAt: docData.createdAt
-              ? docData.createdAt.toDate()
-              : new Date(),
-            files: Array.isArray(docData.files)
-              ? docData.files
-              : docData.file
-              ? [docData.file]
-              : [],
-          };
+      console.log("Firestore query snapshot size:", querySnapshot.size);
 
-          // Fetch Supabase URLs
-          if (noticeData.files && noticeData.files.length > 0) {
-            const fileUrls = await Promise.all(
-              noticeData.files.map(async (filePath) => {
-                if (filePath) {
-                  const {
-                    data: { publicUrl },
-                    error,
-                  } = await supabase.storage
-                    .from("notices")
-                    .getPublicUrl(filePath);
+      const fetchedNotices = querySnapshot.docs.map((doc) => {
+        const docData = doc.data();
+        console.log(`Notice document ${doc.id}:`, docData);
 
-                  if (error) {
-                    console.error("Supabase error:", filePath, error.message);
-                    return null;
-                  }
-                  return publicUrl;
-                }
-                return null;
-              })
-            );
-            noticeData.fileUrls = fileUrls.filter((url) => url !== null);
-            noticeData.fileTypes = noticeData.fileUrls.map((url) =>
-              getFileType(url)
-            );
+        // Handle createdAt field (could be a Timestamp or a string)
+        let createdAt;
+        if (docData.createdAt) {
+          if (typeof docData.createdAt === "string") {
+            // If createdAt is an ISO 8601 string, parse it
+            createdAt = new Date(docData.createdAt);
+          } else if (typeof docData.createdAt.toDate === "function") {
+            // If createdAt is a Firestore Timestamp, convert to Date
+            createdAt = docData.createdAt.toDate();
           } else {
-            noticeData.fileUrls = [];
-            noticeData.fileTypes = [];
+            console.warn("Unexpected createdAt format:", docData.createdAt);
+            createdAt = new Date();
           }
+        } else {
+          createdAt = new Date();
+        }
 
-          return noticeData;
-        })
-      );
+        const noticeData = {
+          id: doc.id,
+          title: docData.title || "No Title",
+          noticeBy: docData.noticeBy || "Unknown",
+          content: docData.content || "No content available",
+          createdAt,
+          files: Array.isArray(docData.files)
+            ? docData.files
+            : docData.file
+            ? [docData.file]
+            : [],
+        };
+
+        // Since files already contains public URLs, use them directly
+        noticeData.fileUrls = noticeData.files.filter(
+          (url) => typeof url === "string"
+        );
+        noticeData.fileTypes = noticeData.fileUrls.map((url) =>
+          getFileType(url)
+        );
+
+        return noticeData;
+      });
 
       setNotices(fetchedNotices);
       localStorage.setItem(
@@ -186,12 +203,14 @@ const StudentNotice = () => {
   const handleMouseLeave = () => setIsSidebarHovered(false);
 
   const openPreview = (url, fileType) => {
+    console.log("Opening preview with:", { url, fileType });
     setPreviewUrl(url);
     setPreviewFileType(fileType);
     setIsPreviewOpen(true);
   };
 
   const closePreview = () => {
+    console.log("Closing preview modal");
     setPreviewUrl(null);
     setPreviewFileType(null);
     setIsPreviewOpen(false);
@@ -249,19 +268,13 @@ const StudentNotice = () => {
 
       <div className="flex-1 p-6 ml-56">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-orange-600">NOTICES</h1>
+          <h1 className="text-5xl font-bold text-orange-600">NOTICES</h1>
           <div className="flex space-x-4">
             <button
               onClick={() => fetchNotices(true)}
               className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
             >
               Refresh Notices
-            </button>
-            <button
-              onClick={() => navigate("/")}
-              className="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600 transition-colors"
-            >
-              Back to Dashboard
             </button>
           </div>
         </div>
@@ -289,40 +302,48 @@ const StudentNotice = () => {
                 <strong className="text-gray-800">Attachments:</strong>
                 {notice.fileUrls && notice.fileUrls.length > 0 ? (
                   <ul className="mt-2 space-y-2">
-                    {notice.fileUrls.map((url, index) => (
-                      <li key={index} className="flex items-center space-x-4">
-                        <a
-                          href={url}
-                          download={
-                            url.split("/").pop() || `attachment_${index + 1}`
-                          }
-                          className="text-orange-500 underline hover:text-orange-700"
-                        >
-                          Download File {index + 1}
-                        </a>
-                        {["pdf", "image"].includes(notice.fileTypes[index]) ? (
-                          <button
-                            onClick={() =>
-                              openPreview(url, notice.fileTypes[index])
-                            }
-                            className="text-blue-500 underline hover:text-blue-600"
-                          >
-                            Preview
-                          </button>
-                        ) : (
+                    {notice.fileUrls.map((url, index) => {
+                      console.log(
+                        `Rendering URL ${index + 1} for notice ${notice.id}:`,
+                        url
+                      );
+                      return (
+                        <li key={index} className="flex items-center space-x-4">
                           <a
-                            href={`https://docs.google.com/viewer?url=${encodeURIComponent(
-                              url
-                            )}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-500 underline hover:text-blue-600"
+                            href={url}
+                            download={
+                              url.split("/").pop() || `attachment_${index + 1}`
+                            }
+                            className="text-orange-500 underline hover:text-orange-700"
                           >
-                            Try Google Docs Viewer
+                            Download File {index + 1}
                           </a>
-                        )}
-                      </li>
-                    ))}
+                          {["pdf", "image"].includes(
+                            notice.fileTypes[index]
+                          ) ? (
+                            <button
+                              onClick={() =>
+                                openPreview(url, notice.fileTypes[index])
+                              }
+                              className="text-blue-500 underline hover:text-blue-600"
+                            >
+                              Preview
+                            </button>
+                          ) : (
+                            <a
+                              href={`https://docs.google.com/viewer?url=${encodeURIComponent(
+                                url
+                              )}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-500 underline hover:text-blue-600"
+                            >
+                              Try Google Docs Viewer
+                            </a>
+                          )}
+                        </li>
+                      );
+                    })}
                   </ul>
                 ) : (
                   <span className="text-gray-600"> No attachments</span>

@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useContext, Suspense } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   collection,
   getDocs,
@@ -65,17 +64,7 @@ const PreviewModal = ({ isOpen, onClose, url, fileType }) => {
           </button>
         </div>
         {previewError ? (
-          <p className="text-red-500">
-            {previewError}{" "}
-            <a
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-500 underline"
-            >
-              Try downloading the file
-            </a>
-          </p>
+          <p className="text-red-500">{previewError}</p>
         ) : fileType === "pdf" ? (
           <iframe
             src={url}
@@ -118,7 +107,6 @@ const PreviewModal = ({ isOpen, onClose, url, fileType }) => {
 };
 
 const StudentAssignments = () => {
-  const navigate = useNavigate();
   const [assignments, setAssignments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -577,12 +565,6 @@ const StudentAssignments = () => {
       <div className="flex-grow ml-56 p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold text-orange-500">ASSIGNMENTS</h1>
-          <button
-            onClick={() => navigate("/")}
-            className="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600"
-          >
-            Back to Dashboard
-          </button>
         </div>
 
         {error && (
@@ -618,34 +600,18 @@ const StudentAssignments = () => {
                 <p className="text-sm text-gray-600">
                   <span className="font-semibold">Attachments:</span>{" "}
                   {assignment.fileURLs && assignment.fileURLs.length > 0 ? (
-                    assignment.fileURLs.map((url, index) => {
-                      console.log(
-                        `Rendering URL ${index + 1} for assignment ${
-                          assignment.id
-                        }:`,
-                        url
-                      );
-                      return (
-                        <span key={index} className="inline-block mr-2">
-                          <a
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-orange-500 underline hover:text-orange-600 mr-2"
+                    assignment.fileURLs.map((url, index) => (
+                      <span key={index} className="inline-block mr-2">
+                        {url && typeof url === "string" && (
+                          <button
+                            onClick={() => handlePreview(url)}
+                            className="text-blue-500 underline hover:text-blue-700"
                           >
-                            Download File {index + 1}
-                          </a>
-                          {url && typeof url === "string" && (
-                            <button
-                              onClick={() => handlePreview(url)}
-                              className="text-blue-500 underline hover:text-blue-700"
-                            >
-                              View Preview
-                            </button>
-                          )}
-                        </span>
-                      );
-                    })
+                            View Preview
+                          </button>
+                        )}
+                      </span>
+                    ))
                   ) : (
                     <span>No attachments</span>
                   )}
