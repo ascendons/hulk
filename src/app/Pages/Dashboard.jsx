@@ -38,6 +38,30 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  // Function to get initials from name
+  const getInitials = (name) => {
+    if (!name || name === "N/A") return "N/A";
+    const words = name.trim().split(/\s+/);
+    if (words.length === 1) return words[0][0].toUpperCase();
+    return (words[0][0] + (words[1] ? words[1][0] : "")).toUpperCase();
+  };
+
+  // Array of background colors for initials avatar
+  const backgroundColors = [
+    "bg-blue-500",
+    "bg-green-500",
+    "bg-red-500",
+    "bg-purple-500",
+    "bg-teal-500",
+    "bg-orange-500",
+    "bg-gray-500",
+    "bg-indigo-500",
+  ];
+
+  // Select random background color
+  const randomColor =
+    backgroundColors[Math.floor(Math.random() * backgroundColors.length)];
+
   const getPublicIdFromUrl = (url) => {
     if (!url) return "";
     const regex = /\/v\d+\/(.+?)(?:\.\w+)?$/;
@@ -85,19 +109,22 @@ const Dashboard = () => {
           return;
         }
 
-        console.log("Authenticated user:");
+        console.log("Authenticated user:", user.uid);
 
         const userDocRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
-          console.warn("No user data found in 'users' collection for UID:");
+          console.warn(
+            "No user data found in 'users' collection for UID:",
+            user.uid
+          );
           setError("User data not found in Firestore.");
           return;
         }
 
         const userData = userDoc.data();
-        console.log("User data from 'users':");
+        console.log("User data from 'users':", userData);
 
         const name = userData.name || "Teacher Name";
         const role = userData.role || "Teacher";
@@ -112,11 +139,11 @@ const Dashboard = () => {
         let profilePhotoUrl = "";
         if (!teacherSnapshot.empty) {
           const teacherData = teacherSnapshot.docs[0].data();
-          console.log("Teacher data from 'teachersinfo':");
+          console.log("Teacher data from 'teachersinfo':", teacherData);
           department = teacherData.department || "Department";
           profilePhotoUrl = teacherData.profilePhotoUrl || "";
         } else {
-          console.warn("No teacher info found for UID:");
+          console.warn("No teacher info found for UID:", user.uid);
         }
 
         setTeacherInfo({
@@ -244,7 +271,10 @@ const Dashboard = () => {
                   });
                 }
               } else {
-                console.log("Invalid date format for compositeId:");
+                console.log(
+                  "Invalid date format for compositeId:",
+                  compositeId
+                );
               }
             });
 
@@ -312,34 +342,43 @@ const Dashboard = () => {
             Welcome back, {teacherInfo.name || "Teacher"}!
           </p>
         </div>
-        <div className="bg-white shadow-lg rounded-lg p-6 mb-8 flex items-center justify-between border border-gray-200">
-          <div className="w-16 h-16 rounded-full mr-6 border-2 border-blue-300 overflow-hidden">
-            {teacherInfo.profilePhotoUrl ? (
-              <AdvancedImage
-                cldImg={cld
-                  .image(getPublicIdFromUrl(teacherInfo.profilePhotoUrl))
-                  .resize(fill().width(64).height(64).gravity(autoGravity()))
-                  .format("auto")
-                  .quality("auto")}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <span className="text-gray-500 font-bold text-lg">IMG</span>
-            )}
-          </div>
-          <div className="flex-grow">
-            <h2 className="text-xl font-semibold text-gray-900">
-              {teacherInfo.name || "Teacher Name"}
-            </h2>
-            <p className="text-gray-600 text-sm">
-              Department: {teacherInfo.department || "Department"}
-            </p>
-            <p className="text-gray-600 text-sm">
-              Role: {teacherInfo.role || "Teacher"}
-            </p>
+        <div className="bg-white shadow-lg rounded-xl p-6 mb-8 flex items-center justify-between border border-gray-200">
+          <div className="flex items-center gap-4">
+            <div className="relative w-24 h-24 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-green-200 shadow-md">
+              {teacherInfo.profilePhotoUrl ? (
+                <AdvancedImage
+                  cldImg={cld
+                    .image(getPublicIdFromUrl(teacherInfo.profilePhotoUrl))
+                    .resize(fill().width(96).height(96).gravity(autoGravity()))
+                    .format("auto")
+                    .quality("auto")}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.src = "https://via.placeholder.com/96";
+                  }}
+                />
+              ) : (
+                <div
+                  className={`w-full h-full ${randomColor} flex items-center justify-center text-white text-3xl font-semibold`}
+                >
+                  {getInitials(teacherInfo.name)}
+                </div>
+              )}
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                {teacherInfo.name || "Teacher Name"}
+              </h2>
+              <p className="text-gray-600 text-sm mt-1">
+                Department: {teacherInfo.department || "Department"}
+              </p>
+              <p className="text-gray-600 text-sm mt-1">
+                Role: {teacherInfo.role || "Teacher"}
+              </p>
+            </div>
           </div>
           <Link to={`/teacher/${teacherInfo.userId}`}>
-            <button className="bg-green-500 text-white px-4 py-2 rounded-full hover:bg-green-600 transition-colors text-sm font-medium">
+            <button className="bg-green-500 text-white px-4 py-2 rounded-full hover:bg-green-600 transition-colors text-sm font-medium shadow-sm">
               View Profile
             </button>
           </Link>

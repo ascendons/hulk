@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { db } from "../../config"; // Import Firestore configuration
+import { db } from "../../config";
 import {
   doc,
   setDoc,
@@ -9,14 +9,13 @@ import {
   query,
   where,
   getDocs,
-} from "firebase/firestore"; // Firestore methods
-import { DEPARTMENTS, DIVISIONS, YEARS } from "../constants"; // Import constants
-import { ArrowLeftIcon } from "@heroicons/react/solid"; // Import ArrowLeftIcon
+} from "firebase/firestore";
+import { DEPARTMENTS, DIVISIONS, YEARS } from "../constants";
+import { ArrowLeftIcon } from "@heroicons/react/solid";
 import ReactMarkdown from "react-markdown";
 import { ToastContainer, toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css"; // Import toastify CSS
+import "react-toastify/dist/ReactToastify.css";
 
-// Error Boundary Component
 class ErrorBoundary extends React.Component {
   state = { hasError: false };
 
@@ -54,27 +53,25 @@ class ErrorBoundary extends React.Component {
 const AddDayTimetable = () => {
   const [lectures, setLectures] = useState([
     { startTime: "", endTime: "", subject: "", location: "" },
-  ]); // Initial state with one empty lecture
-  const [duration, setDuration] = useState("24"); // Default duration (24 or 48 hours)
-  const [selectedDate, setSelectedDate] = useState(""); // Date input
-  const [department, setDepartment] = useState(""); // Department input
-  const [year, setYear] = useState(""); // Year input
-  const [division, setDivision] = useState(""); // Division input
-  const [description, setDescription] = useState(""); // Description input
-  const [subjects, setSubjects] = useState([]); // State to store fetched subjects
-  const [error, setError] = useState(null); // For error handling
-  const navigate = useNavigate(); // Hook for navigation
-  const textareaRef = useRef(null); // Ref for textarea
+  ]);
+  const [duration, setDuration] = useState("24");
+  const [selectedDate, setSelectedDate] = useState("");
+  const [department, setDepartment] = useState("");
+  const [year, setYear] = useState("");
+  const [division, setDivision] = useState("");
+  const [description, setDescription] = useState("");
+  const [subjects, setSubjects] = useState([]);
+  const [error, setError] = useState(null);
+  const navigate = useNavigate();
+  const textareaRef = useRef(null);
 
-  // Filter divisions based on department
   const getFilteredDivisions = () => {
     if (department === "Bsc.IT") {
-      return ["A"]; // Only allow division "A" for Bsc.IT
+      return ["A"];
     }
-    return DIVISIONS; // Allow all divisions for other departments
+    return DIVISIONS;
   };
 
-  // Fetch subjects based on selected department
   useEffect(() => {
     const fetchSubjects = async () => {
       if (!department) {
@@ -103,9 +100,8 @@ const AddDayTimetable = () => {
     };
 
     fetchSubjects();
-  }, [department]); // Re-fetch subjects whenever department changes
+  }, [department]);
 
-  // Handle input changes for each lecture field
   const handleInputChange = (index, event) => {
     const { name, value } = event.target;
     const updatedLectures = [...lectures];
@@ -113,7 +109,6 @@ const AddDayTimetable = () => {
     setLectures(updatedLectures);
   };
 
-  // Add a new lecture entry
   const handleAddLecture = () => {
     setLectures([
       ...lectures,
@@ -121,18 +116,15 @@ const AddDayTimetable = () => {
     ]);
   };
 
-  // Remove a lecture entry
   const handleRemoveLecture = (index) => {
     const updatedLectures = lectures.filter((_, i) => i !== index);
     setLectures(updatedLectures);
   };
 
-  // Handle navigation to Courses
   const handleBack = () => {
     navigate("/courses");
   };
 
-  // Function to wrap selected text with markdown syntax
   const formatText = (type) => {
     const textarea = textareaRef.current;
     const start = textarea.selectionStart;
@@ -155,11 +147,9 @@ const AddDayTimetable = () => {
     setDescription(newText);
   };
 
-  // Handle form submission with Firestore integration and toast notification
   const handleSave = async (event) => {
     event.preventDefault();
 
-    // Validate inputs
     if (
       !selectedDate ||
       !duration ||
@@ -194,20 +184,21 @@ const AddDayTimetable = () => {
       }
     }
 
-    // Create a composite document ID
     const compositeId = `${department}_${year}_${division}_${selectedDate.replace(
       /-/g,
       ""
-    )}`; // Remove hyphens from date for consistency
+    )}`;
 
+    const durationMs = parseInt(duration) * 60 * 60 * 1000; // Convert hours to milliseconds
     const timetableData = {
       department,
       year,
       division,
-      duration: parseInt(duration), // Ensure duration is stored as a number
-      lectures, // Store the full lectures array
+      duration: parseInt(duration),
+      lectures,
       description,
-      createdAt: serverTimestamp(), // Store creation timestamp
+      createdAt: serverTimestamp(),
+      deletionTimestamp: new Date(Date.now() + durationMs), // Store deletion time
     };
 
     try {
@@ -220,16 +211,13 @@ const AddDayTimetable = () => {
       );
 
       if (docSnap.empty) {
-        // Document does not exist, this is a create operation
         await setDoc(docRef, timetableData);
         toast.success("Timetable created successfully to Firestore!");
       } else {
-        // Document exists, this is an update operation
-        await setDoc(docRef, timetableData, { merge: true }); // Use merge to update only changed fields
+        await setDoc(docRef, timetableData, { merge: true });
         toast.success("Timetable updated successfully to Firestore!");
       }
 
-      // Reset form after successful save
       setLectures([{ startTime: "", endTime: "", subject: "", location: "" }]);
       setSelectedDate("");
       setDuration("24");
@@ -250,9 +238,7 @@ const AddDayTimetable = () => {
   return (
     <ErrorBoundary>
       <div className="w-screen bg-gray-100 flex">
-        {/* Full-screen Timetable Form */}
         <div className="w-full bg-white shadow-lg rounded-xl p-6 flex flex-col">
-          {/* Back Button */}
           <button
             onClick={handleBack}
             className="mb-4 p-2 bg-white border border-gray-300 rounded-full shadow-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 self-start"
@@ -271,7 +257,6 @@ const AddDayTimetable = () => {
           )}
 
           <form onSubmit={handleSave} className="space-y-6">
-            {/* Duration Section */}
             <div className="mb-6">
               <label className="block text-gray-600 font-semibold mb-2">
                 Duration
@@ -287,7 +272,6 @@ const AddDayTimetable = () => {
               </select>
             </div>
 
-            {/* Department, Year, Division, Date, and Description Section */}
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
                 <label className="block text-gray-600 font-semibold mb-2">

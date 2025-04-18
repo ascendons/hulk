@@ -29,6 +29,30 @@ const StudentDashboard = () => {
   const [timers, setTimers] = useState({});
   const [loading, setLoading] = useState(true);
 
+  // Function to get initials from name
+  const getInitials = (name) => {
+    if (!name || name === "N/A") return "N/A";
+    const words = name.trim().split(/\s+/);
+    if (words.length === 1) return words[0][0].toUpperCase();
+    return (words[0][0] + (words[1] ? words[1][0] : "")).toUpperCase();
+  };
+
+  // Array of background colors for initials avatar
+  const backgroundColors = [
+    "bg-blue-500",
+    "bg-green-500",
+    "bg-red-500",
+    "bg-purple-500",
+    "bg-teal-500",
+    "bg-orange-500",
+    "bg-gray-500",
+    "bg-indigo-500",
+  ];
+
+  // Select random background color
+  const randomColor =
+    backgroundColors[Math.floor(Math.random() * backgroundColors.length)];
+
   const handleMouseEnter = () => {
     setIsSidebarHovered(true);
   };
@@ -350,9 +374,9 @@ const StudentDashboard = () => {
         <h1 className="text-5xl font-bold text-orange-500 mb-6">Dashboard</h1>
 
         {/* Welcome Section */}
-        <div className="bg-white p-4 rounded-lg shadow-md mb-6 flex items-center justify-between">
-          <div className="flex items-center">
-            <div className="w-16 h-16 rounded-full mr-4 flex items-center justify-center overflow-hidden">
+        <div className="bg-white p-6 rounded-xl shadow-md mb-6 flex items-center justify-between border border-gray-200">
+          <div className="flex items-center gap-4">
+            <div className="relative w-24 h-24 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-orange-200 shadow-md">
               {studentData?.profilePhotoUrl ? (
                 <img
                   src={studentData.profilePhotoUrl}
@@ -360,12 +384,14 @@ const StudentDashboard = () => {
                   className="w-full h-full object-cover"
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = "https://via.placeholder.com/64?text=IMG";
+                    e.target.src = "https://via.placeholder.com/96?text=IMG";
                   }}
                 />
               ) : (
-                <div className="w-full h-full bg-gray-300 rounded-full flex items-center justify-center">
-                  <span className="text-gray-500 font-bold text-lg">IMG</span>
+                <div
+                  className={`w-full h-full ${randomColor} flex items-center justify-center text-white text-3xl font-semibold`}
+                >
+                  {getInitials(studentData?.name)}
                 </div>
               )}
             </div>
@@ -374,14 +400,18 @@ const StudentDashboard = () => {
                 Welcome back,{" "}
                 <span className="text-orange-500 font-semibold">Student!</span>
               </p>
-              <p className="text-gray-600">Student Name: {studentData?.name}</p>
-              <p className="text-gray-600">Department: {studentData?.course}</p>
-              <p className="text-gray-600">Role: Student</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {studentData?.name}
+              </p>
+              <p className="text-gray-600 text-sm mt-1">
+                Department: {studentData?.course}
+              </p>
+              <p className="text-gray-600 text-sm mt-1">Role: Student</p>
             </div>
           </div>
           <Link
             to="/view-profile"
-            className="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600 transition-colors"
+            className="bg-orange-500 text-white px-4 py-2 rounded-full hover:bg-orange-600 transition-colors text-sm font-medium shadow-sm"
           >
             View Profile
           </Link>

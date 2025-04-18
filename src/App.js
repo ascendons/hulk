@@ -11,6 +11,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "./config";
 import { AuthProvider } from "./authContext";
 import Community from "./app/Pages/Community";
+import ProtectedCommunity from "./app/routes/ProtectedCommunity";
 
 // Lazy-loaded components
 const Dashboard = React.lazy(() => import("./app/Pages/Dashboard"));
@@ -284,6 +285,7 @@ function App() {
             ))}
 
             <Route path="*" element={<Navigate to="/signup" replace />} />
+            <Route path="/community" element={<ProtectedCommunity />} />
           </Routes>
         </Suspense>
       </BrowserRouter>

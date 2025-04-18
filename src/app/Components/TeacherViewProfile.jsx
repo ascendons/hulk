@@ -30,12 +30,36 @@ const TeacherViewProfile = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [showUploadErrorModal, setShowUploadErrorModal] = useState(false);
-  const [attendance] = useState(85); 
-  
+  const [attendance] = useState(85);
+
+  // Function to get initials from name
+  const getInitials = (name) => {
+    if (!name || name === "N/A") return "N/A";
+    const words = name.trim().split(/\s+/);
+    if (words.length === 1) return words[0][0].toUpperCase();
+    return (words[0][0] + (words[1] ? words[1][0] : "")).toUpperCase();
+  };
+
+  // Array of background colors for initials avatar
+  const backgroundColors = [
+    "bg-blue-500",
+    "bg-green-500",
+    "bg-red-500",
+    "bg-purple-500",
+    "bg-teal-500",
+    "bg-orange-500",
+    "bg-gray-500",
+    "bg-indigo-500",
+  ];
+
+  // Select random background color
+  const randomColor =
+    backgroundColors[Math.floor(Math.random() * backgroundColors.length)];
+
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-  
+
     const validTypes = ["image/jpeg", "image/png", "image/jpg"];
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (!validTypes.includes(file.type)) {
@@ -48,16 +72,16 @@ const TeacherViewProfile = () => {
       setShowUploadErrorModal(true);
       return;
     }
-  
+
     setUploading(true);
     setUploadError("");
-  
+
     try {
       const formData = new FormData();
       formData.append("file", file);
       formData.append("upload_preset", "teachers_profiles");
       formData.append("cloud_name", "dwdejk1u3");
-  
+
       const response = await fetch(
         `https://api.cloudinary.com/v1_1/dwdejk1u3/image/upload`,
         {
@@ -65,7 +89,7 @@ const TeacherViewProfile = () => {
           body: formData,
         }
       );
-  
+
       const data = await response.json();
       if (!response.ok) {
         throw new Error(
@@ -74,31 +98,34 @@ const TeacherViewProfile = () => {
           }`
         );
       }
-  
+
       if (data.secure_url) {
-        const teacherInfoDocRef = doc(db, "teachersinfo", teacherId); // Use teacherId as the document ID
+        const teacherInfoDocRef = doc(db, "teachersinfo", teacherId);
         try {
           await updateDoc(teacherInfoDocRef, {
             profilePhotoUrl: data.secure_url,
           });
         } catch (firestoreError) {
-          throw new Error("Failed to update Firestore (teachersinfo): " + firestoreError.message);
+          throw new Error(
+            "Failed to update Firestore (teachersinfo): " +
+              firestoreError.message
+          );
         }
-  
+
         setTeacher((prev) => {
           const updatedTeacher = {
             ...prev,
             profilePhotoUrl: data.secure_url,
           };
-          console.log("Updated teacher state:");
+          console.log("Updated teacher state:", updatedTeacher);
           return updatedTeacher;
         });
       } else {
         throw new Error("No secure URL returned from Cloudinary.");
       }
     } catch (error) {
-      console.error("Error uploading image:");
-      setUploadError(`Failed to upload image:`);
+      console.error("Error uploading image:", error);
+      setUploadError(`Failed to upload image: ${error.message}`);
       setShowUploadErrorModal(true);
     } finally {
       setUploading(false);
@@ -238,22 +265,30 @@ const TeacherViewProfile = () => {
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="flex-1 p-8">
         {/* Header Section */}
-        <div className="bg-white shadow-lg rounded-lg p-4 mb-8 flex items-center border border-gray-200">
-          <div className="relative w-24 h-24 rounded-full mr-4 border border-blue-300 overflow-hidden flex-shrink-0">
-            <img
-              src={teacher.profilePhotoUrl || "https://via.placeholder.com/64"}
-              alt={`${teacher.name}'s profile`}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.target.src = "https://via.placeholder.com/64";
-              }}
-            />
+        <div className="bg-gradient-to-r from-gray-100 to-gray-200 shadow-xl rounded-xl p-6 mb-8 flex flex-col sm:flex-row items-center sm:items-start gap-6 border border-gray-200">
+          <div className="relative w-32 h-32 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-green-200 shadow-md">
+            {teacher.profilePhotoUrl ? (
+              <img
+                src={teacher.profilePhotoUrl}
+                alt={`${teacher.name}'s profile`}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.src = "https://via.placeholder.com/128";
+                }}
+              />
+            ) : (
+              <div
+                className={`w-full h-full ${randomColor} flex items-center justify-center text-white text-4xl font-semibold`}
+              >
+                {getInitials(teacher.name)}
+              </div>
+            )}
             <label
               htmlFor="profile-upload"
-              className="absolute bottom-0 right-0 bg-green-500 rounded-full p-1 cursor-pointer shadow-md hover:bg-green-600 transition duration-300"
+              className="absolute bottom-2 right-2 bg-green-500 rounded-full p-2 cursor-pointer shadow-lg hover:bg-green-600 hover:scale-110 transition-transform duration-300"
             >
               <svg
-                className="w-4 h-4 text-white"
+                className="w-5 h-5 text-white"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -280,21 +315,37 @@ const TeacherViewProfile = () => {
               className="hidden"
             />
             {uploading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
-                <p className="text-white text-xs">Uploading...</p>
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-60 rounded-full">
+                <svg
+                  className="w-8 h-8 text-white animate-spin"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
+                </svg>
               </div>
             )}
           </div>
-          <div className="flex-1">
-            <h2 className="text-xl font-semibold text-gray-900">
-              {teacher.name}
-            </h2>
-            <p className="text-gray-600 text-sm">{teacher.email}</p>
-            <p className="text-gray-600 text-sm">
+          <div className="flex-1 text-center sm:text-left">
+            <h2 className="text-2xl font-bold text-gray-900">{teacher.name}</h2>
+            <p className="text-gray-600 text-sm mt-1">{teacher.email}</p>
+            <p className="text-gray-600 text-sm mt-1">
               Department: {teacher.department}
             </p>
-            <span className="inline-block bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs mt-1">
-              {teacher.role}
+            <span className="inline-block bg-green-500 text-white px-3 py-1 rounded-full text-xs mt-2 font-medium shadow-sm">
+              {teacher.role.charAt(0).toUpperCase() + teacher.role.slice(1)}
             </span>
           </div>
         </div>
@@ -441,7 +492,7 @@ const TeacherViewProfile = () => {
                     }
                     className="absolute inset-y-0 right-0 flex items-center pr-3 mt-6 text-gray-500"
                   >
-                    {confirmPasswordVisible ? (
+                    {currentPasswordVisible ? (
                       <AiOutlineEyeInvisible size={20} />
                     ) : (
                       <AiOutlineEye size={20} />
@@ -518,7 +569,7 @@ const TeacherViewProfile = () => {
                   </p>
                   <button
                     onClick={() => navigate("/AttendanceAnalytics")}
-                    className="mt-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition duration-300"
+                    className="mt-2 bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition duration-300"
                   >
                     View Attendance Report
                   </button>

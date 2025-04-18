@@ -10,13 +10,13 @@ import {
 } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
 import { db, auth } from "../../config";
-import ChangePasswordModal from "./ChangePasswordModal"; // Adjust the import path as needed
+import ChangePasswordModal from "./ChangePasswordModal";
 import { Cloudinary } from "@cloudinary/url-gen";
 import { AdvancedImage } from "@cloudinary/react";
 import { fill } from "@cloudinary/url-gen/actions/resize";
 import { autoGravity } from "@cloudinary/url-gen/qualifiers/gravity";
 
-const CLOUD_NAME = "dwdejk1u3"; // Match your Cloudinary cloud name
+const CLOUD_NAME = "dwdejk1u3";
 
 const cld = new Cloudinary({
   cloud: {
@@ -39,10 +39,34 @@ const StudentViewProfile = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [uploading, setUploading] = useState(false);
   const [profilePhotoUrl, setProfilePhotoUrl] = useState("");
-  const [currentUserRole, setCurrentUserRole] = useState(null); // Track current user's role
-  const [activeTab, setActiveTab] = useState("Details"); // Add tabs like in TeacherViewProfile
-  const navigate = useNavigate();
+  const [currentUserRole, setCurrentUserRole] = useState(null);
+  const [activeTab, setActiveTab] = useState("Details");
   const [showUploadErrorModal, setShowUploadErrorModal] = useState(false);
+  const navigate = useNavigate();
+
+  // Function to get initials from name
+  const getInitials = (name) => {
+    if (!name || name === "N/A") return "N/A";
+    const words = name.trim().split(/\s+/);
+    if (words.length === 1) return words[0][0].toUpperCase();
+    return (words[0][0] + (words[1] ? words[1][0] : "")).toUpperCase();
+  };
+
+  // Array of background colors for initials avatar
+  const backgroundColors = [
+    "bg-blue-500",
+    "bg-green-500",
+    "bg-red-500",
+    "bg-purple-500",
+    "bg-teal-500",
+    "bg-orange-500",
+    "bg-gray-500",
+    "bg-indigo-500",
+  ];
+
+  // Select random background color
+  const randomColor =
+    backgroundColors[Math.floor(Math.random() * backgroundColors.length)];
 
   useEffect(() => {
     const fetchStudentInfo = async () => {
@@ -56,7 +80,7 @@ const StudentViewProfile = () => {
         }
 
         let targetUserId = null;
-        let targetStudentId = studentId; // Use studentId from URL if provided (document ID)
+        let targetStudentId = studentId;
 
         if (!targetStudentId) {
           const userEmail = user.email || user.uid;
@@ -93,17 +117,16 @@ const StudentViewProfile = () => {
           setCurrentUserRole(userRole);
           if (userRole !== "student" && userRole !== "admin") {
             console.error("User is not a student or admin. Role is:", userRole);
-            navigate("/dashboard"); // Redirect to appropriate dashboard if not a student or admin
+            navigate("/dashboard");
             setErrorMessage(
               `User role '${userRole}' is not a student or admin.`
             );
             return;
           }
         } else {
-          // If studentId is provided (admin viewing another student's profile), fetch the student's data
           const studentQuery = query(
             collection(db, "students"),
-            where("__name__", "==", targetStudentId) // Use studentId as the document ID
+            where("__name__", "==", targetStudentId)
           );
           const studentSnapshot = await getDocs(studentQuery);
 
@@ -115,9 +138,8 @@ const StudentViewProfile = () => {
           }
 
           const studentData = studentSnapshot.docs[0].data();
-          targetUserId = studentData.userId; // Get the userId from the student's document
+          targetUserId = studentData.userId;
 
-          // Fetch user data (name and email) from "users" collection using userId (document ID)
           const userDoc = await getDoc(doc(db, "users", targetUserId));
           if (!userDoc.exists()) {
             console.error(
@@ -136,18 +158,17 @@ const StudentViewProfile = () => {
           }
 
           const userData = userDoc.data();
-          setCurrentUserRole("student"); // Assume the viewed student is a student
+          setCurrentUserRole("student");
         }
 
-        // Fetch student data (either for the current user or specific studentId)
         const studentQuery = targetStudentId
           ? query(
               collection(db, "students"),
-              where("__name__", "==", targetStudentId) // Use studentId as the document ID
+              where("__name__", "==", targetStudentId)
             )
           : query(
               collection(db, "students"),
-              where("userId", "==", targetUserId) // Use userId for current user
+              where("userId", "==", targetUserId)
             );
         const studentSnapshot = await getDocs(studentQuery);
 
@@ -167,7 +188,6 @@ const StudentViewProfile = () => {
         } else {
           const studentData = studentSnapshot.docs[0].data();
 
-          // Fetch user data (name and email) from "users" collection using userId (document ID)
           const userDoc = await getDoc(doc(db, "users", studentData.userId));
           if (!userDoc.exists()) {
             console.error(
@@ -219,6 +239,7 @@ const StudentViewProfile = () => {
     const maxSize = 5 * 1024 * 1024;
     if (!validTypes.includes(file.type)) {
       setErrorMessage("Please upload a valid image (JPEG, PNG, or GIF)");
+      setShowUploadErrorModal(true);
       return;
     }
     if (file.size > maxSize) {
@@ -261,8 +282,9 @@ const StudentViewProfile = () => {
     } catch (error) {
       console.error("Image upload error:", error);
       setErrorMessage(
-        `Failed to upload image: ${error.message}. Please check if the upload preset 'students_profile' is correctly configured in Cloudinary.`
+        `Failed to upload image: ${error.message}. Please check if the upload preset 'student_profile' is correctly configured in Cloudinary.`
       );
+      setShowUploadErrorModal(true);
     } finally {
       setUploading(false);
     }
@@ -291,8 +313,8 @@ const StudentViewProfile = () => {
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="flex-1 p-8">
         {/* Header Section */}
-        <div className="bg-white shadow-lg rounded-lg p-4 mb-8 flex items-center border border-gray-200">
-          <div className="relative w-24 h-24 rounded-full mr-4 border border-orange-300 overflow-hidden flex-shrink-0">
+        <div className="bg-gradient-to-r from-gray-100 to-gray-200 shadow-xl rounded-xl p-6 mb-8 flex flex-col sm:flex-row items-center sm:items-start gap-6 border border-gray-200">
+          <div className="relative w-32 h-32 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-orange-200 shadow-md">
             {profilePhotoUrl ? (
               <AdvancedImage
                 cldImg={cld
@@ -302,23 +324,23 @@ const StudentViewProfile = () => {
                   .quality("auto")}
                 className="w-full h-full object-cover"
                 onError={(e) => {
-                  e.target.src = "https://via.placeholder.com/64";
+                  e.target.src = "https://via.placeholder.com/128";
                 }}
               />
             ) : (
-              <img
-                src="https://via.placeholder.com/64"
-                alt={`${studentInfo.name}'s profile`}
-                className="w-full h-full object-cover"
-              />
+              <div
+                className={`w-full h-full ${randomColor} flex items-center justify-center text-white text-4xl font-semibold`}
+              >
+                {getInitials(studentInfo.name)}
+              </div>
             )}
             {currentUserRole === "student" && !studentId && (
               <label
                 htmlFor="profile-upload"
-                className="absolute bottom-0 right-0 bg-orange-500 rounded-full p-1 cursor-pointer shadow-md hover:bg-orange-600 transition duration-300"
+                className="absolute bottom-2 right-2 bg-orange-500 rounded-full p-2 cursor-pointer shadow-lg hover:bg-orange-600 hover:scale-110 transition-transform duration-300"
               >
                 <svg
-                  className="w-4 h-4 text-white"
+                  className="w-5 h-5 text-white"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -349,20 +371,38 @@ const StudentViewProfile = () => {
               }
             />
             {uploading && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 rounded-full">
-                <p className="text-white text-xs">Uploading...</p>
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-60 rounded-full">
+                <svg
+                  className="w-8 h-8 text-white animate-spin"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
+                </svg>
               </div>
             )}
           </div>
-          <div className="flex-1">
-            <h2 className="text-xl font-semibold text-gray-900">
+          <div className="flex-1 text-center sm:text-left">
+            <h2 className="text-2xl font-bold text-gray-900">
               {studentInfo.name}
             </h2>
-            <p className="text-gray-600 text-sm">{studentInfo.email}</p>
-            <p className="text-gray-600 text-sm">
+            <p className="text-gray-600 text-sm mt-1">{studentInfo.email}</p>
+            <p className="text-gray-600 text-sm mt-1">
               Course: {studentInfo.course}
             </p>
-            <span className="inline-block bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs mt-1">
+            <span className="inline-block bg-orange-500 text-white px-3 py-1 rounded-full text-xs mt-2 font-medium shadow-sm">
               Student
             </span>
           </div>
@@ -484,6 +524,29 @@ const StudentViewProfile = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
       />
+
+      {/* Upload Error Popup */}
+      {showUploadErrorModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white rounded-lg p-6 w-96 transform transition-all duration-300 scale-95 hover:scale-100">
+            <h3 className="text-lg font-semibold text-red-600 mb-4">
+              Image Upload Failed!
+            </h3>
+            <p className="text-gray-600 mb-6">{errorMessage}</p>
+            <div className="flex justify-end">
+              <button
+                onClick={() => {
+                  setShowUploadErrorModal(false);
+                  setErrorMessage("");
+                }}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition duration-300"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
