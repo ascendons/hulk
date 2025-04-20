@@ -245,14 +245,14 @@ const Assignments = () => {
                     </p>
                     {assignment.fileURL && (
                       <div className="mt-2 space-x-4">
-                        <a
+                        {/* <a
                           href={assignment.fileURL}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="text-blue-500 hover:text-blue-600 underline"
                         >
                           Download File
-                        </a>
+                        </a> */}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();

@@ -1,9 +1,7 @@
 import React from "react";
-import { Link, useNavigate } from "react-router-dom"; // Added useNavigate for navigation after logout
-import {
-  signOut, // Import signOut from Firebase auth
-} from "firebase/auth";
-import { auth } from "../../config"; // Import Firebase auth from your config
+import { Link, useNavigate } from "react-router-dom";
+import { signOut } from "firebase/auth";
+import { auth } from "../../config";
 import {
   LayoutDashboard,
   Bell,
@@ -19,26 +17,28 @@ import {
 } from "lucide-react";
 
 const StudentSidebar = () => {
-  const navigate = useNavigate(); // Added useNavigate for navigation
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
-      await signOut(auth); // Sign out the user from Firebase
+      await signOut(auth);
       console.log("User logged out successfully");
-      navigate("/signup"); // Redirect to the signup/login page after logout
+      navigate("/signup");
     } catch (error) {
       console.error("Error logging out:", error);
-      alert("Failed to logout. Please try again."); // Optional: Display an error message
+      alert("Failed to logout. Please try again.");
     }
   };
 
   return (
-    <div className="h-screen bg-gray-800 text-white w-96 p-6 flex flex-col">
-      <div className="mb-8">
-        <h1 className="text-xl font-bold flex items-center">
-          <LayoutDashboard className="mr-2 text-orange-500" />
-          CLASSMATE
-        </h1>
+    <div className="h-screen bg-gray-800 text-white w-72 p-6 flex flex-col">
+      <div className="mb-8 flex items-center">
+        <img
+          src="/studenticon.png"
+          alt="ClassMate Icon"
+          className="w-8 h-8 mr-2"
+        />
+        <h1 className="text-lg font-bold">CLASSMATE</h1>
       </div>
 
       {/* Navigation Links */}
@@ -101,8 +101,6 @@ const StudentSidebar = () => {
 
         {/* Logout Button */}
         <li className="mt-auto">
-          {" "}
-          {/* Pushes the logout button to the bottom */}
           <button
             onClick={handleLogout}
             className="flex items-center w-full p-3 rounded-lg hover:bg-orange-700 transition-colors"

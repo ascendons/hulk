@@ -309,7 +309,7 @@ const StudentNotice = () => {
                       );
                       return (
                         <li key={index} className="flex items-center space-x-4">
-                          <a
+                          {/* <a
                             href={url}
                             download={
                               url.split("/").pop() || `attachment_${index + 1}`
@@ -317,7 +317,7 @@ const StudentNotice = () => {
                             className="text-orange-500 underline hover:text-orange-700"
                           >
                             Download File {index + 1}
-                          </a>
+                          </a> */}
                           {["pdf", "image"].includes(
                             notice.fileTypes[index]
                           ) ? (

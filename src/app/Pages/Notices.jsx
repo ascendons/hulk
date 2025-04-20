@@ -92,14 +92,6 @@ const Notices = () => {
                       >
                         Preview Attachment
                       </button>
-                      <a
-                        href={fileUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-500 underline hover:text-blue-700"
-                      >
-                        Download
-                      </a>
                     </li>
                   ))}
                 </ul>

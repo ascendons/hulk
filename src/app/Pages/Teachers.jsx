@@ -5,7 +5,6 @@ import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../../config";
 import { AuthContext } from "../../authContext";
 import Sidebar from "../Components/Sidebar"; // Assuming Sidebar for teachers
-import { ArrowLeftIcon } from "@heroicons/react/solid"; // Import Heroicons for back arrow
 import Skeleton from "react-loading-skeleton"; // Import Skeleton component
 import "react-loading-skeleton/dist/skeleton.css"; // Import Skeleton CSS
 
@@ -34,6 +33,7 @@ const Teachers = () => {
           usersData[doc.id] = {
             name: doc.data().name || "N/A",
             email: doc.data().email || "N/A",
+            role: doc.data().role || "N/A",
           };
         });
 
@@ -49,6 +49,7 @@ const Teachers = () => {
             department: teacherData.department || "N/A",
             teacherId: teacherData.teacherId || "N/A", // Custom teacher ID if available
             userId,
+            role: usersData[userId]?.role || "Teacher",
           };
         });
 
@@ -114,8 +115,11 @@ const Teachers = () => {
 
   // Handle navigation to teacher profile
   const handleViewDetail = (teacherId) => {
+    const teacher = teachers.find((t) => t.id === teacherId);
     console.log("Navigating to teacher detail with ID:", teacherId);
-    navigate(`/view-profile/teacher/${teacherId}`);
+    navigate(`/view-profile/${teacherId}`, {
+      state: { teacher, role: "teacher" },
+    });
   };
 
   // Filter teachers based on search term
@@ -134,14 +138,6 @@ const Teachers = () => {
 
       {/* Main Content with margin to account for fixed sidebar */}
       <div className="flex-grow ml-64 p-6">
-        {/* Back Arrow Button */}
-        {/* <button
-          onClick={() => navigate("/dashboard")} // Adjust the route as needed (e.g., to a dashboard)
-          className="mb-4 p-2 bg-white border border-gray-300 rounded-full shadow-sm hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <ArrowLeftIcon className="h-5 w-5 text-gray-600" />
-        </button> */}
-
         <h1 className="text-5xl font-bold text-green-500 mb-6">SEE TEACHERS</h1>
 
         <div className="mb-5">
@@ -150,7 +146,7 @@ const Teachers = () => {
             placeholder="Search..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full p-2.5 text-base border-2 border-gray-300 rounded-lg"
+            className="w-full p-2.5 text-base border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
             disabled={loading}
           />
         </div>
@@ -162,72 +158,73 @@ const Teachers = () => {
           </div>
         ) : (
           <div className="bg-white shadow-md rounded-lg p-4 border border-gray-300">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr>
-                  <th className="border border-gray-300 p-2 bg-gray-200 text-left">
-                    NAME
-                  </th>
-                  <th className="border border-gray-300 p-2 bg-gray-200 text-left">
-                    EMAIL
-                  </th>
-                  <th className="border border-gray-300 p-2 bg-gray-200 text-left">
-                    PHONE
-                  </th>
-                  <th className="border border-gray-300 p-2 bg-gray-200 text-left">
-                    DEPARTMENT
-                  </th>
-                  <th className="border border-gray-300 p-2 bg-gray-200 text-left">
-                    TEACHER ID
-                  </th>
-                  <th className="border border-gray-300 p-2 bg-gray-200 text-left">
-                    ACTION
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredTeachers.length > 0 ? (
-                  filteredTeachers.map((teacher) => (
-                    <tr key={teacher.id}>
-                      <td className="border border-gray-300 p-2">
-                        {teacher.name}
-                      </td>
-                      <td className="border border-gray-300 p-2">
-                        {teacher.email}
-                      </td>
-                      <td className="border border-gray-300 p-2">
-                        {teacher.phone}
-                      </td>
-                      <td className="border border-gray-300 p-2">
-                        {teacher.department}
-                      </td>
-                      <td className="border border-gray-300 p-2">
-                        {teacher.teacherId}
-                      </td>
-                      <td className="border border-gray-300 p-2 flex space-x-2">
-                        <button
-                          onClick={() => handleViewDetail(teacher.id)}
-                          disabled={loading}
-                          className="bg-green-500 text-white px-2.5 py-1 rounded cursor-pointer text-sm hover:bg-green-600"
-                        >
-                          View Detail
-                        </button>
-                        {/* Removed the DELETE button */}
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr>
+                    <th className="border border-gray-300 p-2 bg-gray-200 text-left text-sm font-semibold">
+                      NAME
+                    </th>
+                    <th className="border border-gray-300 p-2 bg-gray-200 text-left text-sm font-semibold">
+                      EMAIL
+                    </th>
+                    <th className="border border-gray-300 p-2 bg-gray-200 text-left text-sm font-semibold">
+                      PHONE
+                    </th>
+                    <th className="border border-gray-300 p-2 bg-gray-200 text-left text-sm font-semibold">
+                      DEPARTMENT
+                    </th>
+                    <th className="border border-gray-300 p-2 bg-gray-200 text-left text-sm font-semibold">
+                      TEACHER ID
+                    </th>
+                    <th className="border border-gray-300 p-2 bg-gray-200 text-left text-sm font-semibold">
+                      ACTION
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredTeachers.length > 0 ? (
+                    filteredTeachers.map((teacher) => (
+                      <tr key={teacher.id}>
+                        <td className="border border-gray-300 p-2 text-sm">
+                          {teacher.name}
+                        </td>
+                        <td className="border border-gray-300 p-2 text-sm">
+                          {teacher.email}
+                        </td>
+                        <td className="border border-gray-300 p-2 text-sm">
+                          {teacher.phone}
+                        </td>
+                        <td className="border border-gray-300 p-2 text-sm">
+                          {teacher.department}
+                        </td>
+                        <td className="border border-gray-300 p-2 text-sm">
+                          {teacher.teacherId}
+                        </td>
+                        <td className="border border-gray-300 p-2 text-sm flex space-x-2">
+                          <button
+                            onClick={() => handleViewDetail(teacher.id)}
+                            disabled={loading}
+                            className="bg-green-500 text-white px-2.5 py-1 rounded text-sm hover:bg-green-600 transition"
+                          >
+                            View Detail
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan="6"
+                        className="border border-gray-300 p-2 text-center text-gray-600 text-sm"
+                      >
+                        No teachers found.
                       </td>
                     </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td
-                      colSpan="6"
-                      className="border border-gray-300 p-2 text-center text-gray-600"
-                    >
-                      No teachers found.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>

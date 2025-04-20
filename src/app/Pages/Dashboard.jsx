@@ -38,7 +38,6 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // Function to get initials from name
   const getInitials = (name) => {
     if (!name || name === "N/A") return "N/A";
     const words = name.trim().split(/\s+/);
@@ -46,7 +45,6 @@ const Dashboard = () => {
     return (words[0][0] + (words[1] ? words[1][0] : "")).toUpperCase();
   };
 
-  // Array of background colors for initials avatar
   const backgroundColors = [
     "bg-blue-500",
     "bg-green-500",
@@ -58,7 +56,6 @@ const Dashboard = () => {
     "bg-indigo-500",
   ];
 
-  // Select random background color
   const randomColor =
     backgroundColors[Math.floor(Math.random() * backgroundColors.length)];
 
@@ -323,93 +320,102 @@ const Dashboard = () => {
 
   if (error) {
     return (
-      <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 items-center justify-center">
+      <div className="flex min-h-screen bg-gray-100 items-center justify-center">
         <p className="text-red-500 text-lg font-bold">{error}</p>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <div className="fixed w-56 bg-blue-800 text-white h-screen overflow-y-hidden border-0 outline-0">
+    <div className="flex min-h-screen bg-gray-100">
+      {/* Fixed Sidebar */}
+      <div className="fixed w-64 bg-blue-800 text-white h-screen overflow-y-auto">
         <Sidebar />
       </div>
 
-      <div className="flex-grow p-8 ml-56 bg-gradient-to-br from-gray-50 to-gray-100">
-        <div className="mb-8">
-          <h1 className="text-5xl font-bold mb-4 text-green-500">Dashboard</h1>
-          <p className="text-gray-600">
+      {/* Main Content */}
+      <div className="flex-grow p-6 ml-64">
+        {/* Header */}
+        <div className="mb-6">
+          <h1 className="text-5xl font-bold text-green-500 mb-2">Dashboard</h1>
+          <p className="text-gray-600 text-lg">
             Welcome back, {teacherInfo.name || "Teacher"}!
           </p>
         </div>
-        <div className="bg-white shadow-lg rounded-xl p-6 mb-8 flex items-center justify-between border border-gray-200">
+
+        {/* Profile Card */}
+        <div className="bg-white shadow-md rounded-lg p-6 mb-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="relative w-24 h-24 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-green-200 shadow-md">
+            <div className="relative w-16 h-16 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-green-200">
               {teacherInfo.profilePhotoUrl ? (
                 <AdvancedImage
                   cldImg={cld
                     .image(getPublicIdFromUrl(teacherInfo.profilePhotoUrl))
-                    .resize(fill().width(96).height(96).gravity(autoGravity()))
+                    .resize(fill().width(64).height(64).gravity(autoGravity()))
                     .format("auto")
                     .quality("auto")}
                   className="w-full h-full object-cover"
                   onError={(e) => {
-                    e.target.src = "https://via.placeholder.com/96";
+                    e.target.src = "https://via.placeholder.com/64";
                   }}
                 />
               ) : (
                 <div
-                  className={`w-full h-full ${randomColor} flex items-center justify-center text-white text-3xl font-semibold`}
+                  className={`w-full h-full ${randomColor} flex items-center justify-center text-white text-2xl font-semibold`}
                 >
                   {getInitials(teacherInfo.name)}
                 </div>
               )}
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="text-xl font-bold text-gray-900">
                 {teacherInfo.name || "Teacher Name"}
               </h2>
-              <p className="text-gray-600 text-sm mt-1">
+              <p className="text-gray-600 text-sm">
                 Department: {teacherInfo.department || "Department"}
               </p>
-              <p className="text-gray-600 text-sm mt-1">
+              <p className="text-gray-600 text-sm">
                 Role: {teacherInfo.role || "Teacher"}
               </p>
             </div>
           </div>
           <Link to={`/teacher/${teacherInfo.userId}`}>
-            <button className="bg-green-500 text-white px-4 py-2 rounded-full hover:bg-green-600 transition-colors text-sm font-medium shadow-sm">
+            <button className="bg-green-500 text-white px-4 py-2 rounded-full hover:bg-green-600 transition-colors text-sm font-medium">
               View Profile
             </button>
           </Link>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
-            <h2 className="text-3xl font-bold text-blue-600">
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          <div className="bg-white shadow-md rounded-lg p-6 text-center">
+            <h2 className="text-3xl font-bold text-gray-800">
               {totalStudents}
             </h2>
             <p className="text-gray-600 mt-2">Total Students</p>
           </div>
-          <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
-            <h2 className="text-3xl font-bold text-green-600">
+          <div className="bg-white shadow-md rounded-lg p-6 text-center">
+            <h2 className="text-3xl font-bold text-gray-800">
               {totalTeachers}
             </h2>
             <p className="text-gray-600 mt-2">Total Teachers</p>
           </div>
-          <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
-            <h2 className="text-3xl font-bold text-purple-600">
+          <div className="bg-white shadow-md rounded-lg p-6 text-center">
+            <h2 className="text-3xl font-bold text-gray-800">
               {totalSubjects}
             </h2>
             <p className="text-gray-600 mt-2">Total Subjects</p>
           </div>
-          <div className="bg-white shadow-lg rounded-lg p-6 text-center hover:shadow-xl transition-shadow">
+          <div className="bg-white shadow-md rounded-lg p-6 text-center">
             <h2 className="text-3xl font-bold text-orange-600">
               {attendance}%
             </h2>
             <p className="text-gray-600 mt-2">Attendance</p>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+
+        {/* Button Group */}
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-6">
           <button
             onClick={() => navigate("/courses")}
             className="bg-blue-500 text-white px-6 py-4 rounded-lg font-bold hover:bg-blue-600 transition-colors"
@@ -442,16 +448,17 @@ const Dashboard = () => {
           </button>
         </div>
 
+        {/* Notice Board and Upcoming Events */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white shadow-lg rounded-lg p-6 max-h-96 overflow-y-auto">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          <div className="bg-white shadow-md rounded-lg p-6">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">
               Notice Board
             </h2>
             {notices.length > 0 ? (
               <ul className="space-y-4">
                 {notices.map((notice) => (
                   <li key={notice.id} className="border-b pb-4 last:border-b-0">
-                    <h3 className="text-lg font-semibold text-blue-600">
+                    <h3 className="text-lg font-semibold text-gray-800">
                       {notice.title}
                     </h3>
                     <p className="text-sm text-gray-600 mb-2">
@@ -480,16 +487,16 @@ const Dashboard = () => {
               <p className="text-gray-600">No notices available.</p>
             )}
           </div>
-          <div className="bg-white shadow-lg rounded-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">
+          <div className="bg-white shadow-md rounded-lg p-6">
+            <h2 className="text-xl font-bold text-gray-800 mb-4">
               Upcoming Events
             </h2>
             {upcomingEvents.length > 0 ? (
-              <div className="space-y-4 max-h-96 overflow-y-auto">
+              <div className="space-y-4">
                 {upcomingEvents.map((event) => (
                   <div
                     key={event.id}
-                    className="bg-white shadow-md rounded-lg p-4 border border-gray-200"
+                    className="bg-white shadow-sm rounded-lg p-4 border border-gray-200"
                   >
                     <div className="flex justify-between items-center mb-2">
                       <p className="text-gray-600 font-medium">
@@ -509,7 +516,7 @@ const Dashboard = () => {
                       Subject: {event.subject}
                     </p>
                     <div className="mt-2">
-                      <div className="bg-blue-100 text-gray-800 p-3 rounded-lg">
+                      <div className="bg-blue-50 text-gray-800 p-3 rounded-lg">
                         <ReactMarkdown
                           components={{
                             p: ({ node, ...props }) => (

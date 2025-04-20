@@ -27,8 +27,8 @@ const AddSubjects = React.lazy(() => import("./app/Pages/AddSubjects"));
 const TeacherViewProfile = React.lazy(() =>
   import("./app/Components/TeacherViewProfile")
 );
-const StudentViewProfile = React.lazy(() =>
-  import("./app/Components/StudentViewProfile")
+const NewViewProfile = React.lazy(() =>
+  import("./app/Components/newviewprofile")
 );
 const AssignmentMarks = React.lazy(() =>
   import("./app/Components/AssignmentMarks")
@@ -79,7 +79,7 @@ const StudentAssignments = React.lazy(() =>
 const teacherRoutes = [
   { path: "/dashboard", component: Dashboard },
   { path: "/courses", component: Courses },
-  { path: "/syllabus", component: Syllabus }, // Updated to use corrected Syllabus
+  { path: "/syllabus", component: Syllabus },
   { path: "/addsyllabus", component: AddSyllabus },
   { path: "/AddDayTimetable", component: AddDayTimetable },
   { path: "/create-notice", component: CreateNotice },
@@ -127,7 +127,7 @@ const adminRoutes = [
 
 // Universal Routes (accessible by all authenticated users)
 const universalRoutes = [
-  { path: "/view-profile/:studentId?", component: StudentViewProfile },
+  { path: "/view-profile/:studentId?", component: NewViewProfile },
   { path: "/teacher/:teacherId", component: TeacherViewProfile },
   { path: "/community", component: Community },
 ];

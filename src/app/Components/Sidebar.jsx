@@ -51,9 +51,9 @@ const Sidebar = () => {
       </button>
 
       <div
-        className={`fixed lg:relative h-screen bg-gray-900 text-white w-64 p-6 flex flex-col transform transition-transform duration-300 ease-in-out ${
-          isSidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        } overflow-y-hidden`}
+        className={`fixed h-screen bg-gray-900 text-white w-64 p-6 flex flex-col transform transition-transform duration-300 ease-in-out ${
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } lg:translate-x-0 overflow-y-auto`} // Reduced width from w-72 to w-64
       >
         <button
           onClick={toggleSidebar}
@@ -63,11 +63,13 @@ const Sidebar = () => {
         </button>
 
         {/* Dashboard Header */}
-        <div className="mb-8">
-          <h1 className="text-xl font-bold flex items-center">
-            <LayoutDashboard className="mr-2 text-green-600" />
-            ClassMate
-          </h1>
+        <div className="mb-8 flex items-center">
+          <img
+            src="/studenticon.png"
+            alt="ClassMate Icon"
+            className="w-8 h-8 mr-2"
+          />
+          <h1 className="text-lg font-bold">CLASSMATE</h1>
         </div>
 
         <ul className="flex-grow space-y-2 overflow-y-hidden">
@@ -158,17 +160,6 @@ const Sidebar = () => {
               Assignments
             </Link>
           </li>
-
-          {/* <li>
-            <Link
-              to="/addsyllabus"
-              className="flex items-center p-3 rounded-lg hover:bg-orange-700 transition-colors"
-              onClick={() => setIsSidebarOpen(false)}
-            >
-              <Book className="mr-3 text-green-600" />
-              Add Syllabus
-            </Link>
-          </li> */}
 
           <li>
             <Link
