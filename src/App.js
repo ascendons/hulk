@@ -12,6 +12,7 @@ import { auth, db } from "./config";
 import { AuthProvider } from "./authContext";
 import Community from "./app/Pages/Community";
 import ProtectedCommunity from "./app/routes/ProtectedCommunity";
+import StudentViewProfile from "./app/Components/StudentViewProfile";
 
 // Lazy-loaded components
 const Dashboard = React.lazy(() => import("./app/Pages/Dashboard"));
@@ -129,6 +130,7 @@ const adminRoutes = [
 const universalRoutes = [
   { path: "/view-profile/:studentId?", component: NewViewProfile },
   { path: "/teacher/:teacherId", component: TeacherViewProfile },
+  { path: "/student/:studentId", component: StudentViewProfile },
   { path: "/community", component: Community },
 ];
 

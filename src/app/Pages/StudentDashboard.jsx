@@ -28,6 +28,7 @@ const StudentDashboard = () => {
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [timers, setTimers] = useState({});
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null); // Store the authenticated user
 
   // Function to get initials from name
   const getInitials = (name) => {
@@ -200,6 +201,7 @@ const StudentDashboard = () => {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user); // Store the authenticated user
       if (user) {
         try {
           const studentDocRef = doc(db, "students", user.uid);
@@ -221,6 +223,7 @@ const StudentDashboard = () => {
                 rollNo: data.rollno || "Roll No",
                 phoneNumber: data.phonenumber || "Phone Number",
                 profilePhotoUrl: data.profilePhotoUrl || "",
+                userId: user.uid, // Ensure userId is included
               };
               console.log("Student Info:", studentInfo);
               setStudentData(studentInfo);
@@ -288,6 +291,7 @@ const StudentDashboard = () => {
                 rollNo: data.rollno || "Roll No",
                 phoneNumber: data.phonenumber || "Phone Number",
                 profilePhotoUrl: "",
+                userId: user.uid,
               });
               setAttendancePercentage(0);
               setTotalNotes(0);
@@ -306,6 +310,7 @@ const StudentDashboard = () => {
               rollNo: "Roll No",
               phoneNumber: "Phone Number",
               profilePhotoUrl: "",
+              userId: user.uid,
             });
             setAttendancePercentage(0);
             setTotalNotes(0);
@@ -324,6 +329,7 @@ const StudentDashboard = () => {
             rollNo: "Roll No",
             phoneNumber: "Phone Number",
             profilePhotoUrl: "",
+            userId: user.uid,
           });
           setAttendancePercentage(0);
           setTotalNotes(0);
@@ -410,7 +416,7 @@ const StudentDashboard = () => {
             </div>
           </div>
           <Link
-            to="/view-profile"
+            to={`/student/${studentData?.userId || currentUser?.uid || ""}`}
             className="bg-orange-500 text-white px-4 py-2 rounded-full hover:bg-orange-600 transition-colors text-sm font-medium shadow-sm"
           >
             View Profile

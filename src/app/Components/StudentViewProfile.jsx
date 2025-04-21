@@ -42,6 +42,7 @@ const StudentViewProfile = () => {
   const [currentUserRole, setCurrentUserRole] = useState(null);
   const [activeTab, setActiveTab] = useState("Details");
   const [showUploadErrorModal, setShowUploadErrorModal] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState(null); // Store the authenticated user's ID
   const navigate = useNavigate();
 
   // Function to get initials from name
@@ -79,10 +80,12 @@ const StudentViewProfile = () => {
           return;
         }
 
+        setCurrentUserId(user.uid); // Store the authenticated user's ID
+
         let targetUserId = null;
         let targetStudentId = studentId;
 
-        if (!targetStudentId) {
+        if (!targetStudentId || targetStudentId === ":studentId") {
           const userEmail = user.email || user.uid;
           if (!userEmail) {
             console.error("No email or UID available for the user.");
@@ -106,6 +109,7 @@ const StudentViewProfile = () => {
 
           const userData = usersSnapshot.docs[0].data();
           targetUserId = userData.userId || user.uid;
+          targetStudentId = user.uid; // Use the UID as the studentId
           if (!targetUserId) {
             console.error("No userId found in user data.");
             setErrorMessage("No userId found in user data.");
@@ -309,6 +313,9 @@ const StudentViewProfile = () => {
     );
   }
 
+  // Determine if the profile being viewed is the current user's own profile
+  const isOwnProfile = currentUserId === studentInfo.userId;
+
   return (
     <div className="flex min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <div className="flex-1 p-8">
@@ -334,7 +341,7 @@ const StudentViewProfile = () => {
                 {getInitials(studentInfo.name)}
               </div>
             )}
-            {currentUserRole === "student" && !studentId && (
+            {currentUserRole === "student" && isOwnProfile && (
               <label
                 htmlFor="profile-upload"
                 className="absolute bottom-2 right-2 bg-orange-500 rounded-full p-2 cursor-pointer shadow-lg hover:bg-orange-600 hover:scale-110 transition-transform duration-300"
@@ -367,7 +374,7 @@ const StudentViewProfile = () => {
               onChange={handleImageUpload}
               className="hidden"
               disabled={
-                uploading || currentUserRole !== "student" || !!studentId
+                uploading || currentUserRole !== "student" || !isOwnProfile
               }
             />
             {uploading && (
@@ -492,7 +499,7 @@ const StudentViewProfile = () => {
               <p className="text-gray-600 mb-6">
                 Update your password to keep your account secure.
               </p>
-              {currentUserRole === "student" && !studentId && (
+              {currentUserRole === "student" && isOwnProfile && (
                 <button
                   onClick={() => setIsModalOpen(true)}
                   className="bg-orange-500 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-orange-600 transition-colors"
